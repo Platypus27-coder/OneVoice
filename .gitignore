@@ -1,0 +1,50 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+*.egg
+
+# Virtual environments
+venv/
+.venv/
+env/
+
+# Jupyter Notebooks checkpoints
+.ipynb_checkpoints/
+
+# Model weights (too large for git — use Git LFS or HuggingFace Hub)
+*.pt
+*.pth
+*.bin
+*.gguf
+*.onnx
+*.tflite
+*.qnn
+
+# Qualcomm compiled models
+quantized_models/
+
+# Downloaded HuggingFace cache
+~/.cache/huggingface/
+
+# Audio data (use DVC or separate storage)
+data/raw_audio/
+data/calibration/*.wav
+
+# API Keys / secrets
+.env
+*.env
+config/secrets.yaml
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db

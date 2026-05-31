@@ -1,0 +1,66 @@
+# Pipeline Configuration — OneVoice Edge
+
+# ─────────────────────────────────────────────
+# Audio Capture
+# ─────────────────────────────────────────────
+audio:
+  sample_rate: 16000
+  chunk_size: 1024
+  channels: 1
+  format: int16           # pyaudio.paInt16
+  vad_threshold: 0.5      # Silero VAD sensitivity (0.0 - 1.0)
+  vad_min_speech_ms: 300  # Minimum speech duration to trigger pipeline
+
+# ─────────────────────────────────────────────
+# Trạm 0: Denoise (GIPFormer ONNX)
+# ─────────────────────────────────────────────
+denoise:
+  enabled: true
+  model_path: "models/gipformer_denoise.onnx"
+  use_gpu: false           # ONNX CPU inference on edge device
+
+# ─────────────────────────────────────────────
+# Trạm 1: ASR (Whisper-Tiny)
+# ─────────────────────────────────────────────
+asr:
+  model_name: "openai/whisper-tiny"
+  model_path: "models/whisper_tiny_int8.onnx"  # Quantized version
+  language: "vi"           # Default: Vietnamese (auto-detect also supported)
+  streaming: true
+  chunk_length_s: 3        # Process 3-second audio chunks for low latency
+  task: "transcribe"
+
+# ─────────────────────────────────────────────
+# Trạm 2: Machine Translation (MarianMT)
+# ─────────────────────────────────────────────
+translation:
+  vi_en_model: "Helsinki-NLP/opus-mt-vi-en"
+  en_vi_model: "Helsinki-NLP/opus-mt-en-vi"
+  model_dir: "models/marianmt/"   # Local fine-tuned checkpoint
+  max_length: 128
+  direction: "vi2en"              # Default direction
+
+# ─────────────────────────────────────────────
+# Trạm 3: TTS (BetterBox-TTS / Tiny VITS)
+# ─────────────────────────────────────────────
+tts:
+  default_engine: "betterbox"     # "betterbox" | "vits" | "vallex" (premium)
+  betterbox:
+    model_path: "models/betterbox/"
+    language: "vi"
+    speed: 1.0
+    pitch: 0
+  vits:
+    model_path: "models/vits_en_tiny.onnx"
+    language: "en"
+  vallex:                         # Premium Mode (requires Wi-Fi or charging)
+    enabled: false
+    model_path: "models/vallex/"
+
+# ─────────────────────────────────────────────
+# Pipeline Orchestrator
+# ─────────────────────────────────────────────
+pipeline:
+  queue_maxsize: 10        # Max items in each inter-stage queue
+  target_latency_ms: 1000  # Alert if total latency exceeds this
+  log_latency: true        # Print per-stage timing to console
