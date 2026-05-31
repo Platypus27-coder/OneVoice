@@ -1,15 +1,23 @@
 """
-OneVoice Edge — Main Pipeline Orchestrator
-==========================================
+OneVoice Edge — Main Pipeline Orchestrator (VI ↔ EN)
+=====================================================
 Connects all 4 stages using thread-safe queues for real-time,
-low-latency Speech-to-Speech translation.
+low-latency Speech-to-Speech translation. Focused exclusively on
+Vietnamese ↔ English translation.
 
 Pipeline flow:
-  Microphone → [Trạm 0: Denoise] → [Trạm 1: ASR] → [Trạm 2: MT] → [Trạm 3: TTS] → Speaker
+  Microphone
+    → [Trạm 0: Denoise — GIPFormer ONNX]
+    → [Trạm 1: ASR — GIPFormer (VI) / Whisper-Tiny (EN)]
+    → [Trạm 2: MT — MarianMT (VI↔EN)]
+    → [Trạm 3: TTS — OmniVoice (VI out) / pyttsx3 (EN out)]
+    → Speaker
 
-Target latency: < 1 second end-to-end
-RAM budget: < 200 MB
-Network: None (100% offline)
+Direction modes:
+  "vi2en" — Vietnamese speaker → English listener (default)
+  "en2vi" — English speaker → Vietnamese listener
+
+Target: < 1 second end-to-end latency, < 200MB RAM, 100% offline.
 """
 
 import queue
@@ -18,15 +26,17 @@ import threading
 import yaml
 import sys
 import os
+import argparse
 
-# Add src to path
 sys.path.insert(0, os.path.dirname(__file__))
 
 from audio.capture import AudioCapture
 from audio.denoise import Denoiser
-from asr.whisper_asr import WhisperASR
+from asr.whisper_asr import ASRManager
 from translation.mt_engine import Translator
 from tts.tts_engine import TTSEngine
+from utils.text_normalizer import normalize
+from utils.srt_generator import SRTGenerator
 
 
 def load_config(path: str = "config/config.yaml") -> dict:
@@ -36,58 +46,144 @@ def load_config(path: str = "config/config.yaml") -> dict:
 
 class OneVoicePipeline:
     """
-    End-to-end real-time speech translation pipeline.
-    Each stage runs in its own daemon thread, communicating
-    through bounded queues to prevent memory buildup.
+    End-to-end real-time VI↔EN speech translation pipeline.
     """
 
-    def __init__(self, config_path: str = "config/config.yaml"):
+    def __init__(self, config_path: str = "config/config.yaml",
+                 direction: str = "vi2en"):
         self.cfg = load_config(config_path)
+        self.direction = direction  # "vi2en" or "en2vi"
         q_size = self.cfg["pipeline"]["queue_maxsize"]
 
         # ── Inter-stage Queues ──────────────────────────────────────────────
-        self.q_audio_raw   = queue.Queue(maxsize=q_size)   # Raw mic audio
-        self.q_audio_clean = queue.Queue(maxsize=q_size)   # Denoised audio
-        self.q_text_src    = queue.Queue(maxsize=q_size)   # Transcribed text
-        self.q_text_tgt    = queue.Queue(maxsize=q_size)   # Translated text
+        self.q_audio_raw   = queue.Queue(maxsize=q_size)
+        self.q_audio_clean = queue.Queue(maxsize=q_size)
+        self.q_text_src    = queue.Queue(maxsize=q_size)
+        self.q_text_tgt    = queue.Queue(maxsize=q_size)
 
         # ── Modules ─────────────────────────────────────────────────────────
-        self.capture   = AudioCapture(self.q_audio_raw, self.cfg)
-        self.denoiser  = Denoiser(self.cfg["denoise"]["model_path"])
-        self.asr       = WhisperASR(self.q_text_src, self.cfg)
+        self.capture    = AudioCapture(self.q_audio_raw, self.cfg)
+        self.denoiser   = Denoiser(num_threads=2)
+        self.asr        = ASRManager(self.cfg)
         self.translator = Translator(self.cfg)
-        self.tts       = TTSEngine(self.cfg)
+        self.tts        = TTSEngine(self.cfg)
+        self.srt        = SRTGenerator(bilingual=True)
+
+        # ── Latency tracking ────────────────────────────────────────────────
+        self._latency_log: list = []
 
     def _denoise_worker(self):
-        """Reads raw audio, denoises, pushes to clean audio queue."""
+        """Trạm 0: Reads raw audio, denoises, pushes to clean queue."""
         print("[Denoise Worker] ✅ Started")
         while True:
             try:
                 raw = self.q_audio_raw.get(timeout=1)
-                if self.cfg["denoise"]["enabled"]:
-                    try:
-                        clean = self.denoiser.denoise(raw)
-                    except Exception:
-                        clean = self.denoiser.passthrough(raw)
-                else:
-                    clean = raw
+                t0 = time.perf_counter()
+                clean = self.denoiser.denoise(raw)
+                elapsed = (time.perf_counter() - t0) * 1000
                 if not self.q_audio_clean.full():
-                    self.q_audio_clean.put(clean)
+                    self.q_audio_clean.put((clean, elapsed))
                 self.q_audio_raw.task_done()
             except queue.Empty:
                 continue
 
+    def _asr_worker(self):
+        """Trạm 1: Transcribes audio, normalizes, pushes text."""
+        print(f"[ASR Worker] ✅ Started (direction={self.direction})")
+        while True:
+            try:
+                audio_tuple = self.q_audio_clean.get(timeout=1)
+                audio, denoise_ms = audio_tuple
+
+                t0 = time.perf_counter()
+                result = self.asr.transcribe(audio, direction=self.direction)
+                asr_ms = (time.perf_counter() - t0) * 1000
+
+                if result["text"]:
+                    # Normalize text before MT
+                    normalized = normalize(result["text"], lang=result["lang"])
+                    result["text"] = normalized
+                    result["denoise_ms"] = denoise_ms
+                    result["asr_ms"] = asr_ms
+                    self.q_text_src.put(result)
+
+                self.q_audio_clean.task_done()
+            except queue.Empty:
+                continue
+
+    def _mt_worker(self):
+        """Trạm 2: Translates text, pushes to TTS queue."""
+        print("[MT Worker] ✅ Started (VI↔EN)")
+        while True:
+            try:
+                item = self.q_text_src.get(timeout=1)
+                t0 = time.perf_counter()
+                translated = self.translator.translate(
+                    item["text"], direction=item["direction"]
+                )
+                mt_ms = (time.perf_counter() - t0) * 1000
+
+                if translated:
+                    item["translated"] = translated
+                    item["mt_ms"] = mt_ms
+                    self.q_text_tgt.put(item)
+
+                self.q_text_src.task_done()
+            except queue.Empty:
+                continue
+
+    def _tts_worker(self):
+        """Trạm 3: Synthesizes translated text, plays audio."""
+        print("[TTS Worker] ✅ Started")
+        while True:
+            try:
+                item = self.q_text_tgt.get(timeout=1)
+                t0 = time.perf_counter()
+                audio, sr = self.tts.synthesize(
+                    item["translated"], direction=item["direction"]
+                )
+                tts_ms = (time.perf_counter() - t0) * 1000
+
+                # Log full latency
+                total_ms = (
+                    item.get("denoise_ms", 0) +
+                    item.get("asr_ms", 0) +
+                    item.get("mt_ms", 0) +
+                    tts_ms
+                )
+                self._log_latency(item, total_ms)
+
+                # Play
+                self.tts.play(audio, sample_rate=sr)
+
+                # Generate SRT entry
+                duration_s = len(audio) / sr
+                self.srt.add_entry(item["text"], item["translated"], duration_s)
+
+                self.q_text_tgt.task_done()
+            except queue.Empty:
+                continue
+
+    def _log_latency(self, item: dict, total_ms: float):
+        """Log per-utterance latency breakdown."""
+        arrow = "VI→EN" if item.get("direction") == "vi2en" else "EN→VI"
+        status = "✅" if total_ms < 1000 else "⚠️"
+        print(
+            f"\n{status} [{arrow}] Total: {total_ms:.0f}ms | "
+            f"Denoise: {item.get('denoise_ms', 0):.0f}ms | "
+            f"ASR: {item.get('asr_ms', 0):.0f}ms | "
+            f"MT: {item.get('mt_ms', 0):.0f}ms | "
+            f"TTS: remaining"
+        )
+        print(f"   \"{item['text']}\" → \"{item['translated']}\"\n")
+        self._latency_log.append(total_ms)
+
     def load_models(self):
-        """Load all models before starting workers."""
-        print("\n🔄 Loading models...")
+        """Load all models sequentially before starting workers."""
+        print("\n🔄 Loading models (VI↔EN pipeline)...")
         t0 = time.perf_counter()
 
-        if self.cfg["denoise"]["enabled"]:
-            try:
-                self.denoiser.load()
-            except Exception as e:
-                print(f"[Denoiser] ⚠ Could not load model: {e} — will passthrough")
-
+        self.denoiser.load()
         self.asr.load()
         self.translator.load()
         self.tts.load()
@@ -99,44 +195,57 @@ class OneVoicePipeline:
         """Start all workers and begin real-time translation."""
         self.load_models()
 
-        threads = [
+        direction_label = "🇻🇳 VI → EN 🇬🇧" if self.direction == "vi2en" else "🇬🇧 EN → VI 🇻🇳"
+
+        workers = [
             threading.Thread(target=self.capture.start, daemon=True, name="AudioCapture"),
             threading.Thread(target=self._denoise_worker, daemon=True, name="Denoise"),
-            threading.Thread(target=self.asr.run,
-                             args=(self.q_audio_clean,), daemon=True, name="ASR"),
-            threading.Thread(target=self.translator.run,
-                             args=(self.q_text_src, self.q_text_tgt), daemon=True, name="MT"),
-            threading.Thread(target=self.tts.run,
-                             args=(self.q_text_tgt,), daemon=True, name="TTS"),
+            threading.Thread(target=self._asr_worker, daemon=True, name="ASR"),
+            threading.Thread(target=self._mt_worker, daemon=True, name="MT"),
+            threading.Thread(target=self._tts_worker, daemon=True, name="TTS"),
         ]
 
-        print("🎙️ OneVoice Edge is LIVE — speak into the microphone...")
-        print("   Press Ctrl+C to stop.\n")
+        print(f"🎙️ OneVoice Edge is LIVE  —  {direction_label}")
+        print(f"   Speak into the microphone. Press Ctrl+C to stop.\n")
 
-        for t in threads:
+        for t in workers:
             t.start()
 
         try:
             while True:
-                time.sleep(1)
-                if self.cfg["pipeline"]["log_latency"]:
+                time.sleep(5)
+                if self._latency_log:
+                    avg = sum(self._latency_log) / len(self._latency_log)
                     print(
-                        f"[Pipeline] Queues — "
+                        f"[Pipeline] Queue sizes — "
                         f"raw:{self.q_audio_raw.qsize()} "
                         f"clean:{self.q_audio_clean.qsize()} "
                         f"src_text:{self.q_text_src.qsize()} "
-                        f"tgt_text:{self.q_text_tgt.qsize()}"
+                        f"tgt_text:{self.q_text_tgt.qsize()} | "
+                        f"Avg latency: {avg:.0f}ms"
                     )
         except KeyboardInterrupt:
-            print("\n⏹ Stopping OneVoice Edge pipeline.")
             self.capture.stop()
+            # Save SRT on exit
+            if self.srt.entry_count > 0:
+                srt_path = f"output_{int(time.time())}.srt"
+                self.srt.save(srt_path)
+                print(f"\n📄 SRT subtitle saved: {srt_path}")
+            print("\n⏹ OneVoice Edge stopped.")
 
 
 if __name__ == "__main__":
-    import argparse
-    parser = argparse.ArgumentParser(description="OneVoice Edge — Real-time Speech Translation")
-    parser.add_argument("--config", default="config/config.yaml", help="Path to config.yaml")
+    parser = argparse.ArgumentParser(
+        description="OneVoice Edge — Real-time VI↔EN Speech Translation"
+    )
+    parser.add_argument("--config", default="config/config.yaml")
+    parser.add_argument(
+        "--direction",
+        choices=["vi2en", "en2vi"],
+        default="vi2en",
+        help="Translation direction: vi2en (Vietnamese→English) or en2vi (English→Vietnamese)",
+    )
     args = parser.parse_args()
 
-    pipeline = OneVoicePipeline(config_path=args.config)
+    pipeline = OneVoicePipeline(config_path=args.config, direction=args.direction)
     pipeline.start()
