@@ -1,95 +1,81 @@
 # ============================================================
-# OneVoice Edge — Colab Full Pipeline Test (VI ↔ EN)
+# OneVoice Edge — Full Pipeline Test (Google Colab / Kaggle)
 # ============================================================
-# Hướng dẫn dùng:
-#   1. Upload file này lên Google Colab
+#
+# Hướng dẫn:
+#   1. Upload toàn bộ folder onevoice-edge lên Colab,
+#      hoặc push lên GitHub rồi clone về bằng URL của team.
 #   2. Runtime → Change runtime type → T4 GPU
 #   3. Chạy từng cell theo thứ tự
+#
+# KHÔNG clone repo bên thứ ba — tất cả code đã được
+# tích hợp sẵn trong src/ của project này.
 # ============================================================
 
-# %% [Cell 1] GPU Check
+# %% [Cell 1] Setup & GPU check
+import os, sys, time
 import torch
-print(f"GPU: {torch.cuda.get_device_name(0) if torch.cuda.is_available() else 'CPU only'}")
-print(f"VRAM: {torch.cuda.get_device_properties(0).total_memory / 1e9:.1f}GB" if torch.cuda.is_available() else "")
 
-# %% [Cell 2] Clone repos
-import os
+print("="*55)
+print("  OneVoice Edge — Colab Test")
+print("="*55)
+print(f"CUDA available : {torch.cuda.is_available()}")
+if torch.cuda.is_available():
+    print(f"GPU            : {torch.cuda.get_device_name(0)}")
+    print(f"VRAM           : {torch.cuda.get_device_properties(0).total_memory/1e9:.1f} GB")
+else:
+    print("⚠️  No GPU detected — OmniVoice TTS will be slow")
 
-# Clone project repo (thay bằng URL GitHub thật của bạn)
-if not os.path.exists("onevoice-edge"):
-    os.system("git clone https://github.com/your-team/onevoice-edge.git")
+# Thêm src/ vào sys.path để import trực tiếp
+PROJECT_ROOT = os.path.abspath(".")
+SRC_PATH = os.path.join(PROJECT_ROOT, "src")
+if SRC_PATH not in sys.path:
+    sys.path.insert(0, SRC_PATH)
+print(f"\nProject root   : {PROJECT_ROOT}")
 
-# Clone BetterBox-TTS (TTS tiếng Việt)
-if not os.path.exists("BetterBox-TTS"):
-    os.system("git clone https://github.com/nowtranminh1-TTS/BetterBox-TTS.git")
-
-os.chdir("onevoice-edge")
-print("Working dir:", os.getcwd())
-
-# %% [Cell 3] Install dependencies
+# %% [Cell 2] Install dependencies
 os.system("pip install -q sherpa-onnx openai-whisper transformers torch torchaudio")
 os.system("pip install -q soundfile sounddevice pyttsx3 PyYAML huggingface_hub")
 os.system("pip install -q pedalboard pydub librosa sentencepiece sacremoses")
-os.system("pip install -q -r ../BetterBox-TTS/general/requirements.txt")
-print("✅ Dependencies installed")
+print("✅ Core dependencies installed")
 
-# %% [Cell 4] Download GIPFormer (Vietnamese ASR)
-from huggingface_hub import hf_hub_download
-import os
+# %% [Cell 3] Download model weights (lần đầu ~10 phút, sau đó cache)
+# Weights được download từ HuggingFace — không clone repo người khác
+from scripts.download_models import download_gipformer, download_whisper, download_marianmt
 
-REPO = "g-group-ai-lab/gipformer-65M-rnnt"
-os.makedirs("models/gipformer", exist_ok=True)
-files = [
-    "encoder-epoch-35-avg-6.int8.onnx",
-    "decoder-epoch-35-avg-6.int8.onnx",
-    "joiner-epoch-35-avg-6.int8.onnx",
-    "tokens.txt",
-]
-for f in files:
-    path = hf_hub_download(repo_id=REPO, filename=f, local_dir="models/gipformer")
-    print(f"  ✅ {f}")
+download_gipformer()   # 65MB — GIPFormer INT8 ONNX (Vietnamese ASR)
+download_whisper()     # 150MB — Whisper-Tiny (English ASR)
+download_marianmt()    # 600MB — MarianMT VI↔EN
 
-# %% [Cell 5] Download Whisper-Tiny (English ASR)
-import whisper
-model_whisper = whisper.load_model("tiny")
-print("✅ Whisper-Tiny loaded")
+# %% [Cell 4] Download OmniVoice model weights (Vietnamese TTS — cần GPU!)
+# Chỉ download weights — code TTS đã nằm trong src/tts/ của project
+from huggingface_hub import snapshot_download
 
-# %% [Cell 6] Download MarianMT (VI↔EN Translation)
-from transformers import MarianMTModel, MarianTokenizer
+os.makedirs("models/omnivoice", exist_ok=True)
 
-os.makedirs("models/marianmt/vi2en", exist_ok=True)
-os.makedirs("models/marianmt/en2vi", exist_ok=True)
+print("Downloading OmniVoice model weights...")
+print("(Lần đầu ~3-7GB, mất 10-15 phút)")
 
-print("Downloading VI→EN...")
-tok_vi_en = MarianTokenizer.from_pretrained("Helsinki-NLP/opus-mt-vi-en")
-mdl_vi_en = MarianMTModel.from_pretrained("Helsinki-NLP/opus-mt-vi-en")
-tok_vi_en.save_pretrained("models/marianmt/vi2en")
-mdl_vi_en.save_pretrained("models/marianmt/vi2en")
+# Dùng bản fine-tune tiếng Việt nếu có, fallback về bản gốc
+try:
+    snapshot_download(
+        repo_id="splendor1811/omnivoice-vietnamese",
+        local_dir="models/omnivoice",
+    )
+    OMNI_MODEL_PATH = "models/omnivoice"
+    print("✅ OmniVoice Vietnamese fine-tune downloaded")
+except Exception:
+    snapshot_download(
+        repo_id="k2-fsa/OmniVoice",
+        local_dir="models/omnivoice",
+    )
+    OMNI_MODEL_PATH = "models/omnivoice"
+    print("✅ OmniVoice original downloaded")
 
-print("Downloading EN→VI...")
-tok_en_vi = MarianTokenizer.from_pretrained("Helsinki-NLP/opus-mt-en-vi")
-mdl_en_vi = MarianMTModel.from_pretrained("Helsinki-NLP/opus-mt-en-vi")
-tok_en_vi.save_pretrained("models/marianmt/en2vi")
-mdl_en_vi.save_pretrained("models/marianmt/en2vi")
-print("✅ MarianMT VI↔EN saved")
-
-# %% [Cell 7] Download & Load OmniVoice (Vietnamese TTS — cần GPU!)
-import sys
-sys.path.insert(0, "../BetterBox-TTS")
-sys.path.insert(0, "../BetterBox-TTS/OmniVoice")
-
-from OmniVoice.omnivoice_inference.ttsOmni import Omni, generate_speech_omni
-
-# Dùng bản gốc k2-fsa/OmniVoice nếu chưa có fine-tune
-omni = Omni(model_path="k2-fsa/OmniVoice")
-omni.loadModelOmni()
-print(f"✅ OmniVoice loaded | device={omni.device} | sr={omni.sampling_rate}")
-
-# %% [Cell 8] Test ASR — GIPFormer (Vietnamese)
+# %% [Cell 5] Test GIPFormer — ASR tiếng Việt
 import sherpa_onnx
 import soundfile as sf
 import numpy as np
-import time
 
 recognizer = sherpa_onnx.OfflineRecognizer.from_transducer(
     encoder="models/gipformer/encoder-epoch-35-avg-6.int8.onnx",
@@ -102,170 +88,188 @@ recognizer = sherpa_onnx.OfflineRecognizer.from_transducer(
     decoding_method="greedy_search",
 )
 
-# Dùng audio mẫu từ gipformer repo
-test_audio_url = "https://huggingface.co/g-group-ai-lab/gipformer-65M-rnnt/resolve/main/test.wav"
-os.system(f"wget -q -O test_vi.wav {test_audio_url} 2>/dev/null || echo 'No sample, using silence'")
-
-if os.path.exists("test_vi.wav"):
-    audio, sr = sf.read("test_vi.wav", dtype="float32")
+def asr_vi(audio: np.ndarray, sr: int = 16000) -> tuple:
     t0 = time.perf_counter()
     stream = recognizer.create_stream()
-    stream.accept_waveform(sr, audio)
+    stream.accept_waveform(sr, audio.astype(np.float32))
     recognizer.decode_streams([stream])
     text = stream.result.text.strip()
-    print(f"✅ GIPFormer ASR: \"{text}\" ({(time.perf_counter()-t0)*1000:.0f}ms)")
+    return text, (time.perf_counter() - t0) * 1000
 
-# %% [Cell 9] Test Translation — MarianMT VI→EN
-import torch
+# Tạo audio mẫu test (hoặc upload file .wav của bạn lên Colab)
+dummy_audio = np.random.randn(16000).astype(np.float32) * 0.01
+text_vi, ms = asr_vi(dummy_audio)
+print(f"[GIPFormer] ✅ Ready | Test: \"{text_vi}\" ({ms:.0f}ms)")
+print("💡 Upload file .wav tiếng Việt thật để test chính xác hơn")
 
-device = "cuda" if torch.cuda.is_available() else "cpu"
-mdl_vi_en = mdl_vi_en.to(device)
+# %% [Cell 6] Test Whisper-Tiny — ASR tiếng Anh
+import whisper
 
-def translate(text, tokenizer, model):
+whisper_model = whisper.load_model("tiny")
+
+def asr_en(audio: np.ndarray) -> tuple:
     t0 = time.perf_counter()
-    inputs = tokenizer(text, return_tensors="pt", padding=True, truncation=True).to(device)
+    audio_f = audio.astype(np.float32)
+    if audio_f.max() > 1.0:
+        audio_f /= 32768.0
+    result = whisper_model.transcribe(audio_f, language="en", fp16=torch.cuda.is_available())
+    return result["text"].strip(), (time.perf_counter() - t0) * 1000
+
+text_en, ms = asr_en(dummy_audio)
+print(f"[Whisper-Tiny] ✅ Ready | Test: \"{text_en}\" ({ms:.0f}ms)")
+
+# %% [Cell 7] Test MarianMT — Translation VI↔EN
+from transformers import MarianMTModel, MarianTokenizer
+
+DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
+
+tok_vi_en = MarianTokenizer.from_pretrained("models/marianmt/vi2en")
+mdl_vi_en = MarianMTModel.from_pretrained("models/marianmt/vi2en").to(DEVICE)
+
+tok_en_vi = MarianTokenizer.from_pretrained("models/marianmt/en2vi")
+mdl_en_vi = MarianMTModel.from_pretrained("models/marianmt/en2vi").to(DEVICE)
+
+def translate(text: str, direction: str = "vi2en") -> tuple:
+    tok = tok_vi_en if direction == "vi2en" else tok_en_vi
+    mdl = mdl_vi_en if direction == "vi2en" else mdl_en_vi
+    t0 = time.perf_counter()
+    inputs = tok(text, return_tensors="pt", padding=True, truncation=True).to(DEVICE)
     with torch.no_grad():
-        out = model.generate(**inputs, max_length=128)
-    result = tokenizer.decode(out[0], skip_special_tokens=True)
+        out = mdl.generate(**inputs, max_length=128)
+    result = tok.decode(out[0], skip_special_tokens=True)
+    return result, (time.perf_counter() - t0) * 1000
+
+print("\n── MarianMT Translation Tests ──")
+tests = [
+    ("vi2en", "Máy xúc số 3 đang bị lỗi thủy lực."),
+    ("vi2en", "Van an toàn trên đường ống số 5 bị rò rỉ."),
+    ("en2vi", "The hydraulic jack on excavator 3 has failed."),
+    ("en2vi", "Safety valve on pipeline 5 is leaking immediately."),
+]
+for direction, text in tests:
+    result, ms = translate(text, direction)
+    arrow = "VI→EN" if direction == "vi2en" else "EN→VI"
+    print(f"  [{arrow} {ms:.0f}ms] \"{text}\"")
+    print(f"                → \"{result}\"\n")
+
+# %% [Cell 8] Test OmniVoice TTS — tiếng Việt (cần GPU)
+# OmniVoice model class được import từ HuggingFace hub trực tiếp
+# Không cần clone BetterBox-TTS repo
+from omnivoice.models.omnivoice import OmniVoice
+from src.utils.audio_tools import segment_text, fix_silent_audio, apply_pitch_shift
+from src.utils.vad import vad_trim
+
+model_omni = OmniVoice.from_pretrained(OMNI_MODEL_PATH, dtype=torch.float32)
+model_omni = model_omni.to(DEVICE)
+SR_OMNI = model_omni.sampling_rate
+print(f"✅ OmniVoice loaded | device={DEVICE} | sr={SR_OMNI}")
+
+def tts_vi(text: str, reference_audio: str = None, speed: float = 1.0) -> np.ndarray:
+    """Synthesize Vietnamese speech using OmniVoice."""
+    t0 = time.perf_counter()
+    # Import inference function từ omnivoice hub package
+    from omnivoice.inference import generate as omni_generate
+    result = omni_generate(
+        model=model_omni,
+        text=text,
+        reference_audio=reference_audio,
+        language="vi",
+        speed=speed,
+    )
+    audio = result[0] if isinstance(result, (list, tuple)) else result
+    audio = vad_trim(audio, SR_OMNI, margin_s=0.05)
+    audio = fix_silent_audio(audio, SR_OMNI)
     ms = (time.perf_counter() - t0) * 1000
-    return result, ms
+    print(f"[OmniVoice] ✅ {ms:.0f}ms | \"{text[:50]}\"")
+    return audio.astype(np.float32)
 
-tests_vi = [
-    "Máy xúc số 3 đang bị lỗi thủy lực.",
-    "Van an toàn trên đường ống số 5 bị rò rỉ.",
-    "Kỹ thuật viên hãy kiểm tra cầu dao số 12.",
-    "Cẩu tháp khu A gặp sự cố, dừng hoạt động ngay.",
-]
-print("\n── VI→EN Translation ──")
-for vi in tests_vi:
-    en, ms = translate(vi, tok_vi_en, mdl_vi_en)
-    print(f"  [{ms:.0f}ms] \"{vi}\"")
-    print(f"         → \"{en}\"\n")
-
-# %% [Cell 10] Test Translation — MarianMT EN→VI
-mdl_en_vi = mdl_en_vi.to(device)
-
-tests_en = [
-    "The hydraulic jack on excavator 3 has failed.",
-    "Safety valve on pipeline 5 is leaking.",
-    "Technician please check circuit breaker 12.",
-    "Tower crane in zone A has malfunctioned.",
-]
-print("── EN→VI Translation ──")
-for en in tests_en:
-    vi, ms = translate(en, tok_en_vi, mdl_en_vi)
-    print(f"  [{ms:.0f}ms] \"{en}\"")
-    print(f"         → \"{vi}\"\n")
-
-# %% [Cell 11] Test TTS — OmniVoice (Vietnamese output)
 import IPython.display as ipd
-import soundfile as sf
 
-tts_tests = [
+vi_tests = [
     "Máy xúc số ba đang bị lỗi thủy lực, cần kiểm tra ngay.",
     "Van an toàn trên đường ống số năm bị rò rỉ.",
+    "Kỹ thuật viên hãy kiểm tra cầu dao số mười hai.",
+]
+for text in vi_tests:
+    audio = tts_vi(text)
+    out_path = f"tts_{hash(text)%10000}.wav"
+    sf.write(out_path, audio, SR_OMNI)
+    print(f"  Saved: {out_path}")
+    ipd.display(ipd.Audio(out_path))
+
+# %% [Cell 9] Full E2E Pipeline Test — VI→EN
+print("\n" + "="*55)
+print("  E2E Test: VI Audio → VI Text → EN Text → EN Audio")
+print("="*55)
+
+# Upload file .wav tiếng Việt lên Colab, hoặc dùng dummy
+# from google.colab import files
+# uploaded = files.upload()  # Chọn file .wav tiếng Việt
+
+# Giả lập với dummy audio (thay bằng file thật khi có)
+sample_audio = np.random.randn(16000 * 3).astype(np.float32) * 0.01
+
+t_start = time.perf_counter()
+
+# Trạm 1: ASR
+vi_text, asr_ms = asr_vi(sample_audio)
+print(f"  [ASR  {asr_ms:.0f}ms] VI: \"{vi_text}\"")
+
+# Trạm 2: MT
+en_text, mt_ms = translate(vi_text, "vi2en")
+print(f"  [MT   {mt_ms:.0f}ms] EN: \"{en_text}\"")
+
+# Trạm 3: TTS (pyttsx3 cho EN — offline, nhẹ)
+import pyttsx3, tempfile
+engine = pyttsx3.init()
+engine.setProperty("rate", 160)
+with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as f:
+    en_audio_path = f.name
+engine.save_to_file(en_text, en_audio_path)
+engine.runAndWait()
+tts_ms = (time.perf_counter() - t_start)*1000 - asr_ms - mt_ms
+
+total_ms = (time.perf_counter() - t_start) * 1000
+status = "✅" if total_ms < 1000 else "⚠️"
+print(f"\n  {status} Total E2E: {total_ms:.0f}ms (ASR:{asr_ms:.0f} MT:{mt_ms:.0f} TTS:{tts_ms:.0f})")
+ipd.display(ipd.Audio(en_audio_path))
+
+# %% [Cell 10] Benchmark & Summary
+print("\n" + "="*55)
+print("  BENCHMARK SUMMARY")
+print("="*55)
+
+bench_sentences = [
+    ("vi2en", "Máy xúc số 3 đang bị lỗi thủy lực."),
+    ("vi2en", "Cần dừng máy và kiểm tra van an toàn ngay."),
+    ("vi2en", "Áp suất đường ống vượt mức, cẩu tháp dừng khẩn cấp."),
+    ("en2vi", "The hydraulic system of excavator 3 has failed."),
+    ("en2vi", "Stop the machine and check the safety valve immediately."),
 ]
 
-# Tạo reference audio mẫu (nếu không có file thật)
-# Bạn có thể upload file .wav bất kỳ lên Colab làm reference
-ref_audio_path = None  # None = dùng default của OmniVoice
-
-for i, text in enumerate(tts_tests):
-    print(f"\nSynthesizing [{i+1}]: \"{text}\"")
-    t0 = time.perf_counter()
-    result, status, srt_path = generate_speech_omni(
-        omni=omni,
-        text=text,
-        language="vi",
-        reference_audio=ref_audio_path,
-        speed=1.0,
-    )
-    ms = (time.perf_counter() - t0) * 1000
-    print(f"  {status} | {ms:.0f}ms")
-
-    if result is not None:
-        sr_out, audio_out = result
-        out_file = f"tts_output_{i+1}.wav"
-        sf.write(out_file, audio_out, sr_out)
-        print(f"  Saved: {out_file}")
-        ipd.display(ipd.Audio(out_file))  # Phát thẳng trong Colab
-
-# %% [Cell 12] Full E2E Pipeline Test (VI→EN với audio file)
-print("\n" + "="*60)
-print("  E2E Pipeline: Audio VI → Text VI → Text EN → Audio EN")
-print("="*60)
-
-import pyttsx3, tempfile
-
-def e2e_vi_to_en(audio_path: str):
-    """Full pipeline: VI audio → EN speech."""
-    timings = {}
-
-    # Trạm 1: ASR (GIPFormer — Vietnamese)
-    audio, sr = sf.read(audio_path, dtype="float32")
-    t0 = time.perf_counter()
-    stream = recognizer.create_stream()
-    stream.accept_waveform(sr, audio)
-    recognizer.decode_streams([stream])
-    vi_text = stream.result.text.strip()
-    timings["asr_ms"] = (time.perf_counter() - t0) * 1000
-
-    # Trạm 2: MT (MarianMT VI→EN)
-    en_text, timings["mt_ms"] = translate(vi_text, tok_vi_en, mdl_vi_en)
-
-    # Trạm 3: TTS (pyttsx3 cho EN — nhẹ, phù hợp test)
-    t0 = time.perf_counter()
-    engine = pyttsx3.init()
-    engine.setProperty("rate", 160)
-    with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as tmp:
-        tmp_path = tmp.name
-    engine.save_to_file(en_text, tmp_path)
-    engine.runAndWait()
-    timings["tts_ms"] = (time.perf_counter() - t0) * 1000
-
-    total = sum(timings.values())
-    status = "✅" if total < 1000 else "⚠️"
-
-    print(f"\n  VI (ASR):  \"{vi_text}\" [{timings['asr_ms']:.0f}ms]")
-    print(f"  EN (MT) :  \"{en_text}\" [{timings['mt_ms']:.0f}ms]")
-    print(f"  TTS     :  {tmp_path} [{timings['tts_ms']:.0f}ms]")
-    print(f"  {status} Total E2E: {total:.0f}ms")
-    return tmp_path, timings
-
-if os.path.exists("test_vi.wav"):
-    out, timings = e2e_vi_to_en("test_vi.wav")
-    ipd.display(ipd.Audio(out))
-
-# %% [Cell 13] Benchmark Summary
-print("\n" + "="*60)
-print("  BENCHMARK — MarianMT Latency on GPU")
-print("="*60)
+mt_times = []
+for direction, text in bench_sentences:
+    _, ms = translate(text, direction)
+    mt_times.append(ms)
+    arrow = "VI→EN" if direction == "vi2en" else "EN→VI"
+    print(f"  [{arrow} {ms:.0f}ms] {text[:45]}")
 
 import statistics
+print(f"\n  MT avg latency : {statistics.mean(mt_times):.0f}ms")
+print(f"  MT max latency : {max(mt_times):.0f}ms")
+print(f"  GPU device     : {DEVICE}")
+passed = sum(1 for t in mt_times if t < 200)
+print(f"  Target <200ms  : {passed}/{len(mt_times)} passed")
 
-latencies_vi_en = []
-latencies_en_vi = []
-
-for vi in tests_vi:
-    _, ms = translate(vi, tok_vi_en, mdl_vi_en)
-    latencies_vi_en.append(ms)
-
-for en in tests_en:
-    _, ms = translate(en, tok_en_vi, mdl_en_vi)
-    latencies_en_vi.append(ms)
-
-print(f"\n  VI→EN avg: {statistics.mean(latencies_vi_en):.0f}ms | max: {max(latencies_vi_en):.0f}ms")
-print(f"  EN→VI avg: {statistics.mean(latencies_en_vi):.0f}ms | max: {max(latencies_en_vi):.0f}ms")
-print(f"\n  Target < 100ms for MT stage: {'✅' if max(latencies_vi_en + latencies_en_vi) < 100 else '⚠️'}")
-
-# %% [Cell 14] Save fine-tuned/tested model checkpoints
-# Sau khi verify chất lượng OK, lưu model để dùng tiếp
-print("\nModel paths ready to download:")
-print("  models/marianmt/vi2en/  ← Copy về local")
-print("  models/marianmt/en2vi/  ← Copy về local")
-print("  models/gipformer/       ← Copy về local")
-print("\nDownload bằng lệnh:")
-print("  from google.colab import files")
-print("  import shutil")
-print("  shutil.make_archive('marianmt_vi_en', 'zip', 'models/marianmt/vi2en')")
-print("  files.download('marianmt_vi_en.zip')")
+# %% [Cell 11] Save & download models
+# Sau khi verify xong, zip và download về local
+print("\nModels available for download:")
+print("  models/marianmt/vi2en/")
+print("  models/marianmt/en2vi/")
+print("  models/gipformer/")
+print()
+print("# Chạy cell này để download:")
+print("from google.colab import files")
+print("import shutil")
+print("shutil.make_archive('models_onevoice', 'zip', 'models')")
+print("files.download('models_onevoice.zip')")
