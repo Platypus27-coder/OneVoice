@@ -32,7 +32,7 @@ sys.path.insert(0, os.path.dirname(__file__))
 
 from audio.capture import AudioCapture
 from audio.denoise import Denoiser
-from asr.whisper_asr import ASRManager
+from asr.asr_manager import ASRManager
 from translation.mt_engine import Translator
 from tts.tts_engine import TTSEngine
 from utils.text_normalizer import normalize
@@ -105,6 +105,7 @@ class OneVoicePipeline:
                     result["text"] = normalized
                     result["denoise_ms"] = denoise_ms
                     result["asr_ms"] = asr_ms
+                    # Emotion and event are already in result from ASRManager
                     self.q_text_src.put(result)
 
                 self.q_audio_clean.task_done()
@@ -139,8 +140,14 @@ class OneVoicePipeline:
             try:
                 item = self.q_text_tgt.get(timeout=1)
                 t0 = time.perf_counter()
+                
+                # Pass emotion to TTS if available
+                emotion = item.get("emotion", "neutral")
+                
                 audio, sr = self.tts.synthesize(
-                    item["translated"], direction=item["direction"]
+                    item["translated"], 
+                    direction=item["direction"],
+                    emotion=emotion
                 )
                 tts_ms = (time.perf_counter() - t0) * 1000
 

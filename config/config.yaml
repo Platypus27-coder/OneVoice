@@ -20,31 +20,37 @@ denoise:
   use_gpu: false           # ONNX CPU inference on edge device
 
 # ─────────────────────────────────────────────
-# Trạm 1: ASR (Whisper-Tiny)
+# Trạm 1: ASR (GIPFormer VI & SenseVoice EN)
 # ─────────────────────────────────────────────
 asr:
-  model_name: "openai/whisper-tiny"
-  model_path: "models/whisper_tiny_int8.onnx"  # Quantized version
-  language: "vi"           # Default: Vietnamese (auto-detect also supported)
+  num_threads: 2
   streaming: true
   chunk_length_s: 3        # Process 3-second audio chunks for low latency
-  task: "transcribe"
+  
+sensevoice:
+  model_path: "iic/SenseVoiceSmall"  # Auto-download from ModelScope if not local
 
 # ─────────────────────────────────────────────
-# Trạm 2: Machine Translation (MarianMT)
+# Trạm 2: Machine Translation (VietAI envit5)
 # ─────────────────────────────────────────────
 translation:
-  vi_en_model: "Helsinki-NLP/opus-mt-vi-en"
-  en_vi_model: "Helsinki-NLP/opus-mt-en-vi"
-  model_dir: "models/marianmt/"   # Local fine-tuned checkpoint
-  max_length: 128
-  direction: "vi2en"              # Default direction
+  model: "VietAI/envit5-translation"     # 1 model duy nhất cho cả VI↔EN (~600MB)
+  model_dir: "models/envit5/"            # Local checkpoint (tùy chọn)
+  max_length: 512
+  direction: "vi2en"                     # Default direction
 
 # ─────────────────────────────────────────────
 # Trạm 3: TTS (BetterBox-TTS / Tiny VITS)
 # ─────────────────────────────────────────────
 tts:
   default_engine: "betterbox"     # "betterbox" | "vits" | "vallex" (premium)
+  en_speed: 0.85                  # Tốc độ đọc (0.7=rất chậm, 0.85=chậm chắc, 1.0=bình thường, 1.2=nhanh)
+
+  # ── Giọng mẫu tiếng Anh (Voice Preset) ─────────────────────────────
+  # Chạy 'python scripts/download_voice_preset.py' để tải giọng mẫu chất lượng cao.
+  # Nếu file không tồn tại, hệ thống sẽ tự động dùng clone giọng từ file đầu vào.
+  en_preset_audio: "src/tts/presets/en_male_narrator.wav"
+  en_preset_text:  "Some call me nature, others call me mother nature."
   betterbox:
     model_path: "models/betterbox/"
     language: "vi"

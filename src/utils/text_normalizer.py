@@ -100,6 +100,11 @@ def normalize_vi(text: str) -> str:
 
     # Normalize whitespace
     text = " ".join(text.split())
+    
+    # Capitalize the first letter, lowercase the rest (essential for MarianMT to avoid garbage translation of ALL CAPS)
+    if text.isupper():
+        text = text.capitalize()
+    
     return text
 
 

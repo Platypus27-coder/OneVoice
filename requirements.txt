@@ -1,30 +1,34 @@
-# Core
-numpy>=1.24.0
-soundfile>=0.12.0
-sounddevice>=0.4.6
-pyaudio>=0.2.14
+# ── Core ASR ──────────────────────────────────────────────────────────────────
+sherpa-onnx                        # GIPFormer ONNX runtime (VI ASR)
+openai-whisper                     # Whisper (EN ASR, dùng bởi F5-TTS khi transcribe ref audio)
+funasr_onnx                        # SenseVoice ONNX (EN ASR + emotion detection)
+modelscope                         # SenseVoice model loader
 
-# VAD
-silero-vad>=5.0
+# ── Machine Translation ─────────────────────────────────────────────────
+transformers>=4.40.0               # AutoModel — tương thích mọi kiến trúc HuggingFace
+sentencepiece                      # Tokenizer cho VietAI/envit5 (T5 SentencePiece)
 
-# ASR
-openai-whisper>=20231117
-transformers>=4.38.0
-torch>=2.1.0
+# ── Punctuation Restoration ───────────────────────────────────────────────────
+deepmultilingualpunctuation        # kredor/punctuate-all (hỗ trợ tiếng Việt)
 
-# Translation
-sentencepiece>=0.2.0
-sacremoses>=0.1.1
+# ── TTS ───────────────────────────────────────────────────────────────────────
+f5-tts                             # F5-TTS voice cloning (EN TTS, Python 3.10+)
+gtts                               # Google TTS fallback (cần internet, test Colab)
+pyttsx3                            # Offline TTS fallback (cần espeak trên Linux)
 
-# TTS (dependency stubs — actual models linked separately)
-pydub>=0.25.1
+# ── Deep Learning ─────────────────────────────────────────────────────────────
+torch
+torchaudio
+torchvision
 
-# ONNX runtime (lightweight inference on CPU/edge)
-onnxruntime>=1.17.0
+# ── Audio Processing ──────────────────────────────────────────────────────────
+soundfile                          # Đọc/ghi WAV
+sounddevice                        # Phát audio real-time
+librosa                            # Phân tích audio, time-stretch (speed control)
+pydub                              # Chuyển đổi định dạng audio (mp3→wav)
+pedalboard                         # Audio effects
 
-# Config
-PyYAML>=6.0
-
-# Qualcomm AI Hub (for model export on Colab — not needed on edge device)
-# qai-hub
-# qai-hub-models
+# ── Infrastructure ────────────────────────────────────────────────────────────
+huggingface_hub                    # Tải model từ HuggingFace Hub
+PyYAML                             # Đọc config.yaml
+numpy
