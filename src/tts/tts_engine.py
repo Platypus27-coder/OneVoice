@@ -89,23 +89,25 @@ class TTSEngine:
         # Đảm bảo thư mục tồn tại
         os.makedirs(os.path.dirname(self.en_preset_audio), exist_ok=True)
 
-        # ── Phương án 1: F5-TTS built-in reference (nhanh nhất, 0 download) ──
-        f5_builtins = [
-            "/usr/local/lib/python3.12/dist-packages/f5_tts/infer/examples/basic/basic_ref_en.wav",
-            "/usr/local/lib/python3.11/dist-packages/f5_tts/infer/examples/basic/basic_ref_en.wav",
-        ]
-        for builtin in f5_builtins:
+        # ── Phương án 1: F5-TTS built-in reference (nhanh nhất, 0 download, đa nền tảng) ──
+        try:
+            import f5_tts
+            f5_dir = os.path.dirname(f5_tts.__file__)
+            builtin = os.path.join(f5_dir, "infer", "examples", "basic", "basic_ref_en.wav")
             if os.path.exists(builtin):
                 import shutil
                 shutil.copy(builtin, self.en_preset_audio)
+                
                 # Update preset text to match F5-TTS built-in transcript
                 txt_path = self.en_preset_audio.replace(".wav", ".txt")
                 f5_text = "Some call me nature, others call me mother nature."
-                with open(txt_path, "w") as f:
+                with open(txt_path, "w", encoding="utf-8") as f:
                     f.write(f5_text)
                 self.en_preset_text = f5_text
                 print(f"[TTS] 🎤 Voice preset: sử dụng F5-TTS built-in reference.")
                 return
+        except ImportError:
+            pass
 
         # ── Phương án 2: gTTS (cần internet, fallback cho lần đầu) ─────────
         try:
