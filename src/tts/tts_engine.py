@@ -92,7 +92,7 @@ class TTSEngine:
         # ── Phương án 1: F5-TTS built-in reference (nhanh nhất, 0 download, đa nền tảng) ──
         try:
             import f5_tts
-            f5_dir = os.path.dirname(f5_tts.__file__)
+            f5_dir = f5_tts.__path__[0]
             builtin = os.path.join(f5_dir, "infer", "examples", "basic", "basic_ref_en.wav")
             if os.path.exists(builtin):
                 import shutil
