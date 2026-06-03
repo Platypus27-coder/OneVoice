@@ -229,7 +229,6 @@ class TTSEngine:
 
         # Priority 2: F5-TTS — voice cloning (Python 3.10+, offline, GPU)
         try:
-            import os
             if os.name == 'nt':
                 # Fix DLL loading for torchcodec/ffmpeg on Windows Conda (Python 3.8+)
                 conda_prefix = os.environ.get("CONDA_PREFIX")
