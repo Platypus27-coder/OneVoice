@@ -176,8 +176,15 @@ Dưới đây là 7 kịch bản kiểm thử (Test Scenarios) đầy rẫy các
 conda create -n onevoice python=3.11.8
 conda activate onevoice
 
-# 2. Cài đặt các thư viện 
+# 2. Cài đặt FFmpeg (Bắt buộc cho F5-TTS)
+# - Trên Windows (dùng terminal admin): winget install ffmpeg
+# - Trên Linux/Colab: sudo apt-get install ffmpeg
+
+# 3. Cài đặt các thư viện 
 pip install -r requirements.txt
+
+# 4. Tải các file âm thanh giọng mẫu (Voice Presets)
+python scripts/download_voice_preset.py
 ```
 
 *(Lưu ý: Lần chạy đầu tiên, hệ thống sẽ tự động tải các file weights của GIPFormer và SenseVoice từ HuggingFace/ModelScope về cache cục bộ. Để chạy 100% Offline không cần Wifi, hãy đảm bảo bạn đã chạy pipeline ít nhất 1 lần khi có mạng).*
