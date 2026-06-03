@@ -27,6 +27,7 @@ def _load_vad():
                 model="silero_vad",
                 force_reload=False,
                 onnx=True,
+                trust_repo=True,
             )
             print("[VAD] ✅ Silero VAD loaded.")
         except Exception as e:
@@ -58,9 +59,16 @@ def vad_trim(audio: np.ndarray, sr: int, margin_s: float = 0.05) -> np.ndarray:
         trimmed, _ = librosa.effects.trim(audio, top_db=30)
         return trimmed
 
-    (get_speech_timestamps, _, _, _, collect_chunks, _) = utils
-
     try:
+        get_speech_timestamps = utils[0]
+        # In newer silero-vad (v5+), collect_chunks is at index 4. In older versions it might be at 4 too, 
+        # but the tuple length differs (5 vs 6).
+        collect_chunks = [u for u in utils if callable(u) and getattr(u, "__name__", "") == "collect_chunks"]
+        if collect_chunks:
+            collect_chunks = collect_chunks[0]
+        else:
+            collect_chunks = utils[4]
+            
         # Resample to 16kHz for VAD
         vad_sr = 16000
         wav_16k = librosa.resample(audio, orig_sr=sr, target_sr=vad_sr) if sr != vad_sr else audio

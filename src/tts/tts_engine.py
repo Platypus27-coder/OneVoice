@@ -152,11 +152,59 @@ class TTSEngine:
                 model_path = "splendor1811/omnivoice-vietnamese"
 
             self._omni = Omni(model_path=model_path)
-            self._omni.loadModelOmni()
             self._generate_speech_omni = generate_speech_omni
-            print(f"[TTS] ✅ OmniVoice loaded from: {model_path}")
+            
+            # ── Auto-generate VI reference audio if missing ──
+            wavs_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "omnivoice_inference", "wavs")
+            # If the user didn't create a 'wavs' folder in the root, create one locally
+            root_wavs = "wavs"
+            if not os.path.exists(root_wavs):
+                os.makedirs(root_wavs, exist_ok=True)
+            
+            ref_path = os.path.join(root_wavs, "reference_sound.wav")
+            if not os.path.exists(ref_path):
+                # Ưu tiên sử dụng Nobita.wav do người dùng cung cấp
+                nobita_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "Nobita.wav")
+                # Normalize path
+                nobita_path = os.path.abspath(nobita_path)
+                
+                if os.path.exists(nobita_path):
+                    print(f"[TTS VI] 🌐 Tìm thấy file {nobita_path}, đang copy làm voice preset...")
+                    import shutil
+                    shutil.copy(nobita_path, ref_path)
+                    
+                    # Tạo file txt chứa transcript để OmniVoice không phải gọi mô hình nhận diện giọng nói (ASR)
+                    # (tránh lỗi thiếu thư viện chunkformer)
+                    ref_text_path = ref_path.replace(".wav", ".txt")
+                    with open(ref_text_path, "w", encoding="utf-8") as f:
+                        f.write("Cậu đã làm dì dới nó dở. Thêm năng lượng hả. Nó quạt động như thế nào dợ. Cho mình mượn chúc, đừng có keo kiệt dậy chứ. Hôm nai lớp mình có bài kiểm tra môn thể dục nên mình rất là cần nó luôn. Sài xong mình trả lại liền.")
+                        
+                    print(f"[TTS VI] ✅ Voice preset tiếng Việt đã được tạo từ Nobita.wav: {ref_path}")
+                else:
+                    print(f"[TTS VI] 🌐 Đang tạo voice preset tiếng Việt bằng gTTS (chỉ cần 1 lần)...")
+                    try:
+                        from gtts import gTTS
+                        from pydub import AudioSegment
+                        import tempfile
+                        # Một câu tiếng Việt chuẩn, rõ ràng để làm mẫu giọng
+                        ref_text = "Chào mừng bạn đến với hệ thống OneVoice. Hệ thống đã sẵn sàng."
+                        tts = gTTS(text=ref_text, lang="vi", slow=False, tld="com.vn")
+                        with tempfile.NamedTemporaryFile(suffix=".mp3", delete=False) as tmp:
+                            mp3_path = tmp.name
+                        tts.save(mp3_path)
+                        seg = AudioSegment.from_mp3(mp3_path)
+                        seg.export(ref_path, format="wav")
+                        os.unlink(mp3_path)
+                        # Create txt file too
+                        with open(ref_path.replace(".wav", ".txt"), "w", encoding="utf-8") as f:
+                            f.write(ref_text)
+                        print(f"[TTS VI] ✅ Voice preset tiếng Việt đã được tạo: {ref_path}")
+                    except Exception as e:
+                        print(f"[TTS VI] ⚠ Không tạo được voice preset ({e})")
+                    
+            print(f"[TTS] ✅ OmniVoice loaded from: {self._omni.model_path}")
         except Exception as e:
-            print(f"[TTS] ⚠ OmniVoice not available ({e}). Vietnamese TTS in stub mode.")
+            print(f"[TTS] ⚠ Failed to load OmniVoice: {e}")
             self._omni = None
 
     def _load_english_tts(self):
@@ -236,6 +284,17 @@ class TTSEngine:
                 t0 = time.perf_counter()
                 # Use default reference audio if available
                 ref_audio = self.cfg.get("betterbox", {}).get("reference_audio", None)
+                ref_text = None
+                
+                if ref_audio is None:
+                    # Look for the auto-generated reference in the root wavs folder
+                    fallback_ref = os.path.join("wavs", "reference_sound.wav")
+                    if os.path.exists(fallback_ref):
+                        ref_audio = fallback_ref
+                        fallback_txt = fallback_ref.replace(".wav", ".txt")
+                        if os.path.exists(fallback_txt):
+                            with open(fallback_txt, "r", encoding="utf-8") as f:
+                                ref_text = f.read().strip()
                 
                 # We monkey-patch the wrapper slightly or pass instruct down
                 # Currently generate_speech_omni doesn't take instruct in our port?
@@ -247,6 +306,7 @@ class TTSEngine:
                     text=text,
                     language="vi",
                     reference_audio=ref_audio,
+                    ref_text=ref_text,
                     speed=self.cfg.get("betterbox", {}).get("speed", 1.0),
                     instruct=instruct  # Newly added
                 )
@@ -255,6 +315,8 @@ class TTSEngine:
                     elapsed_ms = (time.perf_counter() - t0) * 1000
                     print(f"[TTS VI] ⏱ {elapsed_ms:.0f}ms | {status}")
                     return audio.astype(np.float32), sr
+                else:
+                    print(f"[TTS VI] ⚠ OmniVoice failed: {status}")
             except Exception as e:
                 print(f"[TTS VI] ⚠ OmniVoice error: {e}")
 

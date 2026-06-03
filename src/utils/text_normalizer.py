@@ -56,6 +56,36 @@ _UNIT_EXPAND_EN = {
     r"\bhz\b":   "hertz",
 }
 
+# ── Colloquial & Mechanics Slang ──────────────────────────────────────────────
+_COLLOQUIAL_VI = {}
+_COLLOQUIAL_LOADED = False
+
+def _load_colloquial_dict():
+    global _COLLOQUIAL_LOADED
+    if _COLLOQUIAL_LOADED:
+        return
+        
+    import os
+    import csv
+    csv_path = os.path.join(os.path.dirname(__file__), "../../data/colloquial_terms.csv")
+    try:
+        with open(csv_path, encoding="utf-8") as f:
+            reader = csv.reader(f)
+            next(reader, None)  # skip header
+            for row in reader:
+                if len(row) >= 2:
+                    slang = row[0].strip().lower()
+                    formal = row[1].strip().lower()
+                    if slang and formal:
+                        pattern = r"\b" + re.escape(slang) + r"\b"
+                        _COLLOQUIAL_VI[pattern] = formal
+    except FileNotFoundError:
+        pass # Optional file
+    except Exception as e:
+        print(f"[Normalizer] ⚠ Could not load colloquial terms: {e}")
+        
+    _COLLOQUIAL_LOADED = True
+
 # ── Industrial code pattern (e.g. "V-001", "P-3B") ───────────────────────────
 _INDUSTRIAL_CODE = re.compile(r'\b([A-Z]{1,3})-(\d{1,4}[A-Z]?)\b')
 
@@ -90,6 +120,11 @@ def normalize_vi(text: str) -> str:
 
     # Expand units (case-insensitive)
     for pattern, replacement in _UNIT_EXPAND_VI.items():
+        text = re.sub(pattern, replacement, text, flags=re.IGNORECASE)
+
+    # Normalize colloquial terms (case-insensitive)
+    _load_colloquial_dict()
+    for pattern, replacement in _COLLOQUIAL_VI.items():
         text = re.sub(pattern, replacement, text, flags=re.IGNORECASE)
 
     # Expand industrial equipment codes: "Máy XC-03" → "Máy XC không ba"

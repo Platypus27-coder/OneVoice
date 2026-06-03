@@ -53,11 +53,11 @@ def load_terminology(csv_path: str):
 
 
 def _apply_terminology(text: str, override: dict[str, str]) -> str:
-    """Replace known technical terms before passing to neural MT."""
-    text_lower = text.lower()
+    """Replace known technical terms. Uses word boundaries to avoid partial matches."""
     result = text
     for src, tgt in sorted(override.items(), key=lambda x: -len(x[0])):
-        pattern = re.compile(re.escape(src), re.IGNORECASE)
+        # Use word boundaries (\b) to prevent 'roof' matching inside 'rooftop'
+        pattern = re.compile(r'\b' + re.escape(src) + r'\b', re.IGNORECASE)
         result = pattern.sub(tgt, result)
     return result
 
@@ -217,9 +217,7 @@ class Translator:
         from utils.text_normalizer import normalize
         normalized_text = normalize(punced_text, lang=src_lang)
 
-        # Apply technical terminology substitution
-        # NOTE: We do NOT inject English terms into Vietnamese source (causes hallucination).
-        # Instead we apply terminology AFTER translation on the English output.
+        # Do NOT inject dictionary before translation to preserve model's context reasoning.
         text_with_terms = normalized_text
 
         # Chunk text based on sentences to preserve context for translation
@@ -263,13 +261,13 @@ class Translator:
         result = " ".join(translated_chunks)
         
         # ── Bước 3: Post-translation terminology correction ────────────────────
-        # Apply terminology AFTER translation to fix model errors (e.g. "dredge" → "excavator")
-        # This is safe because we are substituting English→English, no hallucination risk.
+        # Apply terminology AFTER translation to enforce dictionary terms.
         if direction == "vi2en":
             result = _apply_terminology(result, _TERM_OVERRIDE_VI_EN)
         else:
             result = _apply_terminology(result, _TERM_OVERRIDE_EN_VI)
-        # Apply EN→EN post-translation corrections (fix known model errors like "dredge"→"excavator")
+            
+        # Apply EN→EN or VI→VI post-translation corrections to fix known model errors.
         result = _apply_terminology(result, _POST_TRANSLATE_FIX)
 
         elapsed_ms = (time.perf_counter() - t0_total) * 1000
