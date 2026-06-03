@@ -95,15 +95,75 @@ Hệ thống là một đường ống hai chiều, cho phép bạn chuyển đ�
 ## Demo Kết Quả Dịch Thuật & Voice Cloning
 Dưới đây là 7 kịch bản kiểm thử (Test Scenarios) đầy rẫy các thuật ngữ chuyên ngành hóc búa, từ lóng thi công và các tình huống thực tế tại công trường. Hệ thống đã dịch chuẩn xác và trích xuất thành file âm thanh thành công vào thư mục `demo_outputs/`.
 
-| Test | Chiều | Đầu vào (Input Text) | Bản dịch (Translated Text) | Âm thanh (Audio) |
-|---|---|---|---|---|
-| **1** | VI→EN | Cậu đã làm gì với nó hở. Thêm năng lượng hả... Hôm nay lớp mình có bài kiểm tra môn thể dục nên mình rất là cần nó luôn. Sài xong mình trả lại liền. | *What did you do with it? More power, huh? ... I really need it. I'll give it back when I'm done.* | <details><summary>🔗 Nghe Audio</summary><br><video src="https://github.com/user-attachments/files/28541360/test_1_output_vi2en.wav" controls="controls"></video></details> |
-| **2** | VI→EN | Ê bạn ơi cái máy xúc số ba nó bị xì nhớt thủy lực rồi bơm bê tông cũng kẹt luôn qua kiểm tra lẹ giùm mình đi chứ để vậy là cháy van an toàn nha | *Hey, buddy, that excavator number three, it's leaking hydraulic fluid. The pump's jammed, too. please check it immediately. the safety valve will blow out.* | <details><summary>🔗 Nghe Audio</summary><br><video src="https://github.com/user-attachments/files/28541362/test_2_output_vi2en.wav" controls="controls"></video></details> |
-| **3** | EN→VI | the gantry crane at berth seven is malfunctioning we cannot unload the containers the draft survey shows the vessel is listing to port side | *Cần cẩu ở cầu cảng số 7 bị trục trặc. Chúng ta không thể dỡ các container. Giám định mớn nước cho thấy con tàu đang nghiêng sang mạn trái.* | <details><summary>🔗 Nghe Audio</summary><br><video src="https://github.com/user-attachments/files/28541365/test_3_output_en2vi.wav" controls="controls"></video></details> |
-| **4** | EN→VI | the solar inverter tripped again check the photovoltaic panels on the rooftop and make sure the string combiner box is not overheating | *Bộ đảo lưu năng lượng mặt trời lại bị hỏng. Kiểm tra các tấm pin quang điện trên mái nhà và đảm bảo bộ tổng hợp dây không bị quá nóng.* | <details><summary>🔗 Nghe Audio</summary><br><video src="https://github.com/user-attachments/files/28541359/test_4_output_en2vi.wav" controls="controls"></video></details> |
-| **5** | VI→EN | anh ơi cái xe tải nó bị hộp số trục trặc rồi mà két nước cũng rỉ nước ra nữa bạc biên kêu to lắm chắc phải thay rồi mà ống bô cũng bị thủng luôn | *Hey, man, the truck's got a malfunctioning gearbox, and the cooling system's leaking too. The connecting rod bearing is knocking, probably needs to be replaced, and the exhaust pipe is punctured too.* | <details><summary>🔗 Nghe Audio</summary><br><video src="https://github.com/user-attachments/files/28541361/test_5_output_vi2en.wav" controls="controls"></video></details> |
-| **6** | EN→VI | one worker collapsed from heatstroke bring the first aid kit and check if we have tourniquets and a portable defibrillator in the emergency cabinet | *Một công nhân bị ngã do say nắng. Mang theo bộ sơ cứu và kiểm tra xem có ga-rô và máy khử rung cầm tay không trong tủ cấp cứu.* | <details><summary>🔗 Nghe Audio</summary><br><video src="https://github.com/user-attachments/files/28541364/test_6_output_en2vi.wav" controls="controls"></video></details> |
-| **7** | EN→VI | the project manager said that if the geotechnical report confirms the soil bearing capacity is sufficient we can proceed with the shallow foundation design... | *Giám đốc dự án nói rằng nếu báo cáo địa kỹ thuật xác nhận sức chịu tải của đất là đủ, chúng tôi có thể tiến hành thiết kế móng nông thay vì sử dụng cọc sâu...* | <details><summary>🔗 Nghe Audio</summary><br><video src="https://github.com/user-attachments/files/28541363/test_7_output_en2vi.wav" controls="controls"></video></details> |
+1. **Test 1 (VI→EN)**
+   - **Đầu vào**: Cậu đã làm gì với nó hở. Thêm năng lượng hả... Hôm nay lớp mình có bài kiểm tra môn thể dục nên mình rất là cần nó luôn. Sài xong mình trả lại liền.
+   - **Bản dịch**: *What did you do with it? More power, huh? ... I really need it. I'll give it back when I'm done.*
+<details>
+  <summary><h5>🔗 Nghe Audio</h5></summary>
+
+[test_1_output_vi2en.webm](https://github.com/user-attachments/files/28541360/test_1_output_vi2en.webm)
+
+</details>
+
+2. **Test 2 (VI→EN)**
+   - **Đầu vào**: Ê bạn ơi cái máy xúc số ba nó bị xì nhớt thủy lực rồi bơm bê tông cũng kẹt luôn qua kiểm tra lẹ giùm mình đi chứ để vậy là cháy van an toàn nha
+   - **Bản dịch**: *Hey, buddy, that excavator number three, it's leaking hydraulic fluid. The pump's jammed, too. please check it immediately. the safety valve will blow out.*
+<details>
+  <summary><h5>🔗 Nghe Audio</h5></summary>
+
+[test_2_output_vi2en.webm](https://github.com/user-attachments/files/28541362/test_2_output_vi2en.webm)
+
+</details>
+
+3. **Test 3 (EN→VI)**
+   - **Đầu vào**: the gantry crane at berth seven is malfunctioning we cannot unload the containers the draft survey shows the vessel is listing to port side
+   - **Bản dịch**: *Cần cẩu ở cầu cảng số 7 bị trục trặc. Chúng ta không thể dỡ các container. Giám định mớn nước cho thấy con tàu đang nghiêng sang mạn trái.*
+<details>
+  <summary><h5>🔗 Nghe Audio</h5></summary>
+
+[test_3_output_en2vi.webm](https://github.com/user-attachments/files/28541365/test_3_output_en2vi.webm)
+
+</details>
+
+4. **Test 4 (EN→VI)**
+   - **Đầu vào**: the solar inverter tripped again check the photovoltaic panels on the rooftop and make sure the string combiner box is not overheating
+   - **Bản dịch**: *Bộ đảo lưu năng lượng mặt trời lại bị hỏng. Kiểm tra các tấm pin quang điện trên mái nhà và đảm bảo bộ tổng hợp dây không bị quá nóng.*
+<details>
+  <summary><h5>🔗 Nghe Audio</h5></summary>
+
+[test_4_output_en2vi.webm](https://github.com/user-attachments/files/28541359/test_4_output_en2vi.webm)
+
+</details>
+
+5. **Test 5 (VI→EN)**
+   - **Đầu vào**: anh ơi cái xe tải nó bị hộp số trục trặc rồi mà két nước cũng rỉ nước ra nữa bạc biên kêu to lắm chắc phải thay rồi mà ống bô cũng bị thủng luôn
+   - **Bản dịch**: *Hey, man, the truck's got a malfunctioning gearbox, and the cooling system's leaking too. The connecting rod bearing is knocking, probably needs to be replaced, and the exhaust pipe is punctured too.*
+<details>
+  <summary><h5>🔗 Nghe Audio</h5></summary>
+
+[test_5_output_vi2en.webm](https://github.com/user-attachments/files/28541361/test_5_output_vi2en.webm)
+
+</details>
+
+6. **Test 6 (EN→VI)**
+   - **Đầu vào**: one worker collapsed from heatstroke bring the first aid kit and check if we have tourniquets and a portable defibrillator in the emergency cabinet
+   - **Bản dịch**: *Một công nhân bị ngã do say nắng. Mang theo bộ sơ cứu và kiểm tra xem có ga-rô và máy khử rung cầm tay không trong tủ cấp cứu.*
+<details>
+  <summary><h5>🔗 Nghe Audio</h5></summary>
+
+[test_6_output_en2vi.webm](https://github.com/user-attachments/files/28541364/test_6_output_en2vi.webm)
+
+</details>
+
+7. **Test 7 (EN→VI)**
+   - **Đầu vào**: the project manager said that if the geotechnical report confirms the soil bearing capacity is sufficient we can proceed with the shallow foundation design...
+   - **Bản dịch**: *Giám đốc dự án nói rằng nếu báo cáo địa kỹ thuật xác nhận sức chịu tải của đất là đủ, chúng tôi có thể tiến hành thiết kế móng nông thay vì sử dụng cọc sâu...*
+<details>
+  <summary><h5>🔗 Nghe Audio</h5></summary>
+
+[test_7_output_en2vi.webm](https://github.com/user-attachments/files/28541363/test_7_output_en2vi.webm)
+
+</details>
 
 *(Lưu ý: Các file âm thanh trên đã được áp dụng công nghệ Voice Cloning. Tiếng Việt lấy cảm hứng từ giọng của nhân vật Nobita, còn tiếng Anh sử dụng giọng mẫu F5-TTS).*
 
