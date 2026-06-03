@@ -25,12 +25,24 @@ LIBRISPEECH_URL = (
     "/resolve/main/data/validation/clean/1320-122617-0001.flac"
 )
 
-# Alternative: use the f5-tts built-in test reference (already on Colab if f5-tts installed)
-F5TTS_BUILTIN_REF = "/usr/local/lib/python3.12/dist-packages/f5_tts/infer/examples/basic/basic_ref_en.wav"
+# Alternative: use the f5-tts built-in test reference (already installed with f5-tts)
 F5TTS_BUILTIN_TEXT = "Some call me nature, others call me mother nature."
 
 OUT_WAV = os.path.join(PRESET_DIR, "en_male_narrator.wav")
 OUT_TXT = os.path.join(PRESET_DIR, "en_male_narrator.txt")
+
+
+def _find_f5tts_builtin():
+    """Dynamically find F5-TTS built-in reference audio (works on Windows, Linux, Colab)."""
+    try:
+        import f5_tts
+        f5_dir = f5_tts.__path__[0]
+        ref = os.path.join(f5_dir, "infer", "examples", "basic", "basic_ref_en.wav")
+        if os.path.exists(ref):
+            return ref
+    except (ImportError, IndexError):
+        pass
+    return None
 
 
 def download_preset():
@@ -38,10 +50,11 @@ def download_preset():
     print("📥 Đang tải voice preset tiếng Anh chất lượng cao...")
     print("="*60)
 
-    # Option 1: F5-TTS built-in reference (fastest, already on Colab)
-    if os.path.exists(F5TTS_BUILTIN_REF):
+    # Option 1: F5-TTS built-in reference (fastest, cross-platform)
+    f5_ref = _find_f5tts_builtin()
+    if f5_ref:
         import shutil
-        shutil.copy(F5TTS_BUILTIN_REF, OUT_WAV)
+        shutil.copy(f5_ref, OUT_WAV)
         with open(OUT_TXT, "w", encoding="utf-8") as f:
             f.write(F5TTS_BUILTIN_TEXT)
         print(f"✅ Đã dùng giọng mẫu có sẵn từ F5-TTS: {OUT_WAV}")
