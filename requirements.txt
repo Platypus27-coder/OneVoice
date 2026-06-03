@@ -12,7 +12,8 @@ sentencepiece                      # Tokenizer cho VietAI/envit5 (T5 SentencePie
 deepmultilingualpunctuation        # kredor/punctuate-all (hỗ trợ tiếng Việt)
 
 # ── TTS ───────────────────────────────────────────────────────────────────────
-f5-tts                             # F5-TTS voice cloning (EN TTS, Python 3.10+)
+f5-tts                             # F5-TTS voice cloning (EN TTS — chính, chạy tốt trên Colab/Linux)
+pyttsx3                            # Fallback TTS cho Windows (dùng Microsoft SAPI5, không cần cài thêm)
 
 # ── Deep Learning ─────────────────────────────────────────────────────────────
 torch
