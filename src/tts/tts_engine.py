@@ -229,6 +229,17 @@ class TTSEngine:
 
         # Priority 2: F5-TTS — voice cloning (Python 3.10+, offline, GPU)
         try:
+            import os
+            if os.name == 'nt':
+                # Fix DLL loading for torchcodec/ffmpeg on Windows Conda (Python 3.8+)
+                conda_prefix = os.environ.get("CONDA_PREFIX")
+                if conda_prefix:
+                    bin_path = os.path.join(conda_prefix, "Library", "bin")
+                    if os.path.exists(bin_path):
+                        try:
+                            os.add_dll_directory(bin_path)
+                        except AttributeError:
+                            pass
             from f5_tts.api import F5TTS
             self._en_tts = F5TTS()
             self._en_tts_engine = "f5tts"
