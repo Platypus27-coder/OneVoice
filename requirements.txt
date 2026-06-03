@@ -1,7 +1,7 @@
 # ── Core ASR ──────────────────────────────────────────────────────────────────
 sherpa-onnx                        # GIPFormer ONNX runtime (VI ASR)
 openai-whisper                     # Whisper (EN ASR, dùng bởi F5-TTS khi transcribe ref audio)
-funasr_onnx                        # SenseVoice ONNX (EN ASR + emotion detection)
+funasr_onnx                        # SenseVoice ONNX (EN/VI ASR + emotion detection)
 modelscope                         # SenseVoice model loader
 
 # ── Machine Translation ─────────────────────────────────────────────────
@@ -13,8 +13,6 @@ deepmultilingualpunctuation        # kredor/punctuate-all (hỗ trợ tiếng Vi
 
 # ── TTS ───────────────────────────────────────────────────────────────────────
 f5-tts                             # F5-TTS voice cloning (EN TTS, Python 3.10+)
-gtts                               # Google TTS fallback (cần internet, test Colab)
-pyttsx3                            # Offline TTS fallback (cần espeak trên Linux)
 
 # ── Deep Learning ─────────────────────────────────────────────────────────────
 torch
