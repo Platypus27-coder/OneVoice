@@ -96,8 +96,8 @@ Hệ thống là một đường ống hai chiều, cho phép bạn chuyển đ�
 Dưới đây là 7 kịch bản kiểm thử (Test Scenarios) đầy rẫy các thuật ngữ chuyên ngành hóc búa, từ lóng thi công và các tình huống thực tế tại công trường. Hệ thống đã dịch chuẩn xác và trích xuất thành file âm thanh thành công vào thư mục `demo_outputs/`.
 
 1. **Test 1 (VI→EN)**
-   - **Đầu vào**: Cậu đã làm gì với nó hở. Thêm năng lượng hả... Hôm nay lớp mình có bài kiểm tra môn thể dục nên mình rất là cần nó luôn. Sài xong mình trả lại liền.
-   - **Bản dịch**: *What did you do with it? More power, huh? ... I really need it. I'll give it back when I'm done.*
+   - **Đầu vào**: Cậu đã làm gì với nó vậy thêm năng lượng hả nó hoạt động như thế nào vậy cho mình mượn chút đừng có keo kiệt vậy chứ hôm nay lớp mình có bài kiểm tra môn thể dục nên mình rất là cần nó luôn xài xong mình trả lại liền
+   - **Bản dịch**: *What did you do with it? More power, huh? How it works. Well, let me borrow some. don't be mean, because we have a gym test today, so... I really need it. I'll give it back when I'm done.*
 <details>
   <summary><h5>🔗 Nghe Audio</h5></summary>
 
@@ -117,7 +117,7 @@ Dưới đây là 7 kịch bản kiểm thử (Test Scenarios) đầy rẫy các
 
 3. **Test 3 (EN→VI)**
    - **Đầu vào**: the gantry crane at berth seven is malfunctioning we cannot unload the containers the draft survey shows the vessel is listing to port side
-   - **Bản dịch**: *Cần cẩu ở cầu cảng số 7 bị trục trặc. Chúng ta không thể dỡ các container. Giám định mớn nước cho thấy con tàu đang nghiêng sang mạn trái.*
+   - **Bản dịch**: *Cần cẩu ở cầu cảng số 7 bị trục trặc. Chúng ta không thể dỡ các container. Cuộc giám định mớn nước cho thấy con tàu đang nghiêng sang mạn trái.*
 <details>
   <summary><h5>🔗 Nghe Audio</h5></summary>
 
@@ -137,7 +137,7 @@ Dưới đây là 7 kịch bản kiểm thử (Test Scenarios) đầy rẫy các
 
 5. **Test 5 (VI→EN)**
    - **Đầu vào**: anh ơi cái xe tải nó bị hộp số trục trặc rồi mà két nước cũng rỉ nước ra nữa bạc biên kêu to lắm chắc phải thay rồi mà ống bô cũng bị thủng luôn
-   - **Bản dịch**: *Hey, man, the truck's got a malfunctioning gearbox, and the cooling system's leaking too. The connecting rod bearing is knocking, probably needs to be replaced, and the exhaust pipe is punctured too.*
+   - **Bản dịch**: *Hey, man, the truck's got a malfunctioning gearbox, and the water tank's leaking too. It's gotta be replaced, and the pipes are leaking too.*
 <details>
   <summary><h5>🔗 Nghe Audio</h5></summary>
 
@@ -156,8 +156,8 @@ Dưới đây là 7 kịch bản kiểm thử (Test Scenarios) đầy rẫy các
 </details>
 
 7. **Test 7 (EN→VI)**
-   - **Đầu vào**: the project manager said that if the geotechnical report confirms the soil bearing capacity is sufficient we can proceed with the shallow foundation design...
-   - **Bản dịch**: *Giám đốc dự án nói rằng nếu báo cáo địa kỹ thuật xác nhận sức chịu tải của đất là đủ, chúng tôi có thể tiến hành thiết kế móng nông thay vì sử dụng cọc sâu...*
+   - **Đầu vào**: the project manager said that if the geotechnical report confirms the soil bearing capacity is sufficient we can proceed with the shallow foundation design instead of using deep piles which would save us approximately thirty percent of the budget
+   - **Bản dịch**: *Giám đốc dự án nói rằng nếu báo cáo địa kỹ thuật xác nhận sức chịu tải của đất là đủ, chúng tôi có thể tiến hành thiết kế móng nông thay vì sử dụng cọc sâu, mà sẽ tiết kiệm cho chúng ta khoảng 30% ngân sách.*
 <details>
   <summary><h5>🔗 Nghe Audio</h5></summary>
 
