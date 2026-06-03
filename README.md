@@ -116,7 +116,7 @@ Dưới đây là 7 kịch bản kiểm thử (Test Scenarios) đầy rẫy các
 conda create -n onevoice python=3.11.8
 conda activate onevoice
 
-# 2. Cài đặt các thư viện (Không dính repo ngoài)
+# 2. Cài đặt các thư viện 
 pip install -r requirements.txt
 ```
 
