@@ -137,7 +137,7 @@ Dưới đây là 7 kịch bản kiểm thử (Test Scenarios) đầy rẫy các
 
 5. **Test 5 (VI→EN)**
    - **Đầu vào**: anh ơi cái xe tải nó bị hộp số trục trặc rồi mà két nước cũng rỉ nước ra nữa bạc biên kêu to lắm chắc phải thay rồi mà ống bô cũng bị thủng luôn
-   - **Bản dịch**: *Hey, man, the truck's got a malfunctioning gearbox, and the water tank's leaking too. It's gotta be replaced, and the pipes are leaking too.*
+   - **Bản dịch**: *Hey, man, the truck's got a malfunctioning gearbox, and the cooling system's leaking water. Connecting rod ball bearings knocked. It's gotta be replaced, and the exhaust pipe's leaking too.*
 <details>
   <summary><h5>🔗 Nghe Audio</h5></summary>
 

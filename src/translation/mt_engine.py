@@ -66,7 +66,7 @@ def _apply_terminology(text: str, override: dict[str, str]) -> str:
 _VI_SPLIT_MARKERS = [
     " nên ", " vậy chứ ", " vậy ", " mà ", " nhưng ", " còn ",
     " rồi ", " thì ", " để ", " sau đó ", " xong ", " luôn ",
-    " chứ ", " nha ", " hả ", " hả? ", " à ",
+    " chứ ", " nha ", " hả ", " hả? ", " à ", " nữa ",
 ]
 
 
