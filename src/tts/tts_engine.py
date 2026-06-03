@@ -401,24 +401,23 @@ class TTSEngine:
             except Exception as e:
                 print(f"[TTS EN] ⚠ F5-TTS error: {e}")
 
-        # pyttsx3 path
+        # pyttsx3 fallback (khi F5-TTS inference lỗi trên Windows)
         try:
             import pyttsx3
-            if isinstance(self._en_tts, pyttsx3.Engine):
-                import tempfile, soundfile as sf
-                # Adjust rate: default 160 WPM * en_speed
-                self._en_tts.setProperty("rate", int(160 * self.en_speed))
-                with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as tmp:
-                    tmp_path = tmp.name
-                self._en_tts.save_to_file(text, tmp_path)
-                self._en_tts.runAndWait()
-                audio, sr = sf.read(tmp_path, dtype="float32")
-                os.unlink(tmp_path)
-                elapsed_ms = (time.perf_counter() - t0) * 1000
-                print(f"[TTS EN] ⏱ {elapsed_ms:.0f}ms | pyttsx3 (rate={int(160 * self.en_speed)} WPM)")
-                return audio, sr
+            import tempfile, soundfile as sf
+            _fallback_engine = pyttsx3.init()
+            _fallback_engine.setProperty("rate", int(160 * self.en_speed))
+            with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as tmp:
+                tmp_path = tmp.name
+            _fallback_engine.save_to_file(text, tmp_path)
+            _fallback_engine.runAndWait()
+            audio, sr = sf.read(tmp_path, dtype="float32")
+            os.unlink(tmp_path)
+            elapsed_ms = (time.perf_counter() - t0) * 1000
+            print(f"[TTS EN] ⏱ {elapsed_ms:.0f}ms | pyttsx3 fallback (rate={int(160 * self.en_speed)} WPM)")
+            return audio, sr
         except Exception as e:
-            print(f"[TTS EN] ⚠ pyttsx3 error: {e}")
+            print(f"[TTS EN] ⚠ pyttsx3 fallback error: {e}")
 
         # gTTS path (online fallback for Colab testing)
         if getattr(self, "_en_tts", None) == "gtts":
