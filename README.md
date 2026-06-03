@@ -97,7 +97,7 @@ Dưới đây là 7 kịch bản kiểm thử (Test Scenarios) đầy rẫy các
 
 | Test | Chiều | Đầu vào (Input Text) | Bản dịch (Translated Text) | Âm thanh (Audio) |
 |---|---|---|---|---|
-| **1** | VI→EN | Cậu đã làm dì dới nó dở. Thêm năng lượng hả... Hôm nai lớp mình có bài kiểm tra môn thể dục nên mình rất là cần nó luôn. Sài xong mình trả lại liền. | *What did you do with it? More power, huh? ... I really need it. I'll give it back when I'm done.* | <details><summary>🔗 Nghe Audio</summary><br><video src="https://github.com/user-attachments/files/28541360/test_1_output_vi2en.wav" controls="controls"></video></details> |
+| **1** | VI→EN | Cậu đã làm gì với nó hở. Thêm năng lượng hả... Hôm nay lớp mình có bài kiểm tra môn thể dục nên mình rất là cần nó luôn. Sài xong mình trả lại liền. | *What did you do with it? More power, huh? ... I really need it. I'll give it back when I'm done.* | <details><summary>🔗 Nghe Audio</summary><br><video src="https://github.com/user-attachments/files/28541360/test_1_output_vi2en.wav" controls="controls"></video></details> |
 | **2** | VI→EN | Ê bạn ơi cái máy xúc số ba nó bị xì nhớt thủy lực rồi bơm bê tông cũng kẹt luôn qua kiểm tra lẹ giùm mình đi chứ để vậy là cháy van an toàn nha | *Hey, buddy, that excavator number three, it's leaking hydraulic fluid. The pump's jammed, too. please check it immediately. the safety valve will blow out.* | <details><summary>🔗 Nghe Audio</summary><br><video src="https://github.com/user-attachments/files/28541362/test_2_output_vi2en.wav" controls="controls"></video></details> |
 | **3** | EN→VI | the gantry crane at berth seven is malfunctioning we cannot unload the containers the draft survey shows the vessel is listing to port side | *Cần cẩu ở cầu cảng số 7 bị trục trặc. Chúng ta không thể dỡ các container. Giám định mớn nước cho thấy con tàu đang nghiêng sang mạn trái.* | <details><summary>🔗 Nghe Audio</summary><br><video src="https://github.com/user-attachments/files/28541365/test_3_output_en2vi.wav" controls="controls"></video></details> |
 | **4** | EN→VI | the solar inverter tripped again check the photovoltaic panels on the rooftop and make sure the string combiner box is not overheating | *Bộ đảo lưu năng lượng mặt trời lại bị hỏng. Kiểm tra các tấm pin quang điện trên mái nhà và đảm bảo bộ tổng hợp dây không bị quá nóng.* | <details><summary>🔗 Nghe Audio</summary><br><video src="https://github.com/user-attachments/files/28541359/test_4_output_en2vi.wav" controls="controls"></video></details> |
@@ -143,7 +143,7 @@ python src/pipeline.py --direction en2vi
 ---
 
 ## Giấy phép & Tri ân tác giả
-Dự án tuân thủ Giấy phép **CC BY-NC 4.0** (Tuyệt đối không dùng cho mục đích thương mại).
+Dự án tuân thủ Giấy phép **CC BY-NC 4.0**.
 Chúng tôi đã tích hợp trực tiếp, trích xuất và tinh chỉnh mã nguồn từ các tác giả:
 - **BetterBox-TTS & OmniVoice**: Dolly VN / ContextBoxAI (CC BY-NC 4.0)
 - **GIPFormer**: G-Group AI Lab (MIT)
