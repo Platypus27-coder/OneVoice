@@ -32,32 +32,30 @@ when using or distributing this software.
    Note    : This component PROHIBITS commercial use. The entire project
              inherits this restriction.
 
-2. gipformer (ASR & Denoising — Vietnamese)
+2. GIPFormer (ASR & Denoising — Vietnamese)
    Author  : G-Group AI Lab
    Source  : https://huggingface.co/g-group-ai-lab/gipformer-65M-rnnt
    License : MIT License
    Usage   : Efficient Vietnamese speech recognition & noise-robust audio
              pre-processing (Trạm 0 — Denoise, Trạm 1 — ASR)
 
-3. VALL-E X (Cross-lingual Voice Cloning — Premium Mode)
-   Author  : Plachtaa / Songting
-   Source  : https://github.com/Plachtaa/VALL-E-X
-   License : MIT License (Copyright (c) 2023 Songting)
-   Usage   : Optional Premium Mode — cross-lingual voice identity cloning
-             activated only when device has sufficient resources or network.
-
-4. MarianMT — Helsinki-NLP (Machine Translation)
-   Author  : Helsinki-NLP / University of Helsinki
-   Source  : https://huggingface.co/Helsinki-NLP/opus-mt-vi-en
-             https://huggingface.co/Helsinki-NLP/opus-mt-en-vi
-   License : Apache 2.0 / CC BY 4.0 (varies by model card)
-   Usage   : Bilingual translation engine (Trạm 2 — VI↔EN/ZH/KR)
-
-5. Whisper (ASR — Multilingual)
-   Author  : OpenAI
-   Source  : https://github.com/openai/whisper
+3. SenseVoice Small (ASR & Emotion Extraction)
+   Author  : FunAudioLLM / Alibaba
+   Source  : https://github.com/FunAudioLLM/SenseVoice
    License : MIT License
-   Usage   : Streaming multilingual speech recognition (Trạm 1 — ASR fallback)
+   Usage   : Multilingual speech recognition and emotion extraction (Trạm 1 — ASR)
+
+4. envit5-translation (Machine Translation)
+   Author  : VietAI
+   Source  : https://huggingface.co/VietAI/envit5-translation
+   License : MIT License
+   Usage   : Bilingual translation engine (Trạm 2 — VI↔EN)
+
+5. F5-TTS (Voice Cloning)
+   Author  : SWivid
+   Source  : https://github.com/SWivid/F5-TTS
+   License : MIT License
+   Usage   : Zero-shot voice cloning and speech synthesis (Trạm 3 — TTS)
 
 6. Silero VAD (Voice Activity Detection)
    Author  : Silero Team

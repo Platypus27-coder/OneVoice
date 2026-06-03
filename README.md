@@ -1,16 +1,16 @@
-# 🎙️ OneVoice Edge — Hệ Thống Phiên Dịch Giọng Nói Thời Gian Thực
+# OneVoice Edge — Hệ Thống Phiên Dịch Giọng Nói Thời Gian Thực
 > **Cuộc thi OneVoice AI Challenge 2026 — Team Impact**
 
 Hệ thống dịch thuật Speech-to-Speech chạy **100% Offline**, được thiết kế đặc biệt cho môi trường công nghiệp (nhà máy, công trường). Dự án được tối ưu hóa để chạy trên chip **Qualcomm Snapdragon NPU** với độ trễ (latency) dưới **1 giây** và mức ngốn RAM dưới **200 MB**.
 
 ---
 
-## 🏭 Vấn Đề Thực Tế
+## Vấn Đề Thực Tế
 Rào cản ngôn ngữ giữa chuyên gia nước ngoài và kỹ sư bản địa gây giảm năng suất và nguy cơ mất an toàn. Các ứng dụng như Google Translate không thể dùng được vì:
 - Bắt buộc phải có Internet (Cloud-based).
 - Chết hoàn toàn khi gặp tiếng ồn máy móc công trường.
 
-## 🚀 Giải pháp — Kiến Trúc 4 Trạm Cục Bộ (Edge AI)
+## Giải pháp — Kiến Trúc 4 Trạm Cục Bộ (Edge AI)
 
 ### Luồng 1: VI → EN
 
@@ -82,34 +82,34 @@ Speaker / Earphone
 
 ---
 
-## 🌐 Các Chế Độ Hoạt Động (Translation Directions)
+## Các Chế Độ Hoạt Động (Translation Directions)
 Hệ thống là một đường ống hai chiều, cho phép bạn chuyển đổi linh hoạt.
 
 | Hướng (Direction) | Đầu vào (Người nói) | Đầu ra (Loa phát) | Lệnh chạy (Flag) |
 |-------------------|---------------------|-------------------|------------------|
-| **VI → EN** (Mặc định) | Kỹ sư Việt Nam 🇻🇳 | Chuyên gia Anh 🇬🇧 | `--direction vi2en` |
-| **EN → VI** | Chuyên gia Anh 🇬🇧 | Kỹ sư Việt Nam 🇻🇳 | `--direction en2vi` |
+| **VI → EN** (Mặc định) | Người Việt | Người Anh | `--direction vi2en` |
+| **EN → VI** | Người Anh | Người Việt | `--direction en2vi` |
 
 ---
 
-## 🎧 Demo Kết Quả Dịch Thuật & Voice Cloning
+## Demo Kết Quả Dịch Thuật & Voice Cloning
 Dưới đây là 7 kịch bản kiểm thử (Test Scenarios) đầy rẫy các thuật ngữ chuyên ngành hóc búa, từ lóng thi công và các tình huống thực tế tại công trường. Hệ thống đã dịch chuẩn xác và trích xuất thành file âm thanh thành công vào thư mục `demo_outputs/`.
 
 | Test | Chiều | Đầu vào (Input Text) | Bản dịch (Translated Text) | Âm thanh (Audio) |
 |---|---|---|---|---|
-| **1** | VI→EN | Cậu đã làm dì dới nó dở. Thêm năng lượng hả... Hôm nai lớp mình có bài kiểm tra môn thể dục nên mình rất là cần nó luôn. Sài xong mình trả lại liền. | *What did you do with it? More power, huh? ... I really need it. I'll give it back when I'm done.* | `test_1_output_vi2en.wav` |
-| **2** | VI→EN | Ê bạn ơi cái máy xúc số ba nó bị xì nhớt thủy lực rồi bơm bê tông cũng kẹt luôn qua kiểm tra lẹ giùm mình đi chứ để vậy là cháy van an toàn nha | *Hey, buddy, that excavator number three, it's leaking hydraulic fluid. The pump's jammed, too. please check it immediately. the safety valve will blow out.* | `test_2_output_vi2en.wav` |
-| **3** | EN→VI | the gantry crane at berth seven is malfunctioning we cannot unload the containers the draft survey shows the vessel is listing to port side | *Cần cẩu ở cầu cảng số 7 bị trục trặc. Chúng ta không thể dỡ các container. Giám định mớn nước cho thấy con tàu đang nghiêng sang mạn trái.* | `test_3_output_en2vi.wav` |
-| **4** | EN→VI | the solar inverter tripped again check the photovoltaic panels on the rooftop and make sure the string combiner box is not overheating | *Bộ đảo lưu năng lượng mặt trời lại bị hỏng. Kiểm tra các tấm pin quang điện trên mái nhà và đảm bảo bộ tổng hợp dây không bị quá nóng.* | `test_4_output_en2vi.wav` |
-| **5** | VI→EN | anh ơi cái xe tải nó bị hộp số trục trặc rồi mà két nước cũng rỉ nước ra nữa bạc biên kêu to lắm chắc phải thay rồi mà ống bô cũng bị thủng luôn | *Hey, man, the truck's got a malfunctioning gearbox, and the cooling system's leaking too. The connecting rod bearing is knocking, probably needs to be replaced, and the exhaust pipe is punctured too.* | `test_5_output_vi2en.wav` |
-| **6** | EN→VI | one worker collapsed from heatstroke bring the first aid kit and check if we have tourniquets and a portable defibrillator in the emergency cabinet | *Một công nhân bị ngã do say nắng. Mang theo bộ sơ cứu và kiểm tra xem có ga-rô và máy khử rung cầm tay không trong tủ cấp cứu.* | `test_6_output_en2vi.wav` |
-| **7** | EN→VI | the project manager said that if the geotechnical report confirms the soil bearing capacity is sufficient we can proceed with the shallow foundation design... | *Giám đốc dự án nói rằng nếu báo cáo địa kỹ thuật xác nhận sức chịu tải của đất là đủ, chúng tôi có thể tiến hành thiết kế móng nông thay vì sử dụng cọc sâu...* | `test_7_output_en2vi.wav` |
+| **1** | VI→EN | Cậu đã làm dì dới nó dở. Thêm năng lượng hả... Hôm nai lớp mình có bài kiểm tra môn thể dục nên mình rất là cần nó luôn. Sài xong mình trả lại liền. | *What did you do with it? More power, huh? ... I really need it. I'll give it back when I'm done.* | [Nghe audio](demo_outputs/test_1_output_vi2en.wav) |
+| **2** | VI→EN | Ê bạn ơi cái máy xúc số ba nó bị xì nhớt thủy lực rồi bơm bê tông cũng kẹt luôn qua kiểm tra lẹ giùm mình đi chứ để vậy là cháy van an toàn nha | *Hey, buddy, that excavator number three, it's leaking hydraulic fluid. The pump's jammed, too. please check it immediately. the safety valve will blow out.* | [Nghe audio](demo_outputs/test_2_output_vi2en.wav) |
+| **3** | EN→VI | the gantry crane at berth seven is malfunctioning we cannot unload the containers the draft survey shows the vessel is listing to port side | *Cần cẩu ở cầu cảng số 7 bị trục trặc. Chúng ta không thể dỡ các container. Giám định mớn nước cho thấy con tàu đang nghiêng sang mạn trái.* | [Nghe audio](demo_outputs/test_3_output_en2vi.wav) |
+| **4** | EN→VI | the solar inverter tripped again check the photovoltaic panels on the rooftop and make sure the string combiner box is not overheating | *Bộ đảo lưu năng lượng mặt trời lại bị hỏng. Kiểm tra các tấm pin quang điện trên mái nhà và đảm bảo bộ tổng hợp dây không bị quá nóng.* | [Nghe audio](demo_outputs/test_4_output_en2vi.wav) |
+| **5** | VI→EN | anh ơi cái xe tải nó bị hộp số trục trặc rồi mà két nước cũng rỉ nước ra nữa bạc biên kêu to lắm chắc phải thay rồi mà ống bô cũng bị thủng luôn | *Hey, man, the truck's got a malfunctioning gearbox, and the cooling system's leaking too. The connecting rod bearing is knocking, probably needs to be replaced, and the exhaust pipe is punctured too.* | [Nghe audio](demo_outputs/test_5_output_vi2en.wav) |
+| **6** | EN→VI | one worker collapsed from heatstroke bring the first aid kit and check if we have tourniquets and a portable defibrillator in the emergency cabinet | *Một công nhân bị ngã do say nắng. Mang theo bộ sơ cứu và kiểm tra xem có ga-rô và máy khử rung cầm tay không trong tủ cấp cứu.* | [Nghe audio](demo_outputs/test_6_output_en2vi.wav) |
+| **7** | EN→VI | the project manager said that if the geotechnical report confirms the soil bearing capacity is sufficient we can proceed with the shallow foundation design... | *Giám đốc dự án nói rằng nếu báo cáo địa kỹ thuật xác nhận sức chịu tải của đất là đủ, chúng tôi có thể tiến hành thiết kế móng nông thay vì sử dụng cọc sâu...* | [Nghe audio](demo_outputs/test_7_output_en2vi.wav) |
 
 *(Lưu ý: Các file âm thanh trên đã được áp dụng công nghệ Voice Cloning. Tiếng Việt lấy cảm hứng từ giọng của nhân vật Nobita, còn tiếng Anh sử dụng giọng mẫu F5-TTS).*
 
 ---
 
-## ⚙️ Hướng dẫn Cài Đặt (Self-Contained)
+## Hướng dẫn Cài Đặt (Self-Contained)
 
 ```bash
 # 1. Tạo môi trường Conda
@@ -124,16 +124,16 @@ pip install -r requirements.txt
 
 ---
 
-## 🚀 Cách Chạy Dự Án
+## Cách Chạy Dự Án
 
-### 1. Dịch từ Kỹ sư Việt Nam sang Tiếng Anh (VI → EN)
+### 1. Dịch từ Người Việt sang Tiếng Anh (VI → EN)
 Đây là chế độ mặc định. Hệ thống sẽ bật mic, nghe bạn nói Tiếng Việt, khử ồn bằng GIPFormer, dịch sang Tiếng Anh và đọc ra loa.
 
 ```bash
 python src/pipeline.py --direction vi2en
 ```
 
-### 2. Dịch từ Chuyên gia Anh sang Tiếng Việt (EN → VI)
+### 2. Dịch từ Người Anh sang Tiếng Việt (EN → VI)
 Hệ thống sẽ nghe tiếng Anh. Đặc biệt, **SenseVoice** sẽ tự động trích xuất cảm xúc (Ví dụ: Giận dữ, Vui vẻ). Thái độ này sẽ được truyền thẳng xuống **OmniVoice** để đọc Tiếng Việt với đúng tông giọng gắt gỏng hoặc vui nhộn của người gốc.
 
 ```bash
@@ -142,7 +142,7 @@ python src/pipeline.py --direction en2vi
 
 ---
 
-## ⚠️ Giấy phép & Tri ân tác giả
+## Giấy phép & Tri ân tác giả
 Dự án tuân thủ Giấy phép **CC BY-NC 4.0** (Tuyệt đối không dùng cho mục đích thương mại).
 Chúng tôi đã tích hợp trực tiếp, trích xuất và tinh chỉnh mã nguồn từ các tác giả:
 - **BetterBox-TTS & OmniVoice**: Dolly VN / ContextBoxAI (CC BY-NC 4.0)
