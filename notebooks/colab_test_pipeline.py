@@ -38,7 +38,7 @@ print(f"\nProject root   : {PROJECT_ROOT}")
 print("Installing dependencies...")
 os.system("apt-get update && apt-get install -y portaudio19-dev ffmpeg")
 os.system("pip install -q git+https://github.com/huggingface/transformers.git")
-os.system("pip install -q funasr_onnx modelscope f5-tts torch torchvision torchaudio soundfile sounddevice PyYAML pedalboard pydub deepmultilingualpunctuation librosa sentencepiece sacremoses huggingface_hub")
+os.system("pip install -q funasr_onnx modelscope f5-tts torch torchvision torchaudio soundfile sounddevice PyYAML pedalboard pydub deepmultilingualpunctuation librosa sentencepiece sacremoses huggingface_hub accelerate tqdm unidecode cn2an zhconv zhon webdataset")
 print("✅ Core dependencies installed")
 
 # %% [Cell 3] Test SenseVoice ASR (Trạm 1)

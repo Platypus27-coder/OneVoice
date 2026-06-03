@@ -30,3 +30,13 @@ pedalboard                         # Audio effects
 huggingface_hub                    # Tải model từ HuggingFace Hub
 PyYAML                             # Đọc config.yaml
 numpy
+
+# ── OmniVoice & Text Processing ───────────────────────────────────────────────
+accelerate                         # HuggingFace Accelerate cho GPU inference
+tqdm                               # Progress bars
+unidecode                          # Xử lý text đa ngôn ngữ
+cn2an                              # Text processing cho OmniVoice/F5-TTS
+zhconv                             # Text processing cho OmniVoice/F5-TTS
+zhon                               # Text processing cho OmniVoice/F5-TTS
+webdataset                         # Data loader cho TTS
+sacremoses                         # Tokenizer helper cho Translation/Punctuation
