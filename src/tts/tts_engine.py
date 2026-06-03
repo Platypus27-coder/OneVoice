@@ -364,15 +364,29 @@ class TTSEngine:
 
         return None, ""
 
-    # F5-TTS voice cloning path
+    # ── English TTS Synthesis ─────────────────────────────────────────────────
+    # Fallback chain (ưu tiên từ trên xuống):
+    #   1. F5-TTS   — Voice cloning chất lượng cao (CHÍNH, hoạt động trên Colab/Linux)
+    #   2. pyttsx3  — Microsoft SAPI5 (DỰ PHÒNG, chỉ dùng khi F5-TTS lỗi trên Windows)
+    #   3. Silence  — Không có engine nào khả dụng
+    #
+    # Trên Colab/Linux: F5-TTS luôn thành công → KHÔNG BAO GIỜ fallback
+    # Trên Windows:     F5-TTS lỗi torchcodec → tự động chuyển sang pyttsx3
+    # ─────────────────────────────────────────────────────────────────────────
+
     def synthesize_en(self, text: str, reference_wav: str = None, original_text: str = None) -> tuple[np.ndarray, int]:
         """
-        Synthesize English speech using a voice preset or voice cloning.
+        Synthesize English speech.
+
+        Fallback chain:
+          1. F5-TTS (voice cloning, high quality) — primary engine
+          2. pyttsx3 (Microsoft SAPI5) — Windows fallback only
+          3. Silence stub — last resort
         """
         t0 = time.perf_counter()
         engine = getattr(self, "_en_tts_engine", None)
 
-        # F5-TTS path — preset takes priority over live cloning
+        # ── [1] F5-TTS (Primary — Colab/Linux) ──────────────────────────────
         if engine == "f5tts":
             try:
                 import torch
@@ -399,9 +413,10 @@ class TTSEngine:
                 print(f"[TTS EN] ⏱ {elapsed_ms:.0f}ms | F5-TTS (speed={self.en_speed})")
                 return audio.astype(np.float32), sr
             except Exception as e:
-                print(f"[TTS EN] ⚠ F5-TTS error: {e}")
+                print(f"[TTS EN] ⚠ F5-TTS inference failed: {e}")
+                print(f"[TTS EN] ↓ Falling back to pyttsx3...")
 
-        # pyttsx3 fallback (khi F5-TTS inference lỗi trên Windows)
+        # ── [2] pyttsx3 (Fallback — Windows) ─────────────────────────────────
         try:
             import pyttsx3
             import tempfile, soundfile as sf
@@ -417,35 +432,10 @@ class TTSEngine:
             print(f"[TTS EN] ⏱ {elapsed_ms:.0f}ms | pyttsx3 fallback (rate={int(160 * self.en_speed)} WPM)")
             return audio, sr
         except Exception as e:
-            print(f"[TTS EN] ⚠ pyttsx3 fallback error: {e}")
+            print(f"[TTS EN] ⚠ pyttsx3 fallback failed: {e}")
 
-        # gTTS path (online fallback for Colab testing)
-        if getattr(self, "_en_tts", None) == "gtts":
-            try:
-                from gtts import gTTS
-                import tempfile
-                import soundfile as sf
-                with tempfile.NamedTemporaryFile(suffix=".mp3", delete=False) as tmp:
-                    tmp_mp3 = tmp.name
-                gTTS(text=text, lang="en", slow=False).save(tmp_mp3)
-                # Convert mp3 → wav then apply speed
-                from pydub import AudioSegment
-                seg = AudioSegment.from_mp3(tmp_mp3)
-                with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as tmp:
-                    tmp_wav = tmp.name
-                seg.export(tmp_wav, format="wav")
-                audio, sr = sf.read(tmp_wav, dtype="float32")
-                os.unlink(tmp_mp3)
-                os.unlink(tmp_wav)
-                # Apply speed adjustment via librosa
-                audio, sr = self._apply_speed(audio, sr)
-                elapsed_ms = (time.perf_counter() - t0) * 1000
-                print(f"[TTS EN] ⏱ {elapsed_ms:.0f}ms | gTTS (speed={self.en_speed})")
-                return audio, sr
-            except Exception as e:
-                print(f"[TTS EN] ⚠ gTTS error: {e}")
-
-        # Stub: silence
+        # ── [3] Silence stub (last resort) ───────────────────────────────────
+        print("[TTS EN] ⚠ No English TTS engine available — returning silence.")
         return np.zeros(int(self.sample_rate * 0.5), dtype=np.float32), self.sample_rate
 
     def synthesize(self, text: str, direction: str = "vi2en", emotion: str = "neutral", reference_wav: str = None, original_text: str = None) -> tuple[np.ndarray, int]:
