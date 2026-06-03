@@ -5,7 +5,7 @@ funasr_onnx                        # SenseVoice ONNX (EN/VI ASR + emotion detect
 modelscope                         # SenseVoice model loader
 
 # ── Machine Translation ─────────────────────────────────────────────────
-transformers @ git+https://github.com/huggingface/transformers.git # Cần bản mới nhất cho higgs_audio_v2_tokenizer
+transformers>=4.45.0               # Bản ổn định (tránh lỗi FP8 khi chạy trên PyTorch 2.6.0)
 sentencepiece                      # Tokenizer cho VietAI/envit5 (T5 SentencePiece)
 
 # ── Punctuation Restoration ───────────────────────────────────────────────────

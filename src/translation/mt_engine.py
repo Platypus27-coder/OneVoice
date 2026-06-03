@@ -15,6 +15,11 @@ import time
 import queue
 import re
 import torch
+
+# 🛠️ HOTFIX: PyTorch 2.6.0 removed float8_e8m0fnu which crashes Transformers
+if not hasattr(torch, "float8_e8m0fnu"):
+    setattr(torch, "float8_e8m0fnu", getattr(torch, "float8_e4m3fn", None))
+
 from transformers import PreTrainedTokenizerFast, AutoModelForSeq2SeqLM
 
 
