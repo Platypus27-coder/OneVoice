@@ -219,4 +219,3 @@ Chúng tôi đã tích hợp trực tiếp, trích xuất và tinh chỉnh mã n
 - **SenseVoice**: FunAudioLLM / Alibaba (MIT)
 - **VietAI/envit5**: VietAI (MIT)
 
-> **Cảm ơn Ban Tổ Chức OneVoice AI Challenge 2026!**
