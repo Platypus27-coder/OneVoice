@@ -1,5 +1,5 @@
 # OneVoice Edge — Hệ Thống Phiên Dịch Giọng Nói Thời Gian Thực
-> **Cuộc thi OneVoice AI Challenge 2026 — Team Impact**
+
 <img width="2352" height="1792" alt="Gemini_Generated_Image_tyw15ltyw15ltyw1" src="https://github.com/user-attachments/assets/f4747894-01d8-4889-bbf5-a0d2a5c01de7" />
 
 Hệ thống dịch thuật Speech-to-Speech chạy **100% Offline**, được thiết kế đặc biệt cho môi trường công nghiệp (nhà máy, công trường). Dự án được tối ưu hóa để chạy trên chip **Qualcomm Snapdragon NPU** với độ trễ (latency) dưới **1 giây** và mức ngốn RAM dưới **200 MB**.
