@@ -1,0 +1,71 @@
+{
+  "version": "2.0-bootstrap",
+  "terminology_concepts": 216,
+  "term_surface_forms": 426,
+  "utterances_total": 8064,
+  "utterances_core": 864,
+  "utterances_augmented": 7200,
+  "train": 6369,
+  "dev": 716,
+  "test": 979,
+  "safety_fast_path": 196,
+  "minimal_pairs": 240,
+  "asr_confusion_candidates": 237,
+  "domains": 12,
+  "intents": 11,
+  "by_domain": {
+    "concrete_rebar_formwork": 741,
+    "electrical": 710,
+    "excavation": 664,
+    "fall_scaffold": 643,
+    "heavy_equipment": 628,
+    "lifting_rigging": 674,
+    "material_logistics": 693,
+    "mechanical": 646,
+    "piping_plumbing": 685,
+    "safety_general": 613,
+    "survey_measurement": 719,
+    "welding_hotwork": 648
+  },
+  "by_intent": {
+    "ASK_LOCATION": 272,
+    "ASK_MEASUREMENT": 270,
+    "ASK_STATUS": 647,
+    "CONFIRM": 594,
+    "GIVE_INSTRUCTION": 1182,
+    "PROHIBIT_ACTION": 499,
+    "REPORT_PROBLEM": 1391,
+    "REQUEST_ACTION": 1246,
+    "REQUEST_INSPECTION": 1329,
+    "STOP_WORK": 258,
+    "WARN_DANGER": 376
+  },
+  "by_variant": {
+    "code_switch": 411,
+    "colloquial": 482,
+    "core_standard": 864,
+    "handover": 137,
+    "housekeeping": 138,
+    "maintenance": 140,
+    "measurement": 341,
+    "negation": 221,
+    "numeric": 634,
+    "quality": 425,
+    "role": 133,
+    "safety": 567,
+    "spoken": 483,
+    "standard": 2338,
+    "urgent": 212,
+    "warning": 538
+  },
+  "duplicates_removed": {
+    "utterances": 0,
+    "safety": 0,
+    "aliases": 1,
+    "asr_confusions": 4
+  },
+  "split_integrity": {
+    "frame_pattern_leakage": 0,
+    "exact_vi_cross_split_leakage": 0
+  }
+}

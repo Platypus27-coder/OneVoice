@@ -1,0 +1,241 @@
+﻿minimal_pair_id,contrast_type,domain,a_vi,a_en,b_vi,b_en,critical_fields,synthetic,review_status
+MP0001,negation,safety_general,Dùng khu vực cấm.,Use the restricted area.,Không dùng khu vực cấm.,Do not use the restricted area.,negation,True,needs_domain_expert_review
+MP0002,negation,heavy_equipment,Dùng người hướng dẫn xe.,Use the spotter.,Không dùng người hướng dẫn xe.,Do not use the spotter.,negation,True,needs_domain_expert_review
+MP0003,negation,excavation,Dùng sạt lở.,Use the cave-in.,Không dùng sạt lở.,Do not use the cave-in.,negation,True,needs_domain_expert_review
+MP0004,negation,excavation,Dùng thang xuống hố.,Use the access ladder.,Không dùng thang xuống hố.,Do not use the access ladder.,negation,True,needs_domain_expert_review
+MP0005,negation,concrete_rebar_formwork,Dùng cốp pha.,Use the formwork.,Không dùng cốp pha.,Do not use the formwork.,negation,True,needs_domain_expert_review
+MP0006,negation,heavy_equipment,Dùng phanh đỗ.,Use the parking brake.,Không dùng phanh đỗ.,Do not use the parking brake.,negation,True,needs_domain_expert_review
+MP0007,negation,electrical,Dùng quá tải.,Use the overload.,Không dùng quá tải.,Do not use the overload.,negation,True,needs_domain_expert_review
+MP0008,negation,heavy_equipment,Dùng khu vực quay máy.,Use the equipment swing area.,Không dùng khu vực quay máy.,Do not use the equipment swing area.,negation,True,needs_domain_expert_review
+MP0009,negation,excavation,Dùng thành hố đào.,Use the excavation face.,Không dùng thành hố đào.,Do not use the excavation face.,negation,True,needs_domain_expert_review
+MP0010,negation,safety_general,Dùng rào chắn.,Use the barricade.,Không dùng rào chắn.,Do not use the barricade.,negation,True,needs_domain_expert_review
+MP0011,negation,concrete_rebar_formwork,Dùng cao độ đổ bê tông.,Use the concrete pour elevation.,Không dùng cao độ đổ bê tông.,Do not use the concrete pour elevation.,negation,True,needs_domain_expert_review
+MP0012,negation,material_logistics,Dùng dây chằng hàng.,Use the cargo tie-down.,Không dùng dây chằng hàng.,Do not use the cargo tie-down.,negation,True,needs_domain_expert_review
+MP0013,negation,piping_plumbing,Dùng van một chiều.,Use the check valve.,Không dùng van một chiều.,Do not use the check valve.,negation,True,needs_domain_expert_review
+MP0014,negation,heavy_equipment,Dùng xe nâng.,Use the forklift.,Không dùng xe nâng.,Do not use the forklift.,negation,True,needs_domain_expert_review
+MP0015,negation,lifting_rigging,Dùng người báo hiệu.,Use the signal person.,Không dùng người báo hiệu.,Do not use the signal person.,negation,True,needs_domain_expert_review
+MP0016,negation,fall_scaffold,Dùng móc an toàn.,Use the snap hook.,Không dùng móc an toàn.,Do not use the snap hook.,negation,True,needs_domain_expert_review
+MP0017,negation,piping_plumbing,Dùng giá đỡ ống.,Use the pipe support.,Không dùng giá đỡ ống.,Do not use the pipe support.,negation,True,needs_domain_expert_review
+MP0018,negation,lifting_rigging,Dùng tải trọng định mức.,Use the rated load.,Không dùng tải trọng định mức.,Do not use the rated load.,negation,True,needs_domain_expert_review
+MP0019,negation,piping_plumbing,Dùng bơm tăng áp.,Use the booster pump.,Không dùng bơm tăng áp.,Do not use the booster pump.,negation,True,needs_domain_expert_review
+MP0020,negation,fall_scaffold,Dùng lan can bảo vệ.,Use the guardrail.,Không dùng lan can bảo vệ.,Do not use the guardrail.,negation,True,needs_domain_expert_review
+MP0021,negation,welding_hotwork,Dùng van bình khí.,Use the cylinder valve.,Không dùng van bình khí.,Do not use the cylinder valve.,negation,True,needs_domain_expert_review
+MP0022,negation,lifting_rigging,Dùng thanh cân bằng.,Use the spreader beam.,Không dùng thanh cân bằng.,Do not use the spreader beam.,negation,True,needs_domain_expert_review
+MP0023,negation,fall_scaffold,Dùng giàn giáo.,Use the scaffold.,Không dùng giàn giáo.,Do not use the scaffold.,negation,True,needs_domain_expert_review
+MP0024,negation,excavation,Dùng nước đọng trong hố.,Use the standing water in excavation.,Không dùng nước đọng trong hố.,Do not use the standing water in excavation.,negation,True,needs_domain_expert_review
+MP0025,negation,fall_scaffold,Dùng chân kích giàn giáo.,Use the scaffold jack.,Không dùng chân kích giàn giáo.,Do not use the scaffold jack.,negation,True,needs_domain_expert_review
+MP0026,negation,piping_plumbing,Dùng rò nước.,Use the water leak.,Không dùng rò nước.,Do not use the water leak.,negation,True,needs_domain_expert_review
+MP0027,negation,fall_scaffold,Dùng mặt bằng làm việc trên cao.,Use the elevated work area.,Không dùng mặt bằng làm việc trên cao.,Do not use the elevated work area.,negation,True,needs_domain_expert_review
+MP0028,negation,electrical,Dùng dây tiếp địa.,Use the grounding conductor.,Không dùng dây tiếp địa.,Do not use the grounding conductor.,negation,True,needs_domain_expert_review
+MP0029,negation,welding_hotwork,Dùng van điều áp.,Use the gas regulator.,Không dùng van điều áp.,Do not use the gas regulator.,negation,True,needs_domain_expert_review
+MP0030,negation,heavy_equipment,Dùng máy xúc.,Use the excavator.,Không dùng máy xúc.,Do not use the excavator.,negation,True,needs_domain_expert_review
+MP0031,negation,lifting_rigging,Dùng pa lăng.,Use the hoist.,Không dùng pa lăng.,Do not use the hoist.,negation,True,needs_domain_expert_review
+MP0032,negation,mechanical,Dùng trục.,Use the shaft.,Không dùng trục.,Do not use the shaft.,negation,True,needs_domain_expert_review
+MP0033,negation,welding_hotwork,Dùng mỏ hàn.,Use the welding torch.,Không dùng mỏ hàn.,Do not use the welding torch.,negation,True,needs_domain_expert_review
+MP0034,negation,lifting_rigging,Dùng cần chính.,Use the boom.,Không dùng cần chính.,Do not use the boom.,negation,True,needs_domain_expert_review
+MP0035,negation,welding_hotwork,Dùng bình khí.,Use the gas cylinder.,Không dùng bình khí.,Do not use the gas cylinder.,negation,True,needs_domain_expert_review
+MP0036,negation,welding_hotwork,Dùng cắt oxy-gas.,Use the oxy-fuel cutting.,Không dùng cắt oxy-gas.,Do not use the oxy-fuel cutting.,negation,True,needs_domain_expert_review
+MP0037,negation,lifting_rigging,Dùng tải trọng làm việc an toàn.,Use the safe working load.,Không dùng tải trọng làm việc an toàn.,Do not use the safe working load.,negation,True,needs_domain_expert_review
+MP0038,negation,electrical,Dùng đầu cốt cáp.,Use the cable lug.,Không dùng đầu cốt cáp.,Do not use the cable lug.,negation,True,needs_domain_expert_review
+MP0039,negation,safety_general,Dùng kính bảo hộ.,Use the safety glasses.,Không dùng kính bảo hộ.,Do not use the safety glasses.,negation,True,needs_domain_expert_review
+MP0040,negation,welding_hotwork,Dùng bình oxy.,Use the oxygen cylinder.,Không dùng bình oxy.,Do not use the oxygen cylinder.,negation,True,needs_domain_expert_review
+MP0041,negation,excavation,Dùng đường điện ngầm.,Use the underground power line.,Không dùng đường điện ngầm.,Do not use the underground power line.,negation,True,needs_domain_expert_review
+MP0042,negation,concrete_rebar_formwork,Dùng cốt thép.,Use the reinforcing steel.,Không dùng cốt thép.,Do not use the reinforcing steel.,negation,True,needs_domain_expert_review
+MP0043,negation,excavation,Dùng chống vách.,Use the shoring.,Không dùng chống vách.,Do not use the shoring.,negation,True,needs_domain_expert_review
+MP0044,negation,heavy_equipment,Dùng máy đào bánh lốp.,Use the wheeled excavator.,Không dùng máy đào bánh lốp.,Do not use the wheeled excavator.,negation,True,needs_domain_expert_review
+MP0045,negation,lifting_rigging,Dùng ma ní.,Use the shackle.,Không dùng ma ní.,Do not use the shackle.,negation,True,needs_domain_expert_review
+MP0046,negation,excavation,Dùng taluy dốc.,Use the sloping system.,Không dùng taluy dốc.,Do not use the sloping system.,negation,True,needs_domain_expert_review
+MP0047,negation,mechanical,Dùng dầu thủy lực.,Use the hydraulic oil.,Không dùng dầu thủy lực.,Do not use the hydraulic oil.,negation,True,needs_domain_expert_review
+MP0048,negation,piping_plumbing,Dùng độ dốc ống.,Use the pipe slope.,Không dùng độ dốc ống.,Do not use the pipe slope.,negation,True,needs_domain_expert_review
+MP0049,negation,excavation,Dùng cọc chống.,Use the shoring post.,Không dùng cọc chống.,Do not use the shoring post.,negation,True,needs_domain_expert_review
+MP0050,negation,excavation,Dùng khí quyển nguy hiểm.,Use the hazardous atmosphere.,Không dùng khí quyển nguy hiểm.,Do not use the hazardous atmosphere.,negation,True,needs_domain_expert_review
+MP0051,negation,concrete_rebar_formwork,Dùng lớp bê tông bảo vệ.,Use the concrete cover.,Không dùng lớp bê tông bảo vệ.,Do not use the concrete cover.,negation,True,needs_domain_expert_review
+MP0052,negation,safety_general,Dùng điểm tập kết.,Use the assembly point.,Không dùng điểm tập kết.,Do not use the assembly point.,negation,True,needs_domain_expert_review
+MP0053,negation,electrical,Dùng cáp điện.,Use the power cable.,Không dùng cáp điện.,Do not use the power cable.,negation,True,needs_domain_expert_review
+MP0054,negation,heavy_equipment,Dùng máy đào bánh xích.,Use the crawler excavator.,Không dùng máy đào bánh xích.,Do not use the crawler excavator.,negation,True,needs_domain_expert_review
+MP0055,negation,electrical,Dùng dây trung tính.,Use the neutral conductor.,Không dùng dây trung tính.,Do not use the neutral conductor.,negation,True,needs_domain_expert_review
+MP0056,negation,fall_scaffold,Dùng thẻ giàn giáo.,Use the scaffold tag.,Không dùng thẻ giàn giáo.,Do not use the scaffold tag.,negation,True,needs_domain_expert_review
+MP0057,negation,safety_general,Dùng sơ cứu.,Use the first aid.,Không dùng sơ cứu.,Do not use the first aid.,negation,True,needs_domain_expert_review
+MP0058,negation,fall_scaffold,Dùng dây đai toàn thân.,Use the full-body harness.,Không dùng dây đai toàn thân.,Do not use the full-body harness.,negation,True,needs_domain_expert_review
+MP0059,negation,safety_general,Dùng bình chữa cháy.,Use the fire extinguisher.,Không dùng bình chữa cháy.,Do not use the fire extinguisher.,negation,True,needs_domain_expert_review
+MP0060,negation,heavy_equipment,Dùng lưỡi ủi.,Use the dozer blade.,Không dùng lưỡi ủi.,Do not use the dozer blade.,negation,True,needs_domain_expert_review
+MP0061,negation,electrical,Dùng ngắn mạch.,Use the short circuit.,Không dùng ngắn mạch.,Do not use the short circuit.,negation,True,needs_domain_expert_review
+MP0062,negation,survey_measurement,Dùng tim trục.,Use the grid line.,Không dùng tim trục.,Do not use the grid line.,negation,True,needs_domain_expert_review
+MP0063,negation,survey_measurement,Dùng cao độ.,Use the elevation.,Không dùng cao độ.,Do not use the elevation.,negation,True,needs_domain_expert_review
+MP0064,negation,safety_general,Dùng giày bảo hộ.,Use the safety footwear.,Không dùng giày bảo hộ.,Do not use the safety footwear.,negation,True,needs_domain_expert_review
+MP0065,negation,electrical,Dùng chạm đất.,Use the ground fault.,Không dùng chạm đất.,Do not use the ground fault.,negation,True,needs_domain_expert_review
+MP0066,negation,electrical,Dùng cầu dao tự động.,Use the circuit breaker.,Không dùng cầu dao tự động.,Do not use the circuit breaker.,negation,True,needs_domain_expert_review
+MP0067,negation,safety_general,Dùng lối thoát hiểm.,Use the emergency exit.,Không dùng lối thoát hiểm.,Do not use the emergency exit.,negation,True,needs_domain_expert_review
+MP0068,negation,welding_hotwork,Dùng ống dẫn khí.,Use the gas hose.,Không dùng ống dẫn khí.,Do not use the gas hose.,negation,True,needs_domain_expert_review
+MP0069,negation,lifting_rigging,Dùng điểm nâng.,Use the lifting point.,Không dùng điểm nâng.,Do not use the lifting point.,negation,True,needs_domain_expert_review
+MP0070,negation,safety_general,Dùng biển cảnh báo.,Use the warning sign.,Không dùng biển cảnh báo.,Do not use the warning sign.,negation,True,needs_domain_expert_review
+MP0071,negation,electrical,Dùng điện áp.,Use the voltage.,Không dùng điện áp.,Do not use the voltage.,negation,True,needs_domain_expert_review
+MP0072,negation,fall_scaffold,Dùng dây cứu sinh.,Use the lifeline.,Không dùng dây cứu sinh.,Do not use the lifeline.,negation,True,needs_domain_expert_review
+MP0073,negation,excavation,Dùng mép hố đào.,Use the excavation edge.,Không dùng mép hố đào.,Do not use the excavation edge.,negation,True,needs_domain_expert_review
+MP0074,negation,fall_scaffold,Dùng giằng chéo.,Use the cross brace.,Không dùng giằng chéo.,Do not use the cross brace.,negation,True,needs_domain_expert_review
+MP0075,negation,heavy_equipment,Dùng còi lùi.,Use the reverse alarm.,Không dùng còi lùi.,Do not use the reverse alarm.,negation,True,needs_domain_expert_review
+MP0076,negation,welding_hotwork,Dùng mặt nạ hàn.,Use the welding helmet.,Không dùng mặt nạ hàn.,Do not use the welding helmet.,negation,True,needs_domain_expert_review
+MP0077,negation,heavy_equipment,Dùng xe ben.,Use the dump truck.,Không dùng xe ben.,Do not use the dump truck.,negation,True,needs_domain_expert_review
+MP0078,negation,safety_general,Dùng thẻ cảnh báo LOTO.,Use the tagout tag.,Không dùng thẻ cảnh báo LOTO.,Do not use the tagout tag.,negation,True,needs_domain_expert_review
+MP0079,negation,lifting_rigging,Dùng dây cẩu.,Use the lifting sling.,Không dùng dây cẩu.,Do not use the lifting sling.,negation,True,needs_domain_expert_review
+MP0080,negation,material_logistics,Dùng lối đi bộ.,Use the pedestrian walkway.,Không dùng lối đi bộ.,Do not use the pedestrian walkway.,negation,True,needs_domain_expert_review
+MP0081,number,lifting_rigging,Di chuyển người móc cẩu 20 xen-ti-mét.,Move the rigger 20 centimeters.,Di chuyển người móc cẩu 50 xen-ti-mét.,Move the rigger 50 centimeters.,number;unit,True,needs_domain_expert_review
+MP0082,number,heavy_equipment,Di chuyển điểm mù 100 xen-ti-mét.,Move the blind spot 100 centimeters.,Di chuyển điểm mù 50 xen-ti-mét.,Move the blind spot 50 centimeters.,number;unit,True,needs_domain_expert_review
+MP0083,number,lifting_rigging,Di chuyển người móc cẩu 10 xen-ti-mét.,Move the rigger 10 centimeters.,Di chuyển người móc cẩu 200 xen-ti-mét.,Move the rigger 200 centimeters.,number;unit,True,needs_domain_expert_review
+MP0084,number,heavy_equipment,Di chuyển phanh đỗ 30 mét.,Move the parking brake 30 meters.,Di chuyển phanh đỗ 200 mét.,Move the parking brake 200 meters.,number;unit,True,needs_domain_expert_review
+MP0085,number,heavy_equipment,Di chuyển chốt an toàn 100 xen-ti-mét.,Move the safety pin 100 centimeters.,Di chuyển chốt an toàn 200 xen-ti-mét.,Move the safety pin 200 centimeters.,number;unit,True,needs_domain_expert_review
+MP0086,number,heavy_equipment,Di chuyển máy đào bánh lốp 50 xen-ti-mét.,Move the wheeled excavator 50 centimeters.,Di chuyển máy đào bánh lốp 200 xen-ti-mét.,Move the wheeled excavator 200 centimeters.,number;unit,True,needs_domain_expert_review
+MP0087,number,heavy_equipment,Di chuyển máy đào bánh lốp 50 mi-li-mét.,Move the wheeled excavator 50 millimeters.,Di chuyển máy đào bánh lốp 100 mi-li-mét.,Move the wheeled excavator 100 millimeters.,number;unit,True,needs_domain_expert_review
+MP0088,number,lifting_rigging,Di chuyển ma ní 100 mi-li-mét.,Move the shackle 100 millimeters.,Di chuyển ma ní 50 mi-li-mét.,Move the shackle 50 millimeters.,number;unit,True,needs_domain_expert_review
+MP0089,number,lifting_rigging,Di chuyển tải trọng làm việc an toàn 100 mét.,Move the safe working load 100 meters.,Di chuyển tải trọng làm việc an toàn 30 mét.,Move the safe working load 30 meters.,number;unit,True,needs_domain_expert_review
+MP0090,number,lifting_rigging,Di chuyển tải treo 200 mi-li-mét.,Move the suspended load 200 millimeters.,Di chuyển tải treo 50 mi-li-mét.,Move the suspended load 50 millimeters.,number;unit,True,needs_domain_expert_review
+MP0091,number,lifting_rigging,Di chuyển tải trọng định mức 10 mi-li-mét.,Move the rated load 10 millimeters.,Di chuyển tải trọng định mức 30 mi-li-mét.,Move the rated load 30 millimeters.,number;unit,True,needs_domain_expert_review
+MP0092,number,heavy_equipment,Di chuyển còi lùi 50 mét.,Move the reverse alarm 50 meters.,Di chuyển còi lùi 30 mét.,Move the reverse alarm 30 meters.,number;unit,True,needs_domain_expert_review
+MP0093,number,heavy_equipment,Di chuyển máy xúc 50 mi-li-mét.,Move the excavator 50 millimeters.,Di chuyển máy xúc 100 mi-li-mét.,Move the excavator 100 millimeters.,number;unit,True,needs_domain_expert_review
+MP0094,number,lifting_rigging,Di chuyển dây điều hướng 10 mét.,Move the tag line 10 meters.,Di chuyển dây điều hướng 200 mét.,Move the tag line 200 meters.,number;unit,True,needs_domain_expert_review
+MP0095,number,lifting_rigging,Di chuyển dây điều hướng 50 mi-li-mét.,Move the tag line 50 millimeters.,Di chuyển dây điều hướng 20 mi-li-mét.,Move the tag line 20 millimeters.,number;unit,True,needs_domain_expert_review
+MP0096,number,lifting_rigging,Di chuyển pa lăng 10 mi-li-mét.,Move the hoist 10 millimeters.,Di chuyển pa lăng 100 mi-li-mét.,Move the hoist 100 millimeters.,number;unit,True,needs_domain_expert_review
+MP0097,number,lifting_rigging,Di chuyển cáp thép 20 mét.,Move the wire rope 20 meters.,Di chuyển cáp thép 200 mét.,Move the wire rope 200 meters.,number;unit,True,needs_domain_expert_review
+MP0098,number,heavy_equipment,Di chuyển lưỡi ủi 200 xen-ti-mét.,Move the dozer blade 200 centimeters.,Di chuyển lưỡi ủi 10 xen-ti-mét.,Move the dozer blade 10 centimeters.,number;unit,True,needs_domain_expert_review
+MP0099,number,lifting_rigging,Di chuyển người báo hiệu 200 xen-ti-mét.,Move the signal person 200 centimeters.,Di chuyển người báo hiệu 100 xen-ti-mét.,Move the signal person 100 centimeters.,number;unit,True,needs_domain_expert_review
+MP0100,number,heavy_equipment,Di chuyển máy ủi 30 mét.,Move the bulldozer 30 meters.,Di chuyển máy ủi 10 mét.,Move the bulldozer 10 meters.,number;unit,True,needs_domain_expert_review
+MP0101,number,heavy_equipment,Di chuyển chốt an toàn 200 mi-li-mét.,Move the safety pin 200 millimeters.,Di chuyển chốt an toàn 50 mi-li-mét.,Move the safety pin 50 millimeters.,number;unit,True,needs_domain_expert_review
+MP0102,number,heavy_equipment,Di chuyển máy xúc 20 mi-li-mét.,Move the excavator 20 millimeters.,Di chuyển máy xúc 100 mi-li-mét.,Move the excavator 100 millimeters.,number;unit,True,needs_domain_expert_review
+MP0103,number,heavy_equipment,Di chuyển chốt an toàn 30 mi-li-mét.,Move the safety pin 30 millimeters.,Di chuyển chốt an toàn 200 mi-li-mét.,Move the safety pin 200 millimeters.,number;unit,True,needs_domain_expert_review
+MP0104,number,heavy_equipment,Di chuyển xe nâng 200 mi-li-mét.,Move the forklift 200 millimeters.,Di chuyển xe nâng 100 mi-li-mét.,Move the forklift 100 millimeters.,number;unit,True,needs_domain_expert_review
+MP0105,number,lifting_rigging,Di chuyển tải trọng định mức 50 xen-ti-mét.,Move the rated load 50 centimeters.,Di chuyển tải trọng định mức 20 xen-ti-mét.,Move the rated load 20 centimeters.,number;unit,True,needs_domain_expert_review
+MP0106,number,lifting_rigging,Di chuyển dây điều hướng 200 xen-ti-mét.,Move the tag line 200 centimeters.,Di chuyển dây điều hướng 20 xen-ti-mét.,Move the tag line 20 centimeters.,number;unit,True,needs_domain_expert_review
+MP0107,number,lifting_rigging,Di chuyển điểm nâng 100 xen-ti-mét.,Move the lifting point 100 centimeters.,Di chuyển điểm nâng 30 xen-ti-mét.,Move the lifting point 30 centimeters.,number;unit,True,needs_domain_expert_review
+MP0108,number,lifting_rigging,Di chuyển chân chống cẩu 30 mét.,Move the outrigger 30 meters.,Di chuyển chân chống cẩu 20 mét.,Move the outrigger 20 meters.,number;unit,True,needs_domain_expert_review
+MP0109,number,heavy_equipment,Di chuyển máy đào bánh lốp 20 xen-ti-mét.,Move the wheeled excavator 20 centimeters.,Di chuyển máy đào bánh lốp 100 xen-ti-mét.,Move the wheeled excavator 100 centimeters.,number;unit,True,needs_domain_expert_review
+MP0110,number,heavy_equipment,Di chuyển đường công vụ 100 xen-ti-mét.,Move the haul road 100 centimeters.,Di chuyển đường công vụ 20 xen-ti-mét.,Move the haul road 20 centimeters.,number;unit,True,needs_domain_expert_review
+MP0111,number,lifting_rigging,Di chuyển móc cẩu 50 mét.,Move the lifting hook 50 meters.,Di chuyển móc cẩu 200 mét.,Move the lifting hook 200 meters.,number;unit,True,needs_domain_expert_review
+MP0112,number,heavy_equipment,Di chuyển máy ủi 10 mi-li-mét.,Move the bulldozer 10 millimeters.,Di chuyển máy ủi 200 mi-li-mét.,Move the bulldozer 200 millimeters.,number;unit,True,needs_domain_expert_review
+MP0113,number,lifting_rigging,Di chuyển cần chính 200 mét.,Move the boom 200 meters.,Di chuyển cần chính 30 mét.,Move the boom 30 meters.,number;unit,True,needs_domain_expert_review
+MP0114,number,lifting_rigging,Di chuyển cần chính 10 mét.,Move the boom 10 meters.,Di chuyển cần chính 50 mét.,Move the boom 50 meters.,number;unit,True,needs_domain_expert_review
+MP0115,number,lifting_rigging,Di chuyển pa lăng 100 xen-ti-mét.,Move the hoist 100 centimeters.,Di chuyển pa lăng 200 xen-ti-mét.,Move the hoist 200 centimeters.,number;unit,True,needs_domain_expert_review
+MP0116,number,lifting_rigging,Di chuyển pa lăng 10 xen-ti-mét.,Move the hoist 10 centimeters.,Di chuyển pa lăng 30 xen-ti-mét.,Move the hoist 30 centimeters.,number;unit,True,needs_domain_expert_review
+MP0117,number,heavy_equipment,Di chuyển còi lùi 10 mi-li-mét.,Move the reverse alarm 10 millimeters.,Di chuyển còi lùi 200 mi-li-mét.,Move the reverse alarm 200 millimeters.,number;unit,True,needs_domain_expert_review
+MP0118,number,heavy_equipment,Di chuyển còi lùi 200 xen-ti-mét.,Move the reverse alarm 200 centimeters.,Di chuyển còi lùi 10 xen-ti-mét.,Move the reverse alarm 10 centimeters.,number;unit,True,needs_domain_expert_review
+MP0119,number,lifting_rigging,Di chuyển tải trọng làm việc an toàn 50 mét.,Move the safe working load 50 meters.,Di chuyển tải trọng làm việc an toàn 200 mét.,Move the safe working load 200 meters.,number;unit,True,needs_domain_expert_review
+MP0120,number,heavy_equipment,Di chuyển xe lu 20 mét.,Move the road roller 20 meters.,Di chuyển xe lu 10 mét.,Move the road roller 10 meters.,number;unit,True,needs_domain_expert_review
+MP0121,number,lifting_rigging,Di chuyển người móc cẩu 50 xen-ti-mét.,Move the rigger 50 centimeters.,Di chuyển người móc cẩu 30 xen-ti-mét.,Move the rigger 30 centimeters.,number;unit,True,needs_domain_expert_review
+MP0122,number,lifting_rigging,Di chuyển móc cẩu 100 mét.,Move the lifting hook 100 meters.,Di chuyển móc cẩu 10 mét.,Move the lifting hook 10 meters.,number;unit,True,needs_domain_expert_review
+MP0123,number,heavy_equipment,Di chuyển máy đào bánh xích 100 mét.,Move the crawler excavator 100 meters.,Di chuyển máy đào bánh xích 50 mét.,Move the crawler excavator 50 meters.,number;unit,True,needs_domain_expert_review
+MP0124,number,lifting_rigging,Di chuyển ma ní 20 mi-li-mét.,Move the shackle 20 millimeters.,Di chuyển ma ní 10 mi-li-mét.,Move the shackle 10 millimeters.,number;unit,True,needs_domain_expert_review
+MP0125,number,heavy_equipment,Di chuyển xe nâng 20 xen-ti-mét.,Move the forklift 20 centimeters.,Di chuyển xe nâng 100 xen-ti-mét.,Move the forklift 100 centimeters.,number;unit,True,needs_domain_expert_review
+MP0126,number,lifting_rigging,Di chuyển cần chính 20 mi-li-mét.,Move the boom 20 millimeters.,Di chuyển cần chính 50 mi-li-mét.,Move the boom 50 millimeters.,number;unit,True,needs_domain_expert_review
+MP0127,number,heavy_equipment,Di chuyển máy đào bánh lốp 50 xen-ti-mét.,Move the wheeled excavator 50 centimeters.,Di chuyển máy đào bánh lốp 20 xen-ti-mét.,Move the wheeled excavator 20 centimeters.,number;unit,True,needs_domain_expert_review
+MP0128,number,lifting_rigging,Di chuyển tải trọng định mức 100 xen-ti-mét.,Move the rated load 100 centimeters.,Di chuyển tải trọng định mức 30 xen-ti-mét.,Move the rated load 30 centimeters.,number;unit,True,needs_domain_expert_review
+MP0129,number,lifting_rigging,Di chuyển người móc cẩu 200 mi-li-mét.,Move the rigger 200 millimeters.,Di chuyển người móc cẩu 10 mi-li-mét.,Move the rigger 10 millimeters.,number;unit,True,needs_domain_expert_review
+MP0130,number,heavy_equipment,Di chuyển xe lu 30 xen-ti-mét.,Move the road roller 30 centimeters.,Di chuyển xe lu 200 xen-ti-mét.,Move the road roller 200 centimeters.,number;unit,True,needs_domain_expert_review
+MP0131,number,heavy_equipment,Di chuyển còi lùi 10 xen-ti-mét.,Move the reverse alarm 10 centimeters.,Di chuyển còi lùi 20 xen-ti-mét.,Move the reverse alarm 20 centimeters.,number;unit,True,needs_domain_expert_review
+MP0132,number,heavy_equipment,Di chuyển chốt an toàn 200 mét.,Move the safety pin 200 meters.,Di chuyển chốt an toàn 100 mét.,Move the safety pin 100 meters.,number;unit,True,needs_domain_expert_review
+MP0133,number,lifting_rigging,Di chuyển tải treo 30 xen-ti-mét.,Move the suspended load 30 centimeters.,Di chuyển tải treo 20 xen-ti-mét.,Move the suspended load 20 centimeters.,number;unit,True,needs_domain_expert_review
+MP0134,number,lifting_rigging,Di chuyển tải treo 200 mi-li-mét.,Move the suspended load 200 millimeters.,Di chuyển tải treo 30 mi-li-mét.,Move the suspended load 30 millimeters.,number;unit,True,needs_domain_expert_review
+MP0135,number,heavy_equipment,Di chuyển máy xúc 50 mét.,Move the excavator 50 meters.,Di chuyển máy xúc 200 mét.,Move the excavator 200 meters.,number;unit,True,needs_domain_expert_review
+MP0136,number,heavy_equipment,Di chuyển xe ben 50 mi-li-mét.,Move the dump truck 50 millimeters.,Di chuyển xe ben 10 mi-li-mét.,Move the dump truck 10 millimeters.,number;unit,True,needs_domain_expert_review
+MP0137,number,lifting_rigging,Di chuyển người báo hiệu 30 mét.,Move the signal person 30 meters.,Di chuyển người báo hiệu 50 mét.,Move the signal person 50 meters.,number;unit,True,needs_domain_expert_review
+MP0138,number,heavy_equipment,Di chuyển máy ủi 10 mét.,Move the bulldozer 10 meters.,Di chuyển máy ủi 30 mét.,Move the bulldozer 30 meters.,number;unit,True,needs_domain_expert_review
+MP0139,number,lifting_rigging,Di chuyển người báo hiệu 10 mi-li-mét.,Move the signal person 10 millimeters.,Di chuyển người báo hiệu 30 mi-li-mét.,Move the signal person 30 millimeters.,number;unit,True,needs_domain_expert_review
+MP0140,number,heavy_equipment,Di chuyển xe lu 50 mi-li-mét.,Move the road roller 50 millimeters.,Di chuyển xe lu 200 mi-li-mét.,Move the road roller 200 millimeters.,number;unit,True,needs_domain_expert_review
+MP0141,number,heavy_equipment,Di chuyển chốt an toàn 10 mi-li-mét.,Move the safety pin 10 millimeters.,Di chuyển chốt an toàn 200 mi-li-mét.,Move the safety pin 200 millimeters.,number;unit,True,needs_domain_expert_review
+MP0142,number,heavy_equipment,Di chuyển gầu xúc 20 mi-li-mét.,Move the bucket 20 millimeters.,Di chuyển gầu xúc 50 mi-li-mét.,Move the bucket 50 millimeters.,number;unit,True,needs_domain_expert_review
+MP0143,number,heavy_equipment,Di chuyển lưỡi ủi 10 mi-li-mét.,Move the dozer blade 10 millimeters.,Di chuyển lưỡi ủi 30 mi-li-mét.,Move the dozer blade 30 millimeters.,number;unit,True,needs_domain_expert_review
+MP0144,number,lifting_rigging,Di chuyển cần cẩu 30 mét.,Move the crane 30 meters.,Di chuyển cần cẩu 50 mét.,Move the crane 50 meters.,number;unit,True,needs_domain_expert_review
+MP0145,number,lifting_rigging,Di chuyển cáp thép 10 xen-ti-mét.,Move the wire rope 10 centimeters.,Di chuyển cáp thép 100 xen-ti-mét.,Move the wire rope 100 centimeters.,number;unit,True,needs_domain_expert_review
+MP0146,number,heavy_equipment,Di chuyển điểm rửa bánh xe 100 mi-li-mét.,Move the wheel wash station 100 millimeters.,Di chuyển điểm rửa bánh xe 10 mi-li-mét.,Move the wheel wash station 10 millimeters.,number;unit,True,needs_domain_expert_review
+MP0147,number,heavy_equipment,Di chuyển gầu xúc 20 xen-ti-mét.,Move the bucket 20 centimeters.,Di chuyển gầu xúc 200 xen-ti-mét.,Move the bucket 200 centimeters.,number;unit,True,needs_domain_expert_review
+MP0148,number,lifting_rigging,Di chuyển cần cẩu 100 xen-ti-mét.,Move the crane 100 centimeters.,Di chuyển cần cẩu 30 xen-ti-mét.,Move the crane 30 centimeters.,number;unit,True,needs_domain_expert_review
+MP0149,number,lifting_rigging,Di chuyển chân chống cẩu 30 mét.,Move the outrigger 30 meters.,Di chuyển chân chống cẩu 200 mét.,Move the outrigger 200 meters.,number;unit,True,needs_domain_expert_review
+MP0150,number,lifting_rigging,Di chuyển điểm nâng 100 mi-li-mét.,Move the lifting point 100 millimeters.,Di chuyển điểm nâng 50 mi-li-mét.,Move the lifting point 50 millimeters.,number;unit,True,needs_domain_expert_review
+MP0151,number,lifting_rigging,Di chuyển thanh cân bằng 100 mét.,Move the spreader beam 100 meters.,Di chuyển thanh cân bằng 20 mét.,Move the spreader beam 20 meters.,number;unit,True,needs_domain_expert_review
+MP0152,number,lifting_rigging,Di chuyển ma ní 30 xen-ti-mét.,Move the shackle 30 centimeters.,Di chuyển ma ní 50 xen-ti-mét.,Move the shackle 50 centimeters.,number;unit,True,needs_domain_expert_review
+MP0153,number,lifting_rigging,Di chuyển bán kính quay 50 xen-ti-mét.,Move the swing radius 50 centimeters.,Di chuyển bán kính quay 10 xen-ti-mét.,Move the swing radius 10 centimeters.,number;unit,True,needs_domain_expert_review
+MP0154,number,heavy_equipment,Di chuyển máy san 100 xen-ti-mét.,Move the motor grader 100 centimeters.,Di chuyển máy san 50 xen-ti-mét.,Move the motor grader 50 centimeters.,number;unit,True,needs_domain_expert_review
+MP0155,number,heavy_equipment,Di chuyển máy ủi 50 mét.,Move the bulldozer 50 meters.,Di chuyển máy ủi 100 mét.,Move the bulldozer 100 meters.,number;unit,True,needs_domain_expert_review
+MP0156,number,heavy_equipment,Di chuyển xe nâng 50 xen-ti-mét.,Move the forklift 50 centimeters.,Di chuyển xe nâng 10 xen-ti-mét.,Move the forklift 10 centimeters.,number;unit,True,needs_domain_expert_review
+MP0157,number,lifting_rigging,Di chuyển cần chính 30 mi-li-mét.,Move the boom 30 millimeters.,Di chuyển cần chính 100 mi-li-mét.,Move the boom 100 millimeters.,number;unit,True,needs_domain_expert_review
+MP0158,number,heavy_equipment,Di chuyển đường công vụ 10 mi-li-mét.,Move the haul road 10 millimeters.,Di chuyển đường công vụ 20 mi-li-mét.,Move the haul road 20 millimeters.,number;unit,True,needs_domain_expert_review
+MP0159,number,lifting_rigging,Di chuyển bán kính quay 10 mét.,Move the swing radius 10 meters.,Di chuyển bán kính quay 20 mét.,Move the swing radius 20 meters.,number;unit,True,needs_domain_expert_review
+MP0160,number,lifting_rigging,Di chuyển ma ní 10 mi-li-mét.,Move the shackle 10 millimeters.,Di chuyển ma ní 100 mi-li-mét.,Move the shackle 100 millimeters.,number;unit,True,needs_domain_expert_review
+MP0161,direction,heavy_equipment,Di chuyển điểm rửa bánh xe sang xuống.,Move the wheel wash station down.,Di chuyển điểm rửa bánh xe sang trái.,Move the wheel wash station to the left.,direction,True,needs_domain_expert_review
+MP0162,direction,lifting_rigging,Di chuyển thanh cân bằng sang lên.,Move the spreader beam up.,Di chuyển thanh cân bằng sang phải.,Move the spreader beam to the right.,direction,True,needs_domain_expert_review
+MP0163,direction,heavy_equipment,Di chuyển máy đào bánh xích sang trái.,Move the crawler excavator to the left.,Di chuyển máy đào bánh xích sang xuống.,Move the crawler excavator down.,direction,True,needs_domain_expert_review
+MP0164,direction,heavy_equipment,Di chuyển khu vực quay máy sang xuống.,Move the equipment swing area down.,Di chuyển khu vực quay máy sang trái.,Move the equipment swing area to the left.,direction,True,needs_domain_expert_review
+MP0165,direction,heavy_equipment,Di chuyển máy đào bánh xích sang phải.,Move the crawler excavator to the right.,Di chuyển máy đào bánh xích sang lên.,Move the crawler excavator up.,direction,True,needs_domain_expert_review
+MP0166,direction,heavy_equipment,Di chuyển xe ben sang lên.,Move the dump truck up.,Di chuyển xe ben sang xuống.,Move the dump truck down.,direction,True,needs_domain_expert_review
+MP0167,direction,lifting_rigging,Di chuyển cáp thép sang phải.,Move the wire rope to the right.,Di chuyển cáp thép sang xuống.,Move the wire rope down.,direction,True,needs_domain_expert_review
+MP0168,direction,lifting_rigging,Di chuyển tải trọng làm việc an toàn sang phải.,Move the safe working load to the right.,Di chuyển tải trọng làm việc an toàn sang xuống.,Move the safe working load down.,direction,True,needs_domain_expert_review
+MP0169,direction,heavy_equipment,Di chuyển xe lu sang xuống.,Move the road roller down.,Di chuyển xe lu sang phải.,Move the road roller to the right.,direction,True,needs_domain_expert_review
+MP0170,direction,heavy_equipment,Di chuyển chốt an toàn sang lên.,Move the safety pin up.,Di chuyển chốt an toàn sang trái.,Move the safety pin to the left.,direction,True,needs_domain_expert_review
+MP0171,direction,lifting_rigging,Di chuyển tải trọng làm việc an toàn sang trái.,Move the safe working load to the left.,Di chuyển tải trọng làm việc an toàn sang phải.,Move the safe working load to the right.,direction,True,needs_domain_expert_review
+MP0172,direction,heavy_equipment,Di chuyển người hướng dẫn xe sang trái.,Move the spotter to the left.,Di chuyển người hướng dẫn xe sang phải.,Move the spotter to the right.,direction,True,needs_domain_expert_review
+MP0173,direction,lifting_rigging,Di chuyển bán kính quay sang xuống.,Move the swing radius down.,Di chuyển bán kính quay sang trái.,Move the swing radius to the left.,direction,True,needs_domain_expert_review
+MP0174,direction,heavy_equipment,Di chuyển máy san sang trái.,Move the motor grader to the left.,Di chuyển máy san sang phải.,Move the motor grader to the right.,direction,True,needs_domain_expert_review
+MP0175,direction,heavy_equipment,Di chuyển máy san sang phải.,Move the motor grader to the right.,Di chuyển máy san sang xuống.,Move the motor grader down.,direction,True,needs_domain_expert_review
+MP0176,direction,heavy_equipment,Di chuyển phanh đỗ sang phải.,Move the parking brake to the right.,Di chuyển phanh đỗ sang trái.,Move the parking brake to the left.,direction,True,needs_domain_expert_review
+MP0177,direction,heavy_equipment,Di chuyển xe ben sang trái.,Move the dump truck to the left.,Di chuyển xe ben sang lên.,Move the dump truck up.,direction,True,needs_domain_expert_review
+MP0178,direction,lifting_rigging,Di chuyển pa lăng sang lên.,Move the hoist up.,Di chuyển pa lăng sang phải.,Move the hoist to the right.,direction,True,needs_domain_expert_review
+MP0179,direction,heavy_equipment,Di chuyển đường công vụ sang xuống.,Move the haul road down.,Di chuyển đường công vụ sang lên.,Move the haul road up.,direction,True,needs_domain_expert_review
+MP0180,direction,heavy_equipment,Di chuyển máy xúc sang xuống.,Move the excavator down.,Di chuyển máy xúc sang phải.,Move the excavator to the right.,direction,True,needs_domain_expert_review
+MP0181,direction,lifting_rigging,Di chuyển tải trọng định mức sang xuống.,Move the rated load down.,Di chuyển tải trọng định mức sang trái.,Move the rated load to the left.,direction,True,needs_domain_expert_review
+MP0182,direction,heavy_equipment,Di chuyển phanh đỗ sang xuống.,Move the parking brake down.,Di chuyển phanh đỗ sang trái.,Move the parking brake to the left.,direction,True,needs_domain_expert_review
+MP0183,direction,lifting_rigging,Di chuyển dây điều hướng sang lên.,Move the tag line up.,Di chuyển dây điều hướng sang trái.,Move the tag line to the left.,direction,True,needs_domain_expert_review
+MP0184,direction,lifting_rigging,Di chuyển tải treo sang xuống.,Move the suspended load down.,Di chuyển tải treo sang phải.,Move the suspended load to the right.,direction,True,needs_domain_expert_review
+MP0185,direction,heavy_equipment,Di chuyển máy xúc sang trái.,Move the excavator to the left.,Di chuyển máy xúc sang phải.,Move the excavator to the right.,direction,True,needs_domain_expert_review
+MP0186,direction,lifting_rigging,Di chuyển tải treo sang lên.,Move the suspended load up.,Di chuyển tải treo sang phải.,Move the suspended load to the right.,direction,True,needs_domain_expert_review
+MP0187,direction,heavy_equipment,Di chuyển xe ben sang phải.,Move the dump truck to the right.,Di chuyển xe ben sang xuống.,Move the dump truck down.,direction,True,needs_domain_expert_review
+MP0188,direction,lifting_rigging,Di chuyển thanh cân bằng sang trái.,Move the spreader beam to the left.,Di chuyển thanh cân bằng sang xuống.,Move the spreader beam down.,direction,True,needs_domain_expert_review
+MP0189,direction,heavy_equipment,Di chuyển máy xúc sang phải.,Move the excavator to the right.,Di chuyển máy xúc sang lên.,Move the excavator up.,direction,True,needs_domain_expert_review
+MP0190,direction,heavy_equipment,Di chuyển máy san sang lên.,Move the motor grader up.,Di chuyển máy san sang trái.,Move the motor grader to the left.,direction,True,needs_domain_expert_review
+MP0191,direction,heavy_equipment,Di chuyển điểm mù sang trái.,Move the blind spot to the left.,Di chuyển điểm mù sang xuống.,Move the blind spot down.,direction,True,needs_domain_expert_review
+MP0192,direction,heavy_equipment,Di chuyển điểm mù sang trái.,Move the blind spot to the left.,Di chuyển điểm mù sang lên.,Move the blind spot up.,direction,True,needs_domain_expert_review
+MP0193,direction,lifting_rigging,Di chuyển chân chống cẩu sang phải.,Move the outrigger to the right.,Di chuyển chân chống cẩu sang trái.,Move the outrigger to the left.,direction,True,needs_domain_expert_review
+MP0194,direction,heavy_equipment,Di chuyển điểm mù sang phải.,Move the blind spot to the right.,Di chuyển điểm mù sang trái.,Move the blind spot to the left.,direction,True,needs_domain_expert_review
+MP0195,direction,lifting_rigging,Di chuyển cần cẩu sang xuống.,Move the crane down.,Di chuyển cần cẩu sang phải.,Move the crane to the right.,direction,True,needs_domain_expert_review
+MP0196,direction,lifting_rigging,Di chuyển ma ní sang xuống.,Move the shackle down.,Di chuyển ma ní sang trái.,Move the shackle to the left.,direction,True,needs_domain_expert_review
+MP0197,direction,lifting_rigging,Di chuyển người móc cẩu sang xuống.,Move the rigger down.,Di chuyển người móc cẩu sang trái.,Move the rigger to the left.,direction,True,needs_domain_expert_review
+MP0198,direction,heavy_equipment,Di chuyển xe lu sang trái.,Move the road roller to the left.,Di chuyển xe lu sang phải.,Move the road roller to the right.,direction,True,needs_domain_expert_review
+MP0199,direction,heavy_equipment,Di chuyển lưỡi ủi sang phải.,Move the dozer blade to the right.,Di chuyển lưỡi ủi sang lên.,Move the dozer blade up.,direction,True,needs_domain_expert_review
+MP0200,direction,heavy_equipment,Di chuyển phanh đỗ sang phải.,Move the parking brake to the right.,Di chuyển phanh đỗ sang xuống.,Move the parking brake down.,direction,True,needs_domain_expert_review
+MP0201,direction,lifting_rigging,Di chuyển tải trọng làm việc an toàn sang phải.,Move the safe working load to the right.,Di chuyển tải trọng làm việc an toàn sang trái.,Move the safe working load to the left.,direction,True,needs_domain_expert_review
+MP0202,direction,heavy_equipment,Di chuyển khu vực quay máy sang lên.,Move the equipment swing area up.,Di chuyển khu vực quay máy sang xuống.,Move the equipment swing area down.,direction,True,needs_domain_expert_review
+MP0203,direction,lifting_rigging,Di chuyển người móc cẩu sang phải.,Move the rigger to the right.,Di chuyển người móc cẩu sang lên.,Move the rigger up.,direction,True,needs_domain_expert_review
+MP0204,direction,heavy_equipment,Di chuyển điểm rửa bánh xe sang lên.,Move the wheel wash station up.,Di chuyển điểm rửa bánh xe sang phải.,Move the wheel wash station to the right.,direction,True,needs_domain_expert_review
+MP0205,direction,lifting_rigging,Di chuyển móc cẩu sang xuống.,Move the lifting hook down.,Di chuyển móc cẩu sang phải.,Move the lifting hook to the right.,direction,True,needs_domain_expert_review
+MP0206,direction,heavy_equipment,Di chuyển máy đào bánh lốp sang trái.,Move the wheeled excavator to the left.,Di chuyển máy đào bánh lốp sang phải.,Move the wheeled excavator to the right.,direction,True,needs_domain_expert_review
+MP0207,direction,heavy_equipment,Di chuyển đường công vụ sang xuống.,Move the haul road down.,Di chuyển đường công vụ sang lên.,Move the haul road up.,direction,True,needs_domain_expert_review
+MP0208,direction,heavy_equipment,Di chuyển gầu xúc sang lên.,Move the bucket up.,Di chuyển gầu xúc sang trái.,Move the bucket to the left.,direction,True,needs_domain_expert_review
+MP0209,direction,heavy_equipment,Di chuyển đường công vụ sang lên.,Move the haul road up.,Di chuyển đường công vụ sang xuống.,Move the haul road down.,direction,True,needs_domain_expert_review
+MP0210,direction,lifting_rigging,Di chuyển điểm nâng sang phải.,Move the lifting point to the right.,Di chuyển điểm nâng sang lên.,Move the lifting point up.,direction,True,needs_domain_expert_review
+MP0211,direction,lifting_rigging,Di chuyển tải trọng định mức sang xuống.,Move the rated load down.,Di chuyển tải trọng định mức sang phải.,Move the rated load to the right.,direction,True,needs_domain_expert_review
+MP0212,direction,lifting_rigging,Di chuyển điểm nâng sang trái.,Move the lifting point to the left.,Di chuyển điểm nâng sang xuống.,Move the lifting point down.,direction,True,needs_domain_expert_review
+MP0213,direction,lifting_rigging,Di chuyển ma ní sang lên.,Move the shackle up.,Di chuyển ma ní sang xuống.,Move the shackle down.,direction,True,needs_domain_expert_review
+MP0214,direction,lifting_rigging,Di chuyển dây cẩu sang trái.,Move the lifting sling to the left.,Di chuyển dây cẩu sang lên.,Move the lifting sling up.,direction,True,needs_domain_expert_review
+MP0215,direction,heavy_equipment,Di chuyển máy san sang xuống.,Move the motor grader down.,Di chuyển máy san sang trái.,Move the motor grader to the left.,direction,True,needs_domain_expert_review
+MP0216,direction,lifting_rigging,Di chuyển người móc cẩu sang lên.,Move the rigger up.,Di chuyển người móc cẩu sang trái.,Move the rigger to the left.,direction,True,needs_domain_expert_review
+MP0217,direction,heavy_equipment,Di chuyển xe lu sang trái.,Move the road roller to the left.,Di chuyển xe lu sang xuống.,Move the road roller down.,direction,True,needs_domain_expert_review
+MP0218,direction,lifting_rigging,Di chuyển người móc cẩu sang phải.,Move the rigger to the right.,Di chuyển người móc cẩu sang xuống.,Move the rigger down.,direction,True,needs_domain_expert_review
+MP0219,direction,lifting_rigging,Di chuyển cần cẩu sang phải.,Move the crane to the right.,Di chuyển cần cẩu sang lên.,Move the crane up.,direction,True,needs_domain_expert_review
+MP0220,direction,heavy_equipment,Di chuyển máy xúc sang xuống.,Move the excavator down.,Di chuyển máy xúc sang phải.,Move the excavator to the right.,direction,True,needs_domain_expert_review
+MP0221,direction,lifting_rigging,Di chuyển bán kính quay sang lên.,Move the swing radius up.,Di chuyển bán kính quay sang phải.,Move the swing radius to the right.,direction,True,needs_domain_expert_review
+MP0222,direction,lifting_rigging,Di chuyển tải trọng làm việc an toàn sang phải.,Move the safe working load to the right.,Di chuyển tải trọng làm việc an toàn sang xuống.,Move the safe working load down.,direction,True,needs_domain_expert_review
+MP0223,direction,lifting_rigging,Di chuyển dây điều hướng sang trái.,Move the tag line to the left.,Di chuyển dây điều hướng sang phải.,Move the tag line to the right.,direction,True,needs_domain_expert_review
+MP0224,direction,heavy_equipment,Di chuyển xe nâng sang xuống.,Move the forklift down.,Di chuyển xe nâng sang phải.,Move the forklift to the right.,direction,True,needs_domain_expert_review
+MP0225,direction,heavy_equipment,Di chuyển máy đào bánh lốp sang xuống.,Move the wheeled excavator down.,Di chuyển máy đào bánh lốp sang lên.,Move the wheeled excavator up.,direction,True,needs_domain_expert_review
+MP0226,direction,heavy_equipment,Di chuyển điểm rửa bánh xe sang lên.,Move the wheel wash station up.,Di chuyển điểm rửa bánh xe sang trái.,Move the wheel wash station to the left.,direction,True,needs_domain_expert_review
+MP0227,direction,heavy_equipment,Di chuyển điểm rửa bánh xe sang xuống.,Move the wheel wash station down.,Di chuyển điểm rửa bánh xe sang lên.,Move the wheel wash station up.,direction,True,needs_domain_expert_review
+MP0228,direction,lifting_rigging,Di chuyển ma ní sang phải.,Move the shackle to the right.,Di chuyển ma ní sang xuống.,Move the shackle down.,direction,True,needs_domain_expert_review
+MP0229,direction,lifting_rigging,Di chuyển cần cẩu sang trái.,Move the crane to the left.,Di chuyển cần cẩu sang phải.,Move the crane to the right.,direction,True,needs_domain_expert_review
+MP0230,direction,lifting_rigging,Di chuyển tải trọng định mức sang lên.,Move the rated load up.,Di chuyển tải trọng định mức sang xuống.,Move the rated load down.,direction,True,needs_domain_expert_review
+MP0231,direction,heavy_equipment,Di chuyển người hướng dẫn xe sang xuống.,Move the spotter down.,Di chuyển người hướng dẫn xe sang lên.,Move the spotter up.,direction,True,needs_domain_expert_review
+MP0232,direction,lifting_rigging,Di chuyển tải treo sang trái.,Move the suspended load to the left.,Di chuyển tải treo sang phải.,Move the suspended load to the right.,direction,True,needs_domain_expert_review
+MP0233,direction,lifting_rigging,Di chuyển cáp thép sang xuống.,Move the wire rope down.,Di chuyển cáp thép sang phải.,Move the wire rope to the right.,direction,True,needs_domain_expert_review
+MP0234,direction,lifting_rigging,Di chuyển dây điều hướng sang phải.,Move the tag line to the right.,Di chuyển dây điều hướng sang lên.,Move the tag line up.,direction,True,needs_domain_expert_review
+MP0235,direction,heavy_equipment,Di chuyển xe lu sang lên.,Move the road roller up.,Di chuyển xe lu sang phải.,Move the road roller to the right.,direction,True,needs_domain_expert_review
+MP0236,direction,heavy_equipment,Di chuyển máy xúc sang trái.,Move the excavator to the left.,Di chuyển máy xúc sang lên.,Move the excavator up.,direction,True,needs_domain_expert_review
+MP0237,direction,heavy_equipment,Di chuyển còi lùi sang lên.,Move the reverse alarm up.,Di chuyển còi lùi sang xuống.,Move the reverse alarm down.,direction,True,needs_domain_expert_review
+MP0238,direction,lifting_rigging,Di chuyển ma ní sang lên.,Move the shackle up.,Di chuyển ma ní sang phải.,Move the shackle to the right.,direction,True,needs_domain_expert_review
+MP0239,direction,lifting_rigging,Di chuyển bán kính quay sang xuống.,Move the swing radius down.,Di chuyển bán kính quay sang phải.,Move the swing radius to the right.,direction,True,needs_domain_expert_review
+MP0240,direction,heavy_equipment,Di chuyển người hướng dẫn xe sang trái.,Move the spotter to the left.,Di chuyển người hướng dẫn xe sang lên.,Move the spotter up.,direction,True,needs_domain_expert_review

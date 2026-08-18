@@ -1,0 +1,217 @@
+﻿canonical_id,domain,vi_standard,vi_aliases,en_standard,kind,risk_level,source_support,source_url,synthetic_translation,review_status
+C0001,safety_general,mũ bảo hộ,nón bảo hộ,safety helmet,ppe,high,domain_scope,https://vbpl.vn/TW/Pages/vbpq-toanvan.aspx?ItemID=152388,True,needs_domain_expert_review
+C0002,safety_general,kính bảo hộ,kính an toàn,safety glasses,ppe,high,domain_scope,https://vbpl.vn/TW/Pages/vbpq-toanvan.aspx?ItemID=152388,True,needs_domain_expert_review
+C0003,safety_general,găng tay bảo hộ,găng bảo hộ,protective gloves,ppe,medium,domain_scope,https://vbpl.vn/TW/Pages/vbpq-toanvan.aspx?ItemID=152388,True,needs_domain_expert_review
+C0004,safety_general,giày bảo hộ,giày mũi thép|giày safety,safety footwear,ppe,high,domain_scope,https://vbpl.vn/TW/Pages/vbpq-toanvan.aspx?ItemID=152388,True,needs_domain_expert_review
+C0005,safety_general,áo phản quang,áo hi-vis|áo phản quang,high-visibility vest,ppe,high,domain_scope,https://vbpl.vn/TW/Pages/vbpq-toanvan.aspx?ItemID=152388,True,needs_domain_expert_review
+C0006,safety_general,nút dừng khẩn cấp,nút emergency|E-stop,emergency stop button,control,critical,domain_scope,https://vbpl.vn/TW/Pages/vbpq-toanvan.aspx?ItemID=152388,True,needs_domain_expert_review
+C0007,safety_general,lối thoát hiểm,lối thoát,emergency exit,location,critical,domain_scope,https://vbpl.vn/TW/Pages/vbpq-toanvan.aspx?ItemID=152388,True,needs_domain_expert_review
+C0008,safety_general,điểm tập kết,điểm tập trung,assembly point,location,high,domain_scope,https://vbpl.vn/TW/Pages/vbpq-toanvan.aspx?ItemID=152388,True,needs_domain_expert_review
+C0009,safety_general,bình chữa cháy,bình cứu hỏa,fire extinguisher,equipment,critical,domain_scope,https://vbpl.vn/TW/Pages/vbpq-toanvan.aspx?ItemID=152388,True,needs_domain_expert_review
+C0010,safety_general,vùng nguy hiểm,khu nguy hiểm,hazard zone,location,critical,domain_scope,https://www.osha.gov/training/outreach/construction/focus-four,True,needs_domain_expert_review
+C0011,safety_general,khu vực cấm,vùng cấm,restricted area,location,high,domain_scope,https://vbpl.vn/TW/Pages/vbpq-toanvan.aspx?ItemID=152388,True,needs_domain_expert_review
+C0012,safety_general,rào chắn,barie|hàng rào tạm,barricade,protection,high,domain_scope,https://vbpl.vn/TW/Pages/vbpq-toanvan.aspx?ItemID=152388,True,needs_domain_expert_review
+C0013,safety_general,biển cảnh báo,biển nguy hiểm,warning sign,protection,high,domain_scope,https://vbpl.vn/TW/Pages/vbpq-toanvan.aspx?ItemID=152388,True,needs_domain_expert_review
+C0014,safety_general,giấy phép làm việc,work permit|PTW,permit to work,document,high,domain_scope,https://vbpl.vn/TW/Pages/vbpq-toanvan.aspx?ItemID=152388,True,needs_domain_expert_review
+C0015,safety_general,khóa cô lập năng lượng,khóa LOTO,lockout device,protection,critical,domain_scope,https://vbpl.vn/TW/Pages/vbpq-toanvan.aspx?ItemID=152388,True,needs_domain_expert_review
+C0016,safety_general,thẻ cảnh báo LOTO,thẻ LOTO,tagout tag,protection,critical,domain_scope,https://vbpl.vn/TW/Pages/vbpq-toanvan.aspx?ItemID=152388,True,needs_domain_expert_review
+C0017,safety_general,sơ cứu,,first aid,process,critical,domain_scope,https://vbpl.vn/TW/Pages/vbpq-toanvan.aspx?ItemID=152388,True,needs_domain_expert_review
+C0018,safety_general,cáng cứu thương,cáng,stretcher,equipment,critical,domain_scope,https://vbpl.vn/TW/Pages/vbpq-toanvan.aspx?ItemID=152388,True,needs_domain_expert_review
+C0019,fall_scaffold,dây đai toàn thân,dây an toàn|dây đai an toàn,full-body harness,ppe,critical,domain_scope,https://www.osha.gov/scaffolding/construction,True,needs_domain_expert_review
+C0020,fall_scaffold,dây cứu sinh,dây lifeline,lifeline,protection,critical,domain_scope,https://www.osha.gov/scaffolding/construction,True,needs_domain_expert_review
+C0021,fall_scaffold,móc an toàn,móc dây an toàn,snap hook,component,critical,domain_scope,https://www.osha.gov/scaffolding/construction,True,needs_domain_expert_review
+C0022,fall_scaffold,điểm neo,điểm móc neo,anchorage point,component,critical,domain_scope,https://www.osha.gov/scaffolding/construction,True,needs_domain_expert_review
+C0023,fall_scaffold,lan can bảo vệ,lan can an toàn,guardrail,protection,critical,domain_scope,https://www.osha.gov/scaffolding/construction,True,needs_domain_expert_review
+C0024,fall_scaffold,tấm chắn chân,ván chắn chân,toe board,protection,high,domain_scope,https://www.osha.gov/scaffolding/construction,True,needs_domain_expert_review
+C0025,fall_scaffold,lưới an toàn,lưới hứng,safety net,protection,critical,domain_scope,https://www.osha.gov/scaffolding/construction,True,needs_domain_expert_review
+C0026,fall_scaffold,giàn giáo,dàn giáo,scaffold,structure,critical,domain_scope,https://www.osha.gov/etools/construction/glossary,True,needs_domain_expert_review
+C0027,fall_scaffold,sàn công tác,mâm giàn giáo|platform,work platform,structure,critical,domain_scope,https://www.osha.gov/scaffolding/construction,True,needs_domain_expert_review
+C0028,fall_scaffold,thang tiếp cận,thang lên xuống,access ladder,equipment,high,domain_scope,https://www.osha.gov/scaffolding/construction,True,needs_domain_expert_review
+C0029,fall_scaffold,lỗ mở sàn,lỗ sàn,floor opening,hazard,critical,domain_scope,https://www.osha.gov/training/outreach/construction/focus-four,True,needs_domain_expert_review
+C0030,fall_scaffold,mép sàn hở,mép hở,unprotected edge,hazard,critical,domain_scope,https://www.osha.gov/training/outreach/construction/focus-four,True,needs_domain_expert_review
+C0031,fall_scaffold,mặt bằng làm việc trên cao,khu vực trên cao,elevated work area,location,critical,domain_scope,https://www.osha.gov/training/outreach/construction/focus-four,True,needs_domain_expert_review
+C0032,fall_scaffold,thẻ giàn giáo,thẻ scaffold,scaffold tag,document,high,domain_scope,https://vbpl.vn/TW/Pages/vbpq-toanvan.aspx?ItemID=152388,True,needs_domain_expert_review
+C0033,fall_scaffold,chân kích giàn giáo,chân kích,scaffold jack,component,high,domain_scope,https://www.osha.gov/scaffolding/construction,True,needs_domain_expert_review
+C0034,fall_scaffold,giằng chéo,giằng chéo giàn giáo,cross brace,component,high,domain_scope,https://www.osha.gov/scaffolding/construction,True,needs_domain_expert_review
+C0035,fall_scaffold,ván sàn giàn giáo,ván sàn,scaffold plank,component,critical,domain_scope,https://www.osha.gov/scaffolding/construction,True,needs_domain_expert_review
+C0036,fall_scaffold,điểm buộc giàn giáo,điểm neo giàn giáo,scaffold tie,component,critical,domain_scope,https://www.osha.gov/scaffolding/construction,True,needs_domain_expert_review
+C0037,excavation,hố đào,hố móng,excavation,structure,critical,domain_scope,https://www.osha.gov/etools/construction/glossary,True,needs_domain_expert_review
+C0038,excavation,rãnh đào,rãnh,trench,structure,critical,domain_scope,https://www.osha.gov/etools/construction/glossary,True,needs_domain_expert_review
+C0039,excavation,mép hố đào,mép hố,excavation edge,location,critical,domain_scope,https://www.osha.gov/etools/construction/trenching/,True,needs_domain_expert_review
+C0040,excavation,thành hố đào,thành hố,excavation face,structure,critical,domain_scope,https://www.osha.gov/etools/construction/glossary,True,needs_domain_expert_review
+C0041,excavation,chống vách,hệ chống vách,shoring,protection,critical,domain_scope,https://www.osha.gov/etools/construction/glossary,True,needs_domain_expert_review
+C0042,excavation,hộp chống sập,trench box|hộp chống hố,trench shield,protection,critical,domain_scope,https://www.osha.gov/etools/construction/glossary,True,needs_domain_expert_review
+C0043,excavation,taluy bậc,đào giật cấp,benching system,protection,high,domain_scope,https://www.osha.gov/etools/construction/glossary,True,needs_domain_expert_review
+C0044,excavation,taluy dốc,đào mái dốc,sloping system,protection,high,domain_scope,https://www.osha.gov/etools/construction/trenching/,True,needs_domain_expert_review
+C0045,excavation,đất đào,đất thải,spoil,material,medium,domain_scope,https://www.osha.gov/etools/construction/glossary,True,needs_domain_expert_review
+C0046,excavation,sạt lở,sạt hố|sập thành hố,cave-in,hazard,critical,domain_scope,https://www.osha.gov/etools/construction/glossary,True,needs_domain_expert_review
+C0047,excavation,nước đọng trong hố,nước trong hố,standing water in excavation,hazard,high,domain_scope,https://www.osha.gov/etools/construction/trenching/,True,needs_domain_expert_review
+C0048,excavation,khí quyển nguy hiểm,khí độc trong hố,hazardous atmosphere,hazard,critical,domain_scope,https://www.osha.gov/etools/construction/glossary,True,needs_domain_expert_review
+C0049,excavation,đường điện ngầm,cáp điện ngầm,underground power line,hazard,critical,domain_scope,https://www.osha.gov/etools/construction/trenching/,True,needs_domain_expert_review
+C0050,excavation,đường ống ngầm,utility ngầm,underground utility line,hazard,critical,domain_scope,https://www.osha.gov/etools/construction/trenching/,True,needs_domain_expert_review
+C0051,excavation,thang xuống hố,thang hố đào,access ladder,equipment,high,domain_scope,https://www.osha.gov/etools/construction/trenching/,True,needs_domain_expert_review
+C0052,excavation,lối ra vào hố,lối xuống hố,safe access and egress,location,high,domain_scope,https://www.osha.gov/etools/construction/trenching/,True,needs_domain_expert_review
+C0053,excavation,máy bơm thoát nước,bơm hố móng,dewatering pump,equipment,medium,domain_scope,https://vbpl.vn/TW/Pages/vbpq-toanvan.aspx?ItemID=152388,True,needs_domain_expert_review
+C0054,excavation,cọc chống,cọc chống vách,shoring post,component,high,domain_scope,https://vbpl.vn/TW/Pages/vbpq-toanvan.aspx?ItemID=152388,True,needs_domain_expert_review
+C0055,concrete_rebar_formwork,bê tông,,concrete,material,medium,domain_scope,https://www.osha.gov/laws-regs/regulations/standardnumber/1926/1926.700,True,needs_domain_expert_review
+C0056,concrete_rebar_formwork,bê tông tươi,bê tông thương phẩm,fresh concrete,material,medium,domain_scope,https://www.osha.gov/laws-regs/regulations/standardnumber/1926/1926.700,True,needs_domain_expert_review
+C0057,concrete_rebar_formwork,cốt thép,thép cốt,reinforcing steel,material,high,domain_scope,https://www.osha.gov/laws-regs/regulations/standardnumber/1926/1926.700,True,needs_domain_expert_review
+C0058,concrete_rebar_formwork,thanh cốt thép,thép cây,rebar,material,high,domain_scope,https://www.osha.gov/laws-regs/regulations/standardnumber/1926/1926.700,True,needs_domain_expert_review
+C0059,concrete_rebar_formwork,cốp pha,cốt pha|ván khuôn,formwork,structure,critical,domain_scope,https://www.osha.gov/laws-regs/regulations/standardnumber/1926/1926.700,True,needs_domain_expert_review
+C0060,concrete_rebar_formwork,cây chống,cột chống,shore,component,critical,domain_scope,https://www.osha.gov/etools/construction/glossary,True,needs_domain_expert_review
+C0061,concrete_rebar_formwork,chống lại,cây chống lại,reshore,component,critical,domain_scope,https://www.osha.gov/etools/construction/glossary,True,needs_domain_expert_review
+C0062,concrete_rebar_formwork,dầm,,beam,structure,medium,domain_scope,https://vbpl.vn/TW/Pages/vbpq-toanvan.aspx?ItemID=152388,True,needs_domain_expert_review
+C0063,concrete_rebar_formwork,cột,,column,structure,medium,domain_scope,https://vbpl.vn/TW/Pages/vbpq-toanvan.aspx?ItemID=152388,True,needs_domain_expert_review
+C0064,concrete_rebar_formwork,sàn bê tông,sàn,concrete slab,structure,medium,domain_scope,https://vbpl.vn/TW/Pages/vbpq-toanvan.aspx?ItemID=152388,True,needs_domain_expert_review
+C0065,concrete_rebar_formwork,móng,móng công trình,foundation,structure,medium,domain_scope,https://vbpl.vn/TW/Pages/vbpq-toanvan.aspx?ItemID=152388,True,needs_domain_expert_review
+C0066,concrete_rebar_formwork,lớp bê tông bảo vệ,lớp bảo vệ,concrete cover,measurement,high,domain_scope,https://vbpl.vn/TW/Pages/vbpq-toanvan.aspx?ItemID=152388,True,needs_domain_expert_review
+C0067,concrete_rebar_formwork,cao độ đổ bê tông,cao độ bê tông,concrete pour elevation,measurement,high,domain_scope,https://vbpl.vn/TW/Pages/vbpq-toanvan.aspx?ItemID=152388,True,needs_domain_expert_review
+C0068,concrete_rebar_formwork,mạch ngừng,mạch ngừng bê tông,construction joint,structure,high,domain_scope,https://vbpl.vn/TW/Pages/vbpq-toanvan.aspx?ItemID=152388,True,needs_domain_expert_review
+C0069,concrete_rebar_formwork,máy đầm dùi,đầm dùi,concrete vibrator,equipment,medium,domain_scope,https://vbpl.vn/TW/Pages/vbpq-toanvan.aspx?ItemID=152388,True,needs_domain_expert_review
+C0070,concrete_rebar_formwork,máy bơm bê tông,bơm bê tông,concrete pump,equipment,high,domain_scope,https://vbpl.vn/TW/Pages/vbpq-toanvan.aspx?ItemID=152388,True,needs_domain_expert_review
+C0071,concrete_rebar_formwork,ống bơm bê tông,ống bơm,concrete delivery hose,component,high,domain_scope,https://vbpl.vn/TW/Pages/vbpq-toanvan.aspx?ItemID=152388,True,needs_domain_expert_review
+C0072,concrete_rebar_formwork,con kê bê tông,con kê,rebar spacer,component,medium,domain_scope,https://vbpl.vn/TW/Pages/vbpq-toanvan.aspx?ItemID=152388,True,needs_domain_expert_review
+C0073,lifting_rigging,cần cẩu,cẩu,crane,equipment,critical,domain_scope,https://www.osha.gov/training/outreach/construction/focus-four,True,needs_domain_expert_review
+C0074,lifting_rigging,cần chính,cần boom,boom,component,critical,domain_scope,https://www.osha.gov/training/outreach/construction/focus-four,True,needs_domain_expert_review
+C0075,lifting_rigging,móc cẩu,móc,lifting hook,component,critical,domain_scope,https://www.osha.gov/training/outreach/construction/focus-four,True,needs_domain_expert_review
+C0076,lifting_rigging,dây cẩu,sling|dây sling,lifting sling,component,critical,domain_scope,https://www.osha.gov/training/outreach/construction/focus-four,True,needs_domain_expert_review
+C0077,lifting_rigging,cáp thép,cáp cẩu,wire rope,component,critical,domain_scope,https://www.osha.gov/training/outreach/construction/focus-four,True,needs_domain_expert_review
+C0078,lifting_rigging,ma ní,shackle|ma ni,shackle,component,critical,domain_scope,https://www.osha.gov/training/outreach/construction/focus-four,True,needs_domain_expert_review
+C0079,lifting_rigging,pa lăng,palang,hoist,equipment,high,domain_scope,https://www.osha.gov/training/outreach/construction/focus-four,True,needs_domain_expert_review
+C0080,lifting_rigging,chân chống cẩu,chân chống,outrigger,component,critical,domain_scope,https://www.osha.gov/training/outreach/construction/focus-four,True,needs_domain_expert_review
+C0081,lifting_rigging,tải treo,hàng treo,suspended load,hazard,critical,domain_scope,https://www.osha.gov/training/outreach/construction/focus-four,True,needs_domain_expert_review
+C0082,lifting_rigging,bán kính quay,vùng quay đuôi,swing radius,hazard,critical,domain_scope,https://www.osha.gov/training/outreach/construction/focus-four,True,needs_domain_expert_review
+C0083,lifting_rigging,người báo hiệu,signalman|người xi nhan,signal person,role,critical,domain_scope,https://www.osha.gov/training/outreach/construction/focus-four,True,needs_domain_expert_review
+C0084,lifting_rigging,người móc cẩu,thợ rigging,rigger,role,critical,domain_scope,https://www.osha.gov/training/outreach/construction/focus-four,True,needs_domain_expert_review
+C0085,lifting_rigging,góc dây cẩu,góc sling,sling angle,measurement,high,domain_scope,https://www.osha.gov/training/outreach/construction/focus-four,True,needs_domain_expert_review
+C0086,lifting_rigging,tải trọng làm việc an toàn,SWL,safe working load,measurement,critical,domain_scope,https://www.osha.gov/training/outreach/construction/focus-four,True,needs_domain_expert_review
+C0087,lifting_rigging,tải trọng định mức,rated capacity,rated load,measurement,critical,domain_scope,https://www.osha.gov/training/outreach/construction/focus-four,True,needs_domain_expert_review
+C0088,lifting_rigging,điểm nâng,tai cẩu,lifting point,component,critical,domain_scope,https://www.osha.gov/training/outreach/construction/focus-four,True,needs_domain_expert_review
+C0089,lifting_rigging,thanh cân bằng,spreader,spreader beam,equipment,high,domain_scope,https://www.osha.gov/training/outreach/construction/focus-four,True,needs_domain_expert_review
+C0090,lifting_rigging,dây điều hướng,dây lái tải,tag line,component,high,domain_scope,https://www.osha.gov/training/outreach/construction/focus-four,True,needs_domain_expert_review
+C0091,heavy_equipment,máy xúc,xe cuốc,excavator,equipment,high,domain_scope,https://www.osha.gov/training/outreach/construction/focus-four,True,needs_domain_expert_review
+C0092,heavy_equipment,máy ủi,xe ủi,bulldozer,equipment,high,domain_scope,https://www.osha.gov/training/outreach/construction/focus-four,True,needs_domain_expert_review
+C0093,heavy_equipment,xe nâng,forklift,forklift,equipment,critical,domain_scope,https://www.osha.gov/training/outreach/construction/focus-four,True,needs_domain_expert_review
+C0094,heavy_equipment,xe ben,xe tải ben,dump truck,equipment,high,domain_scope,https://www.osha.gov/training/outreach/construction/focus-four,True,needs_domain_expert_review
+C0095,heavy_equipment,xe lu,máy lu,road roller,equipment,high,domain_scope,https://vbpl.vn/TW/Pages/vbpq-toanvan.aspx?ItemID=152388,True,needs_domain_expert_review
+C0096,heavy_equipment,máy san,grader,motor grader,equipment,high,domain_scope,https://vbpl.vn/TW/Pages/vbpq-toanvan.aspx?ItemID=152388,True,needs_domain_expert_review
+C0097,heavy_equipment,máy đào bánh lốp,,wheeled excavator,equipment,high,domain_scope,https://vbpl.vn/TW/Pages/vbpq-toanvan.aspx?ItemID=152388,True,needs_domain_expert_review
+C0098,heavy_equipment,máy đào bánh xích,,crawler excavator,equipment,high,domain_scope,https://vbpl.vn/TW/Pages/vbpq-toanvan.aspx?ItemID=152388,True,needs_domain_expert_review
+C0099,heavy_equipment,gầu xúc,gầu,bucket,component,high,domain_scope,https://vbpl.vn/TW/Pages/vbpq-toanvan.aspx?ItemID=152388,True,needs_domain_expert_review
+C0100,heavy_equipment,lưỡi ủi,lưỡi ben,dozer blade,component,high,domain_scope,https://vbpl.vn/TW/Pages/vbpq-toanvan.aspx?ItemID=152388,True,needs_domain_expert_review
+C0101,heavy_equipment,còi lùi,còi báo lùi,reverse alarm,control,critical,domain_scope,https://www.osha.gov/training/outreach/construction/focus-four,True,needs_domain_expert_review
+C0102,heavy_equipment,điểm mù,góc chết,blind spot,hazard,critical,domain_scope,https://www.osha.gov/training/outreach/construction/focus-four,True,needs_domain_expert_review
+C0103,heavy_equipment,khu vực quay máy,vùng quay máy,equipment swing area,location,critical,domain_scope,https://www.osha.gov/training/outreach/construction/focus-four,True,needs_domain_expert_review
+C0104,heavy_equipment,phanh đỗ,phanh tay,parking brake,control,high,domain_scope,https://vbpl.vn/TW/Pages/vbpq-toanvan.aspx?ItemID=152388,True,needs_domain_expert_review
+C0105,heavy_equipment,chốt an toàn,chốt khóa,safety pin,component,high,domain_scope,https://vbpl.vn/TW/Pages/vbpq-toanvan.aspx?ItemID=152388,True,needs_domain_expert_review
+C0106,heavy_equipment,đường công vụ,đường nội bộ,haul road,location,high,domain_scope,https://vbpl.vn/TW/Pages/vbpq-toanvan.aspx?ItemID=152388,True,needs_domain_expert_review
+C0107,heavy_equipment,người hướng dẫn xe,người cảnh giới xe,spotter,role,high,domain_scope,https://www.osha.gov/training/outreach/construction/focus-four,True,needs_domain_expert_review
+C0108,heavy_equipment,điểm rửa bánh xe,cầu rửa xe,wheel wash station,location,medium,domain_scope,https://vbpl.vn/TW/Pages/vbpq-toanvan.aspx?ItemID=152388,True,needs_domain_expert_review
+C0109,electrical,cầu dao tự động,CB|aptomat|áp tô mát,circuit breaker,component,critical,domain_scope,https://www.osha.gov/etools/construction/glossary,True,needs_domain_expert_review
+C0110,electrical,tủ điện,tủ điện công trường,electrical panel,equipment,critical,domain_scope,https://www.osha.gov/etools/construction/glossary,True,needs_domain_expert_review
+C0111,electrical,dây dẫn điện,dây điện,electrical conductor,component,critical,domain_scope,https://www.osha.gov/etools/construction/glossary,True,needs_domain_expert_review
+C0112,electrical,dây pha,dây nóng,live conductor,component,critical,domain_scope,https://www.osha.gov/etools/construction/glossary,True,needs_domain_expert_review
+C0113,electrical,dây trung tính,dây nguội,neutral conductor,component,high,domain_scope,https://www.osha.gov/etools/construction/glossary,True,needs_domain_expert_review
+C0114,electrical,dây tiếp địa,dây nối đất,grounding conductor,component,critical,domain_scope,https://www.osha.gov/etools/construction/glossary,True,needs_domain_expert_review
+C0115,electrical,nối đất,tiếp địa,grounding,process,critical,domain_scope,https://www.osha.gov/etools/construction/glossary,True,needs_domain_expert_review
+C0116,electrical,ngắn mạch,chập điện,short circuit,hazard,critical,domain_scope,https://www.osha.gov/etools/construction/glossary,True,needs_domain_expert_review
+C0117,electrical,chạm đất,lỗi chạm đất,ground fault,hazard,critical,domain_scope,https://www.osha.gov/etools/construction/glossary,True,needs_domain_expert_review
+C0118,electrical,quá tải,,overload,hazard,critical,domain_scope,https://www.osha.gov/etools/construction/glossary,True,needs_domain_expert_review
+C0119,electrical,điện áp,điện thế,voltage,measurement,critical,domain_scope,https://www.osha.gov/etools/construction/glossary,True,needs_domain_expert_review
+C0120,electrical,dòng điện,ampe,current,measurement,high,domain_scope,https://www.osha.gov/etools/construction/glossary,True,needs_domain_expert_review
+C0121,electrical,máy biến áp,biến áp,transformer,equipment,critical,domain_scope,https://www.osha.gov/etools/construction/glossary,True,needs_domain_expert_review
+C0122,electrical,máy phát điện,máy phát,generator,equipment,high,domain_scope,https://vbpl.vn/TW/Pages/vbpq-toanvan.aspx?ItemID=152388,True,needs_domain_expert_review
+C0123,electrical,cáp điện,dây cáp điện,power cable,component,critical,domain_scope,https://vbpl.vn/TW/Pages/vbpq-toanvan.aspx?ItemID=152388,True,needs_domain_expert_review
+C0124,electrical,đầu cốt cáp,đầu cos|cos cáp,cable lug,component,high,domain_scope,https://vbpl.vn/TW/Pages/vbpq-toanvan.aspx?ItemID=152388,True,needs_domain_expert_review
+C0125,electrical,rơ le,relay,relay,component,medium,domain_scope,https://vbpl.vn/TW/Pages/vbpq-toanvan.aspx?ItemID=152388,True,needs_domain_expert_review
+C0126,electrical,khóa liên động,interlock,interlock,protection,high,domain_scope,https://vbpl.vn/TW/Pages/vbpq-toanvan.aspx?ItemID=152388,True,needs_domain_expert_review
+C0127,mechanical,vòng bi,bạc đạn,bearing,component,medium,domain_scope,https://vbpl.vn/TW/Pages/vbpq-toanvan.aspx?ItemID=152388,True,needs_domain_expert_review
+C0128,mechanical,ổ trục thanh truyền,bạc biên|bạc dên,connecting rod bearing,component,medium,domain_scope,https://vbpl.vn/TW/Pages/vbpq-toanvan.aspx?ItemID=152388,True,needs_domain_expert_review
+C0129,mechanical,dây đai truyền động,dây curoa|dây cua-roa,drive belt,component,medium,domain_scope,https://vbpl.vn/TW/Pages/vbpq-toanvan.aspx?ItemID=152388,True,needs_domain_expert_review
+C0130,mechanical,khớp nối,,coupling,component,high,domain_scope,https://vbpl.vn/TW/Pages/vbpq-toanvan.aspx?ItemID=152388,True,needs_domain_expert_review
+C0131,mechanical,trục,,shaft,component,high,domain_scope,https://vbpl.vn/TW/Pages/vbpq-toanvan.aspx?ItemID=152388,True,needs_domain_expert_review
+C0132,mechanical,bơm,,pump,equipment,high,domain_scope,https://vbpl.vn/TW/Pages/vbpq-toanvan.aspx?ItemID=152388,True,needs_domain_expert_review
+C0133,mechanical,van,,valve,component,high,domain_scope,https://vbpl.vn/TW/Pages/vbpq-toanvan.aspx?ItemID=152388,True,needs_domain_expert_review
+C0134,mechanical,mặt bích,,flange,component,medium,domain_scope,https://vbpl.vn/TW/Pages/vbpq-toanvan.aspx?ItemID=152388,True,needs_domain_expert_review
+C0135,mechanical,phớt làm kín,phớt,seal,component,medium,domain_scope,https://vbpl.vn/TW/Pages/vbpq-toanvan.aspx?ItemID=152388,True,needs_domain_expert_review
+C0136,mechanical,bu lông,bulông|bu lon,bolt,component,medium,domain_scope,https://vbpl.vn/TW/Pages/vbpq-toanvan.aspx?ItemID=152388,True,needs_domain_expert_review
+C0137,mechanical,đai ốc,ê-cu|ecu,nut,component,medium,domain_scope,https://vbpl.vn/TW/Pages/vbpq-toanvan.aspx?ItemID=152388,True,needs_domain_expert_review
+C0138,mechanical,ống thủy lực,tuy ô thủy lực|tuy-ô thủy lực,hydraulic hose,component,critical,domain_scope,https://vbpl.vn/TW/Pages/vbpq-toanvan.aspx?ItemID=152388,True,needs_domain_expert_review
+C0139,mechanical,dầu thủy lực,nhớt thủy lực,hydraulic oil,material,high,domain_scope,https://vbpl.vn/TW/Pages/vbpq-toanvan.aspx?ItemID=152388,True,needs_domain_expert_review
+C0140,mechanical,rò dầu,rỉ dầu,oil leak,hazard,high,domain_scope,https://vbpl.vn/TW/Pages/vbpq-toanvan.aspx?ItemID=152388,True,needs_domain_expert_review
+C0141,mechanical,rò nhớt,rỉ nhớt,engine oil leak,hazard,high,domain_scope,https://vbpl.vn/TW/Pages/vbpq-toanvan.aspx?ItemID=152388,True,needs_domain_expert_review
+C0142,mechanical,két làm mát,két nước,radiator,component,medium,domain_scope,https://vbpl.vn/TW/Pages/vbpq-toanvan.aspx?ItemID=152388,True,needs_domain_expert_review
+C0143,mechanical,ống xả,ống bô|ống pô,exhaust pipe,component,medium,domain_scope,https://vbpl.vn/TW/Pages/vbpq-toanvan.aspx?ItemID=152388,True,needs_domain_expert_review
+C0144,mechanical,bộ lọc,lọc,filter,component,medium,domain_scope,https://vbpl.vn/TW/Pages/vbpq-toanvan.aspx?ItemID=152388,True,needs_domain_expert_review
+C0145,welding_hotwork,máy hàn,máy hàn điện,welding machine,equipment,high,domain_scope,https://www.osha.gov/laws-regs/regulations/standardnumber/1926/1926.350,True,needs_domain_expert_review
+C0146,welding_hotwork,que hàn,que điện,welding electrode,material,medium,domain_scope,https://www.osha.gov/laws-regs/regulations/standardnumber/1926/1926.350,True,needs_domain_expert_review
+C0147,welding_hotwork,dây hàn,,welding wire,material,medium,domain_scope,https://www.osha.gov/laws-regs/regulations/standardnumber/1926/1926.350,True,needs_domain_expert_review
+C0148,welding_hotwork,mối hàn,,weld,structure,high,domain_scope,https://www.osha.gov/laws-regs/regulations/standardnumber/1926/1926.350,True,needs_domain_expert_review
+C0149,welding_hotwork,hàn hồ quang,,arc welding,process,high,domain_scope,https://www.osha.gov/laws-regs/regulations/standardnumber/1926/1926.350,True,needs_domain_expert_review
+C0150,welding_hotwork,hàn MIG,,MIG welding,process,medium,domain_scope,https://www.osha.gov/laws-regs/regulations/standardnumber/1926/1926.350,True,needs_domain_expert_review
+C0151,welding_hotwork,hàn TIG,,TIG welding,process,medium,domain_scope,https://www.osha.gov/laws-regs/regulations/standardnumber/1926/1926.350,True,needs_domain_expert_review
+C0152,welding_hotwork,xỉ hàn,xỉ,welding slag,material,medium,domain_scope,https://www.osha.gov/laws-regs/regulations/standardnumber/1926/1926.350,True,needs_domain_expert_review
+C0153,welding_hotwork,bắn tóe hàn,tia hàn,weld spatter,hazard,high,domain_scope,https://www.osha.gov/laws-regs/regulations/standardnumber/1926/1926.350,True,needs_domain_expert_review
+C0154,welding_hotwork,mặt nạ hàn,mặt nạ,welding helmet,ppe,critical,domain_scope,https://www.osha.gov/laws-regs/regulations/standardnumber/1926/1926.350,True,needs_domain_expert_review
+C0155,welding_hotwork,bình khí,bình gas,gas cylinder,equipment,critical,domain_scope,https://www.osha.gov/laws-regs/regulations/standardnumber/1926/1926.350,True,needs_domain_expert_review
+C0156,welding_hotwork,bình oxy,bình ô-xy,oxygen cylinder,equipment,critical,domain_scope,https://www.osha.gov/laws-regs/regulations/standardnumber/1926/1926.350,True,needs_domain_expert_review
+C0157,welding_hotwork,van điều áp,regulator,gas regulator,component,critical,domain_scope,https://www.osha.gov/laws-regs/regulations/standardnumber/1926/1926.350,True,needs_domain_expert_review
+C0158,welding_hotwork,mỏ hàn,torch,welding torch,equipment,high,domain_scope,https://www.osha.gov/laws-regs/regulations/standardnumber/1926/1926.350,True,needs_domain_expert_review
+C0159,welding_hotwork,cắt oxy-gas,cắt gió đá,oxy-fuel cutting,process,critical,domain_scope,https://www.osha.gov/laws-regs/regulations/standardnumber/1926/1926.350,True,needs_domain_expert_review
+C0160,welding_hotwork,ống dẫn khí,dây hơi,gas hose,component,critical,domain_scope,https://www.osha.gov/laws-regs/regulations/standardnumber/1926/1926.350,True,needs_domain_expert_review
+C0161,welding_hotwork,van bình khí,van bình,cylinder valve,component,critical,domain_scope,https://www.osha.gov/laws-regs/regulations/standardnumber/1926/1926.350,True,needs_domain_expert_review
+C0162,welding_hotwork,tấm chắn hàn,màn chắn hàn,welding screen,protection,high,domain_scope,https://www.osha.gov/laws-regs/regulations/standardnumber/1926/1926.350,True,needs_domain_expert_review
+C0163,piping_plumbing,ống cấp nước,ống nước,water supply pipe,component,medium,domain_scope,https://vbpl.vn/TW/Pages/vbpq-toanvan.aspx?ItemID=152388,True,needs_domain_expert_review
+C0164,piping_plumbing,ống thoát nước,ống thoát,drain pipe,component,medium,domain_scope,https://vbpl.vn/TW/Pages/vbpq-toanvan.aspx?ItemID=152388,True,needs_domain_expert_review
+C0165,piping_plumbing,ống PPR,,PPR pipe,component,medium,domain_scope,https://vbpl.vn/TW/Pages/vbpq-toanvan.aspx?ItemID=152388,True,needs_domain_expert_review
+C0166,piping_plumbing,ống thép mạ kẽm,ống GI,galvanized steel pipe,component,medium,domain_scope,https://vbpl.vn/TW/Pages/vbpq-toanvan.aspx?ItemID=152388,True,needs_domain_expert_review
+C0167,piping_plumbing,van bi,,ball valve,component,medium,domain_scope,https://vbpl.vn/TW/Pages/vbpq-toanvan.aspx?ItemID=152388,True,needs_domain_expert_review
+C0168,piping_plumbing,van cổng,,gate valve,component,medium,domain_scope,https://vbpl.vn/TW/Pages/vbpq-toanvan.aspx?ItemID=152388,True,needs_domain_expert_review
+C0169,piping_plumbing,van một chiều,van 1 chiều,check valve,component,high,domain_scope,https://vbpl.vn/TW/Pages/vbpq-toanvan.aspx?ItemID=152388,True,needs_domain_expert_review
+C0170,piping_plumbing,cút 90 độ,co 90,90-degree elbow,component,medium,domain_scope,https://vbpl.vn/TW/Pages/vbpq-toanvan.aspx?ItemID=152388,True,needs_domain_expert_review
+C0171,piping_plumbing,tê ống,tê,pipe tee,component,medium,domain_scope,https://vbpl.vn/TW/Pages/vbpq-toanvan.aspx?ItemID=152388,True,needs_domain_expert_review
+C0172,piping_plumbing,măng sông,nối ống thẳng,coupling sleeve,component,medium,domain_scope,https://vbpl.vn/TW/Pages/vbpq-toanvan.aspx?ItemID=152388,True,needs_domain_expert_review
+C0173,piping_plumbing,đồng hồ áp suất,đồng hồ áp,pressure gauge,measurement,high,domain_scope,https://vbpl.vn/TW/Pages/vbpq-toanvan.aspx?ItemID=152388,True,needs_domain_expert_review
+C0174,piping_plumbing,rò nước,xì nước,water leak,hazard,high,domain_scope,https://vbpl.vn/TW/Pages/vbpq-toanvan.aspx?ItemID=152388,True,needs_domain_expert_review
+C0175,piping_plumbing,rò khí,xì gas|xì khí,gas leak,hazard,critical,domain_scope,https://vbpl.vn/TW/Pages/vbpq-toanvan.aspx?ItemID=152388,True,needs_domain_expert_review
+C0176,piping_plumbing,bơm tăng áp,,booster pump,equipment,high,domain_scope,https://vbpl.vn/TW/Pages/vbpq-toanvan.aspx?ItemID=152388,True,needs_domain_expert_review
+C0177,piping_plumbing,bơm chìm,,submersible pump,equipment,medium,domain_scope,https://vbpl.vn/TW/Pages/vbpq-toanvan.aspx?ItemID=152388,True,needs_domain_expert_review
+C0178,piping_plumbing,giá đỡ ống,support ống,pipe support,component,high,domain_scope,https://vbpl.vn/TW/Pages/vbpq-toanvan.aspx?ItemID=152388,True,needs_domain_expert_review
+C0179,piping_plumbing,độ dốc ống,slope ống,pipe slope,measurement,high,domain_scope,https://vbpl.vn/TW/Pages/vbpq-toanvan.aspx?ItemID=152388,True,needs_domain_expert_review
+C0180,piping_plumbing,thử áp,test áp,pressure test,process,critical,domain_scope,https://vbpl.vn/TW/Pages/vbpq-toanvan.aspx?ItemID=152388,True,needs_domain_expert_review
+C0181,material_logistics,xi măng,,cement,material,medium,domain_scope,https://vbpl.vn/TW/Pages/vbpq-toanvan.aspx?ItemID=152388,True,needs_domain_expert_review
+C0182,material_logistics,cát,,sand,material,low,domain_scope,https://vbpl.vn/TW/Pages/vbpq-toanvan.aspx?ItemID=152388,True,needs_domain_expert_review
+C0183,material_logistics,đá dăm,đá 1x2,crushed stone,material,low,domain_scope,https://vbpl.vn/TW/Pages/vbpq-toanvan.aspx?ItemID=152388,True,needs_domain_expert_review
+C0184,material_logistics,gạch,,brick,material,low,domain_scope,https://vbpl.vn/TW/Pages/vbpq-toanvan.aspx?ItemID=152388,True,needs_domain_expert_review
+C0185,material_logistics,ván ép,ván plywood,plywood,material,medium,domain_scope,https://vbpl.vn/TW/Pages/vbpq-toanvan.aspx?ItemID=152388,True,needs_domain_expert_review
+C0186,material_logistics,thép hình,thép H|thép I,structural steel,material,high,domain_scope,https://vbpl.vn/TW/Pages/vbpq-toanvan.aspx?ItemID=152388,True,needs_domain_expert_review
+C0187,material_logistics,pallet,pa-lét,pallet,equipment,medium,domain_scope,https://vbpl.vn/TW/Pages/vbpq-toanvan.aspx?ItemID=152388,True,needs_domain_expert_review
+C0188,material_logistics,kho vật tư,kho,material storage area,location,medium,domain_scope,https://vbpl.vn/TW/Pages/vbpq-toanvan.aspx?ItemID=152388,True,needs_domain_expert_review
+C0189,material_logistics,bãi tập kết,bãi vật tư,laydown area,location,medium,domain_scope,https://vbpl.vn/TW/Pages/vbpq-toanvan.aspx?ItemID=152388,True,needs_domain_expert_review
+C0190,material_logistics,lối đi bộ,lối người đi,pedestrian walkway,location,high,domain_scope,https://vbpl.vn/TW/Pages/vbpq-toanvan.aspx?ItemID=152388,True,needs_domain_expert_review
+C0191,material_logistics,lối xe chạy,đường xe chạy,vehicle route,location,high,domain_scope,https://vbpl.vn/TW/Pages/vbpq-toanvan.aspx?ItemID=152388,True,needs_domain_expert_review
+C0192,material_logistics,container kho,container vật tư,storage container,location,medium,domain_scope,https://vbpl.vn/TW/Pages/vbpq-toanvan.aspx?ItemID=152388,True,needs_domain_expert_review
+C0193,material_logistics,phiếu xuất kho,phiếu xuất,material issue slip,document,low,domain_scope,https://vbpl.vn/TW/Pages/vbpq-toanvan.aspx?ItemID=152388,True,needs_domain_expert_review
+C0194,material_logistics,mã vật tư,part number|mã hàng,material code,document,medium,domain_scope,https://vbpl.vn/TW/Pages/vbpq-toanvan.aspx?ItemID=152388,True,needs_domain_expert_review
+C0195,material_logistics,số lượng,qty,quantity,measurement,medium,domain_scope,https://vbpl.vn/TW/Pages/vbpq-toanvan.aspx?ItemID=152388,True,needs_domain_expert_review
+C0196,material_logistics,khối lượng,trọng lượng,weight,measurement,high,domain_scope,https://vbpl.vn/TW/Pages/vbpq-toanvan.aspx?ItemID=152388,True,needs_domain_expert_review
+C0197,material_logistics,kiện hàng,kiện,package,object,medium,domain_scope,https://vbpl.vn/TW/Pages/vbpq-toanvan.aspx?ItemID=152388,True,needs_domain_expert_review
+C0198,material_logistics,dây chằng hàng,dây chằng,cargo tie-down,component,high,domain_scope,https://vbpl.vn/TW/Pages/vbpq-toanvan.aspx?ItemID=152388,True,needs_domain_expert_review
+C0199,survey_measurement,cao độ,level,elevation,measurement,high,domain_scope,https://vbpl.vn/TW/Pages/vbpq-toanvan.aspx?ItemID=152388,True,needs_domain_expert_review
+C0200,survey_measurement,tim trục,tim|trục định vị,grid line,measurement,high,domain_scope,https://vbpl.vn/TW/Pages/vbpq-toanvan.aspx?ItemID=152388,True,needs_domain_expert_review
+C0201,survey_measurement,mốc chuẩn,mốc cao độ,benchmark,measurement,high,domain_scope,https://vbpl.vn/TW/Pages/vbpq-toanvan.aspx?ItemID=152388,True,needs_domain_expert_review
+C0202,survey_measurement,máy toàn đạc,total station,total station,equipment,medium,domain_scope,https://vbpl.vn/TW/Pages/vbpq-toanvan.aspx?ItemID=152388,True,needs_domain_expert_review
+C0203,survey_measurement,máy thủy bình,máy level,automatic level,equipment,medium,domain_scope,https://vbpl.vn/TW/Pages/vbpq-toanvan.aspx?ItemID=152388,True,needs_domain_expert_review
+C0204,survey_measurement,mia thủy chuẩn,mia,leveling staff,equipment,low,domain_scope,https://vbpl.vn/TW/Pages/vbpq-toanvan.aspx?ItemID=152388,True,needs_domain_expert_review
+C0205,survey_measurement,thước thép,thước cuộn,steel tape measure,equipment,low,domain_scope,https://vbpl.vn/TW/Pages/vbpq-toanvan.aspx?ItemID=152388,True,needs_domain_expert_review
+C0206,survey_measurement,thước laser,máy đo laser,laser distance meter,equipment,medium,domain_scope,https://vbpl.vn/TW/Pages/vbpq-toanvan.aspx?ItemID=152388,True,needs_domain_expert_review
+C0207,survey_measurement,độ thẳng đứng,độ đứng,verticality,measurement,high,domain_scope,https://vbpl.vn/TW/Pages/vbpq-toanvan.aspx?ItemID=152388,True,needs_domain_expert_review
+C0208,survey_measurement,độ phẳng,,flatness,measurement,medium,domain_scope,https://vbpl.vn/TW/Pages/vbpq-toanvan.aspx?ItemID=152388,True,needs_domain_expert_review
+C0209,survey_measurement,khoảng cách,,distance,measurement,medium,domain_scope,https://vbpl.vn/TW/Pages/vbpq-toanvan.aspx?ItemID=152388,True,needs_domain_expert_review
+C0210,survey_measurement,chiều dài,,length,measurement,medium,domain_scope,https://vbpl.vn/TW/Pages/vbpq-toanvan.aspx?ItemID=152388,True,needs_domain_expert_review
+C0211,survey_measurement,chiều rộng,,width,measurement,medium,domain_scope,https://vbpl.vn/TW/Pages/vbpq-toanvan.aspx?ItemID=152388,True,needs_domain_expert_review
+C0212,survey_measurement,chiều cao,,height,measurement,medium,domain_scope,https://vbpl.vn/TW/Pages/vbpq-toanvan.aspx?ItemID=152388,True,needs_domain_expert_review
+C0213,survey_measurement,góc,,angle,measurement,medium,domain_scope,https://vbpl.vn/TW/Pages/vbpq-toanvan.aspx?ItemID=152388,True,needs_domain_expert_review
+C0214,survey_measurement,đường kính,phi|Ø,diameter,measurement,medium,domain_scope,https://vbpl.vn/TW/Pages/vbpq-toanvan.aspx?ItemID=152388,True,needs_domain_expert_review
+C0215,survey_measurement,sai số,dung sai,tolerance,measurement,high,domain_scope,https://vbpl.vn/TW/Pages/vbpq-toanvan.aspx?ItemID=152388,True,needs_domain_expert_review
+C0216,survey_measurement,tọa độ,,coordinate,measurement,high,domain_scope,https://vbpl.vn/TW/Pages/vbpq-toanvan.aspx?ItemID=152388,True,needs_domain_expert_review

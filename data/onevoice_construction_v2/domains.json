@@ -1,0 +1,62 @@
+[
+  {
+    "domain": "safety_general",
+    "name_vi": "An toàn chung",
+    "name_en": "General safety"
+  },
+  {
+    "domain": "fall_scaffold",
+    "name_vi": "Làm việc trên cao & giàn giáo",
+    "name_en": "Fall protection & scaffolding"
+  },
+  {
+    "domain": "excavation",
+    "name_vi": "Đào đất & hố đào",
+    "name_en": "Excavation & trenching"
+  },
+  {
+    "domain": "concrete_rebar_formwork",
+    "name_vi": "Bê tông, cốt thép & cốp pha",
+    "name_en": "Concrete, rebar & formwork"
+  },
+  {
+    "domain": "lifting_rigging",
+    "name_vi": "Cẩu & rigging",
+    "name_en": "Lifting & rigging"
+  },
+  {
+    "domain": "heavy_equipment",
+    "name_vi": "Máy công trình",
+    "name_en": "Heavy equipment"
+  },
+  {
+    "domain": "electrical",
+    "name_vi": "Điện công trường",
+    "name_en": "Construction electrical"
+  },
+  {
+    "domain": "mechanical",
+    "name_vi": "Cơ khí & bảo trì",
+    "name_en": "Mechanical & maintenance"
+  },
+  {
+    "domain": "welding_hotwork",
+    "name_vi": "Hàn, cắt & hot work",
+    "name_en": "Welding, cutting & hot work"
+  },
+  {
+    "domain": "piping_plumbing",
+    "name_vi": "Đường ống & plumbing",
+    "name_en": "Piping & plumbing"
+  },
+  {
+    "domain": "material_logistics",
+    "name_vi": "Vật liệu & logistics",
+    "name_en": "Materials & site logistics"
+  },
+  {
+    "domain": "survey_measurement",
+    "name_vi": "Trắc đạc & đo kiểm",
+    "name_en": "Surveying & measurement"
+  }
+]

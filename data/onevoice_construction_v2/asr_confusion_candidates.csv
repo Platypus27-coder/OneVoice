@@ -1,0 +1,238 @@
+﻿confusion_id,canonical_text,candidate_asr_text,canonical_id,domain,confusion_type,observed_in_real_data,synthetic,review_status
+ASRC2_0001,bạc biên,bạc biển,C0128,mechanical,phonetic_or_orthographic_candidate,False,True,needs_real_asr_validation
+ASRC2_0002,cẩu,cậu,C0073,lifting_rigging,phonetic_or_orthographic_candidate,False,True,needs_real_asr_validation
+ASRC2_0003,cốp pha,cốt pha,C0059,concrete_rebar_formwork,phonetic_or_orthographic_candidate,False,True,needs_real_asr_validation
+ASRC2_0004,giàn giáo,dàn giáo,C0026,fall_scaffold,phonetic_or_orthographic_candidate,False,True,needs_real_asr_validation
+ASRC2_0005,pa lăng,ba lăng,C0079,lifting_rigging,phonetic_or_orthographic_candidate,False,True,needs_real_asr_validation
+ASRC2_0006,mặt bích,mặt bít,C0134,mechanical,phonetic_or_orthographic_candidate,False,True,needs_real_asr_validation
+ASRC2_0007,phớt,phốt,C0135,mechanical,phonetic_or_orthographic_candidate,False,True,needs_real_asr_validation
+ASRC2_0008,bu lông,bu lon,C0136,mechanical,phonetic_or_orthographic_candidate,False,True,needs_real_asr_validation
+ASRC2_0009,ê-cu,ecu,C0137,mechanical,phonetic_or_orthographic_candidate,False,True,needs_real_asr_validation
+ASRC2_0010,aptomat,áp tô mát,C0109,electrical,phonetic_or_orthographic_candidate,False,True,needs_real_asr_validation
+ASRC2_0011,CB,xi bi,C0109,electrical,phonetic_or_orthographic_candidate,False,True,needs_real_asr_validation
+ASRC2_0012,tiếp địa,tiết địa,C0115,electrical,phonetic_or_orthographic_candidate,False,True,needs_real_asr_validation
+ASRC2_0013,rơ le,rờ le,C0125,electrical,phonetic_or_orthographic_candidate,False,True,needs_real_asr_validation
+ASRC2_0014,đầu cos,đầu cốt,C0124,electrical,phonetic_or_orthographic_candidate,False,True,needs_real_asr_validation
+ASRC2_0015,ma ní,ma ni,C0078,lifting_rigging,phonetic_or_orthographic_candidate,False,True,needs_real_asr_validation
+ASRC2_0016,sling,x-ling,C0076,lifting_rigging,phonetic_or_orthographic_candidate,False,True,needs_real_asr_validation
+ASRC2_0017,boom,bum,,,phonetic_or_orthographic_candidate,False,True,needs_real_asr_validation
+ASRC2_0018,rò nhớt,rò nhất,C0141,mechanical,phonetic_or_orthographic_candidate,False,True,needs_real_asr_validation
+ASRC2_0019,ống bô,ống pô,C0143,mechanical,phonetic_or_orthographic_candidate,False,True,needs_real_asr_validation
+ASRC2_0020,két nước,kết nước,C0142,mechanical,phonetic_or_orthographic_candidate,False,True,needs_real_asr_validation
+ASRC2_0021,dây curoa,dây cua roa,C0129,mechanical,phonetic_or_orthographic_candidate,False,True,needs_real_asr_validation
+ASRC2_0022,mối hàn,mỗi hàn,C0148,welding_hotwork,phonetic_or_orthographic_candidate,False,True,needs_real_asr_validation
+ASRC2_0023,xỉ hàn,sỉ hàn,C0152,welding_hotwork,phonetic_or_orthographic_candidate,False,True,needs_real_asr_validation
+ASRC2_0024,cắt gió đá,cắt gió đó,C0159,welding_hotwork,phonetic_or_orthographic_candidate,False,True,needs_real_asr_validation
+ASRC2_0025,rãnh đào,rảnh đào,C0038,excavation,phonetic_or_orthographic_candidate,False,True,needs_real_asr_validation
+ASRC2_0026,mép hố,mép hồ,C0039,excavation,phonetic_or_orthographic_candidate,False,True,needs_real_asr_validation
+ASRC2_0027,cao độ,cao đổ,C0199,survey_measurement,phonetic_or_orthographic_candidate,False,True,needs_real_asr_validation
+ASRC2_0028,tim trục,tim chục,C0200,survey_measurement,phonetic_or_orthographic_candidate,False,True,needs_real_asr_validation
+ASRC2_0029,thủy bình,thủy bỉnh,,,phonetic_or_orthographic_candidate,False,True,needs_real_asr_validation
+ASRC2_0030,tải treo,tải theo,C0081,lifting_rigging,phonetic_or_orthographic_candidate,False,True,needs_real_asr_validation
+ASRC2_0031,mũ bảo hộ,nón bảo hộ,C0001,safety_general,alias_normalization_candidate,False,True,needs_real_asr_validation
+ASRC2_0032,kính bảo hộ,kính an toàn,C0002,safety_general,alias_normalization_candidate,False,True,needs_real_asr_validation
+ASRC2_0033,găng tay bảo hộ,găng bảo hộ,C0003,safety_general,alias_normalization_candidate,False,True,needs_real_asr_validation
+ASRC2_0034,giày bảo hộ,giày mũi thép,C0004,safety_general,alias_normalization_candidate,False,True,needs_real_asr_validation
+ASRC2_0035,giày bảo hộ,giày safety,C0004,safety_general,alias_normalization_candidate,False,True,needs_real_asr_validation
+ASRC2_0036,áo phản quang,áo hi-vis,C0005,safety_general,alias_normalization_candidate,False,True,needs_real_asr_validation
+ASRC2_0037,áo phản quang,áo phản quang,C0005,safety_general,alias_normalization_candidate,False,True,needs_real_asr_validation
+ASRC2_0038,nút dừng khẩn cấp,nút emergency,C0006,safety_general,alias_normalization_candidate,False,True,needs_real_asr_validation
+ASRC2_0039,nút dừng khẩn cấp,E-stop,C0006,safety_general,alias_normalization_candidate,False,True,needs_real_asr_validation
+ASRC2_0040,lối thoát hiểm,lối thoát,C0007,safety_general,alias_normalization_candidate,False,True,needs_real_asr_validation
+ASRC2_0041,điểm tập kết,điểm tập trung,C0008,safety_general,alias_normalization_candidate,False,True,needs_real_asr_validation
+ASRC2_0042,bình chữa cháy,bình cứu hỏa,C0009,safety_general,alias_normalization_candidate,False,True,needs_real_asr_validation
+ASRC2_0043,vùng nguy hiểm,khu nguy hiểm,C0010,safety_general,alias_normalization_candidate,False,True,needs_real_asr_validation
+ASRC2_0044,khu vực cấm,vùng cấm,C0011,safety_general,alias_normalization_candidate,False,True,needs_real_asr_validation
+ASRC2_0045,rào chắn,barie,C0012,safety_general,alias_normalization_candidate,False,True,needs_real_asr_validation
+ASRC2_0046,rào chắn,hàng rào tạm,C0012,safety_general,alias_normalization_candidate,False,True,needs_real_asr_validation
+ASRC2_0047,biển cảnh báo,biển nguy hiểm,C0013,safety_general,alias_normalization_candidate,False,True,needs_real_asr_validation
+ASRC2_0048,giấy phép làm việc,work permit,C0014,safety_general,alias_normalization_candidate,False,True,needs_real_asr_validation
+ASRC2_0049,giấy phép làm việc,PTW,C0014,safety_general,alias_normalization_candidate,False,True,needs_real_asr_validation
+ASRC2_0050,khóa cô lập năng lượng,khóa LOTO,C0015,safety_general,alias_normalization_candidate,False,True,needs_real_asr_validation
+ASRC2_0051,thẻ cảnh báo LOTO,thẻ LOTO,C0016,safety_general,alias_normalization_candidate,False,True,needs_real_asr_validation
+ASRC2_0052,cáng cứu thương,cáng,C0018,safety_general,alias_normalization_candidate,False,True,needs_real_asr_validation
+ASRC2_0053,dây đai toàn thân,dây an toàn,C0019,fall_scaffold,alias_normalization_candidate,False,True,needs_real_asr_validation
+ASRC2_0054,dây đai toàn thân,dây đai an toàn,C0019,fall_scaffold,alias_normalization_candidate,False,True,needs_real_asr_validation
+ASRC2_0055,dây cứu sinh,dây lifeline,C0020,fall_scaffold,alias_normalization_candidate,False,True,needs_real_asr_validation
+ASRC2_0056,móc an toàn,móc dây an toàn,C0021,fall_scaffold,alias_normalization_candidate,False,True,needs_real_asr_validation
+ASRC2_0057,điểm neo,điểm móc neo,C0022,fall_scaffold,alias_normalization_candidate,False,True,needs_real_asr_validation
+ASRC2_0058,lan can bảo vệ,lan can an toàn,C0023,fall_scaffold,alias_normalization_candidate,False,True,needs_real_asr_validation
+ASRC2_0059,tấm chắn chân,ván chắn chân,C0024,fall_scaffold,alias_normalization_candidate,False,True,needs_real_asr_validation
+ASRC2_0060,lưới an toàn,lưới hứng,C0025,fall_scaffold,alias_normalization_candidate,False,True,needs_real_asr_validation
+ASRC2_0062,sàn công tác,mâm giàn giáo,C0027,fall_scaffold,alias_normalization_candidate,False,True,needs_real_asr_validation
+ASRC2_0063,sàn công tác,platform,C0027,fall_scaffold,alias_normalization_candidate,False,True,needs_real_asr_validation
+ASRC2_0064,thang tiếp cận,thang lên xuống,C0028,fall_scaffold,alias_normalization_candidate,False,True,needs_real_asr_validation
+ASRC2_0065,lỗ mở sàn,lỗ sàn,C0029,fall_scaffold,alias_normalization_candidate,False,True,needs_real_asr_validation
+ASRC2_0066,mép sàn hở,mép hở,C0030,fall_scaffold,alias_normalization_candidate,False,True,needs_real_asr_validation
+ASRC2_0067,mặt bằng làm việc trên cao,khu vực trên cao,C0031,fall_scaffold,alias_normalization_candidate,False,True,needs_real_asr_validation
+ASRC2_0068,thẻ giàn giáo,thẻ scaffold,C0032,fall_scaffold,alias_normalization_candidate,False,True,needs_real_asr_validation
+ASRC2_0069,chân kích giàn giáo,chân kích,C0033,fall_scaffold,alias_normalization_candidate,False,True,needs_real_asr_validation
+ASRC2_0070,giằng chéo,giằng chéo giàn giáo,C0034,fall_scaffold,alias_normalization_candidate,False,True,needs_real_asr_validation
+ASRC2_0071,ván sàn giàn giáo,ván sàn,C0035,fall_scaffold,alias_normalization_candidate,False,True,needs_real_asr_validation
+ASRC2_0072,điểm buộc giàn giáo,điểm neo giàn giáo,C0036,fall_scaffold,alias_normalization_candidate,False,True,needs_real_asr_validation
+ASRC2_0073,hố đào,hố móng,C0037,excavation,alias_normalization_candidate,False,True,needs_real_asr_validation
+ASRC2_0074,rãnh đào,rãnh,C0038,excavation,alias_normalization_candidate,False,True,needs_real_asr_validation
+ASRC2_0075,mép hố đào,mép hố,C0039,excavation,alias_normalization_candidate,False,True,needs_real_asr_validation
+ASRC2_0076,thành hố đào,thành hố,C0040,excavation,alias_normalization_candidate,False,True,needs_real_asr_validation
+ASRC2_0077,chống vách,hệ chống vách,C0041,excavation,alias_normalization_candidate,False,True,needs_real_asr_validation
+ASRC2_0078,hộp chống sập,trench box,C0042,excavation,alias_normalization_candidate,False,True,needs_real_asr_validation
+ASRC2_0079,hộp chống sập,hộp chống hố,C0042,excavation,alias_normalization_candidate,False,True,needs_real_asr_validation
+ASRC2_0080,taluy bậc,đào giật cấp,C0043,excavation,alias_normalization_candidate,False,True,needs_real_asr_validation
+ASRC2_0081,taluy dốc,đào mái dốc,C0044,excavation,alias_normalization_candidate,False,True,needs_real_asr_validation
+ASRC2_0082,đất đào,đất thải,C0045,excavation,alias_normalization_candidate,False,True,needs_real_asr_validation
+ASRC2_0083,sạt lở,sạt hố,C0046,excavation,alias_normalization_candidate,False,True,needs_real_asr_validation
+ASRC2_0084,sạt lở,sập thành hố,C0046,excavation,alias_normalization_candidate,False,True,needs_real_asr_validation
+ASRC2_0085,nước đọng trong hố,nước trong hố,C0047,excavation,alias_normalization_candidate,False,True,needs_real_asr_validation
+ASRC2_0086,khí quyển nguy hiểm,khí độc trong hố,C0048,excavation,alias_normalization_candidate,False,True,needs_real_asr_validation
+ASRC2_0087,đường điện ngầm,cáp điện ngầm,C0049,excavation,alias_normalization_candidate,False,True,needs_real_asr_validation
+ASRC2_0088,đường ống ngầm,utility ngầm,C0050,excavation,alias_normalization_candidate,False,True,needs_real_asr_validation
+ASRC2_0089,thang xuống hố,thang hố đào,C0051,excavation,alias_normalization_candidate,False,True,needs_real_asr_validation
+ASRC2_0090,lối ra vào hố,lối xuống hố,C0052,excavation,alias_normalization_candidate,False,True,needs_real_asr_validation
+ASRC2_0091,máy bơm thoát nước,bơm hố móng,C0053,excavation,alias_normalization_candidate,False,True,needs_real_asr_validation
+ASRC2_0092,cọc chống,cọc chống vách,C0054,excavation,alias_normalization_candidate,False,True,needs_real_asr_validation
+ASRC2_0093,bê tông tươi,bê tông thương phẩm,C0056,concrete_rebar_formwork,alias_normalization_candidate,False,True,needs_real_asr_validation
+ASRC2_0094,cốt thép,thép cốt,C0057,concrete_rebar_formwork,alias_normalization_candidate,False,True,needs_real_asr_validation
+ASRC2_0095,thanh cốt thép,thép cây,C0058,concrete_rebar_formwork,alias_normalization_candidate,False,True,needs_real_asr_validation
+ASRC2_0097,cốp pha,ván khuôn,C0059,concrete_rebar_formwork,alias_normalization_candidate,False,True,needs_real_asr_validation
+ASRC2_0098,cây chống,cột chống,C0060,concrete_rebar_formwork,alias_normalization_candidate,False,True,needs_real_asr_validation
+ASRC2_0099,chống lại,cây chống lại,C0061,concrete_rebar_formwork,alias_normalization_candidate,False,True,needs_real_asr_validation
+ASRC2_0100,sàn bê tông,sàn,C0064,concrete_rebar_formwork,alias_normalization_candidate,False,True,needs_real_asr_validation
+ASRC2_0101,móng,móng công trình,C0065,concrete_rebar_formwork,alias_normalization_candidate,False,True,needs_real_asr_validation
+ASRC2_0102,lớp bê tông bảo vệ,lớp bảo vệ,C0066,concrete_rebar_formwork,alias_normalization_candidate,False,True,needs_real_asr_validation
+ASRC2_0103,cao độ đổ bê tông,cao độ bê tông,C0067,concrete_rebar_formwork,alias_normalization_candidate,False,True,needs_real_asr_validation
+ASRC2_0104,mạch ngừng,mạch ngừng bê tông,C0068,concrete_rebar_formwork,alias_normalization_candidate,False,True,needs_real_asr_validation
+ASRC2_0105,máy đầm dùi,đầm dùi,C0069,concrete_rebar_formwork,alias_normalization_candidate,False,True,needs_real_asr_validation
+ASRC2_0106,máy bơm bê tông,bơm bê tông,C0070,concrete_rebar_formwork,alias_normalization_candidate,False,True,needs_real_asr_validation
+ASRC2_0107,ống bơm bê tông,ống bơm,C0071,concrete_rebar_formwork,alias_normalization_candidate,False,True,needs_real_asr_validation
+ASRC2_0108,con kê bê tông,con kê,C0072,concrete_rebar_formwork,alias_normalization_candidate,False,True,needs_real_asr_validation
+ASRC2_0109,cần cẩu,cẩu,C0073,lifting_rigging,alias_normalization_candidate,False,True,needs_real_asr_validation
+ASRC2_0110,cần chính,cần boom,C0074,lifting_rigging,alias_normalization_candidate,False,True,needs_real_asr_validation
+ASRC2_0111,móc cẩu,móc,C0075,lifting_rigging,alias_normalization_candidate,False,True,needs_real_asr_validation
+ASRC2_0112,dây cẩu,sling,C0076,lifting_rigging,alias_normalization_candidate,False,True,needs_real_asr_validation
+ASRC2_0113,dây cẩu,dây sling,C0076,lifting_rigging,alias_normalization_candidate,False,True,needs_real_asr_validation
+ASRC2_0114,cáp thép,cáp cẩu,C0077,lifting_rigging,alias_normalization_candidate,False,True,needs_real_asr_validation
+ASRC2_0115,ma ní,shackle,C0078,lifting_rigging,alias_normalization_candidate,False,True,needs_real_asr_validation
+ASRC2_0117,pa lăng,palang,C0079,lifting_rigging,alias_normalization_candidate,False,True,needs_real_asr_validation
+ASRC2_0118,chân chống cẩu,chân chống,C0080,lifting_rigging,alias_normalization_candidate,False,True,needs_real_asr_validation
+ASRC2_0119,tải treo,hàng treo,C0081,lifting_rigging,alias_normalization_candidate,False,True,needs_real_asr_validation
+ASRC2_0120,bán kính quay,vùng quay đuôi,C0082,lifting_rigging,alias_normalization_candidate,False,True,needs_real_asr_validation
+ASRC2_0121,người báo hiệu,signalman,C0083,lifting_rigging,alias_normalization_candidate,False,True,needs_real_asr_validation
+ASRC2_0122,người báo hiệu,người xi nhan,C0083,lifting_rigging,alias_normalization_candidate,False,True,needs_real_asr_validation
+ASRC2_0123,người móc cẩu,thợ rigging,C0084,lifting_rigging,alias_normalization_candidate,False,True,needs_real_asr_validation
+ASRC2_0124,góc dây cẩu,góc sling,C0085,lifting_rigging,alias_normalization_candidate,False,True,needs_real_asr_validation
+ASRC2_0125,tải trọng làm việc an toàn,SWL,C0086,lifting_rigging,alias_normalization_candidate,False,True,needs_real_asr_validation
+ASRC2_0126,tải trọng định mức,rated capacity,C0087,lifting_rigging,alias_normalization_candidate,False,True,needs_real_asr_validation
+ASRC2_0127,điểm nâng,tai cẩu,C0088,lifting_rigging,alias_normalization_candidate,False,True,needs_real_asr_validation
+ASRC2_0128,thanh cân bằng,spreader,C0089,lifting_rigging,alias_normalization_candidate,False,True,needs_real_asr_validation
+ASRC2_0129,dây điều hướng,dây lái tải,C0090,lifting_rigging,alias_normalization_candidate,False,True,needs_real_asr_validation
+ASRC2_0130,máy xúc,xe cuốc,C0091,heavy_equipment,alias_normalization_candidate,False,True,needs_real_asr_validation
+ASRC2_0131,máy ủi,xe ủi,C0092,heavy_equipment,alias_normalization_candidate,False,True,needs_real_asr_validation
+ASRC2_0132,xe nâng,forklift,C0093,heavy_equipment,alias_normalization_candidate,False,True,needs_real_asr_validation
+ASRC2_0133,xe ben,xe tải ben,C0094,heavy_equipment,alias_normalization_candidate,False,True,needs_real_asr_validation
+ASRC2_0134,xe lu,máy lu,C0095,heavy_equipment,alias_normalization_candidate,False,True,needs_real_asr_validation
+ASRC2_0135,máy san,grader,C0096,heavy_equipment,alias_normalization_candidate,False,True,needs_real_asr_validation
+ASRC2_0136,gầu xúc,gầu,C0099,heavy_equipment,alias_normalization_candidate,False,True,needs_real_asr_validation
+ASRC2_0137,lưỡi ủi,lưỡi ben,C0100,heavy_equipment,alias_normalization_candidate,False,True,needs_real_asr_validation
+ASRC2_0138,còi lùi,còi báo lùi,C0101,heavy_equipment,alias_normalization_candidate,False,True,needs_real_asr_validation
+ASRC2_0139,điểm mù,góc chết,C0102,heavy_equipment,alias_normalization_candidate,False,True,needs_real_asr_validation
+ASRC2_0140,khu vực quay máy,vùng quay máy,C0103,heavy_equipment,alias_normalization_candidate,False,True,needs_real_asr_validation
+ASRC2_0141,phanh đỗ,phanh tay,C0104,heavy_equipment,alias_normalization_candidate,False,True,needs_real_asr_validation
+ASRC2_0142,chốt an toàn,chốt khóa,C0105,heavy_equipment,alias_normalization_candidate,False,True,needs_real_asr_validation
+ASRC2_0143,đường công vụ,đường nội bộ,C0106,heavy_equipment,alias_normalization_candidate,False,True,needs_real_asr_validation
+ASRC2_0144,người hướng dẫn xe,người cảnh giới xe,C0107,heavy_equipment,alias_normalization_candidate,False,True,needs_real_asr_validation
+ASRC2_0145,điểm rửa bánh xe,cầu rửa xe,C0108,heavy_equipment,alias_normalization_candidate,False,True,needs_real_asr_validation
+ASRC2_0146,cầu dao tự động,CB,C0109,electrical,alias_normalization_candidate,False,True,needs_real_asr_validation
+ASRC2_0147,cầu dao tự động,aptomat,C0109,electrical,alias_normalization_candidate,False,True,needs_real_asr_validation
+ASRC2_0148,cầu dao tự động,áp tô mát,C0109,electrical,alias_normalization_candidate,False,True,needs_real_asr_validation
+ASRC2_0149,tủ điện,tủ điện công trường,C0110,electrical,alias_normalization_candidate,False,True,needs_real_asr_validation
+ASRC2_0150,dây dẫn điện,dây điện,C0111,electrical,alias_normalization_candidate,False,True,needs_real_asr_validation
+ASRC2_0151,dây pha,dây nóng,C0112,electrical,alias_normalization_candidate,False,True,needs_real_asr_validation
+ASRC2_0152,dây trung tính,dây nguội,C0113,electrical,alias_normalization_candidate,False,True,needs_real_asr_validation
+ASRC2_0153,dây tiếp địa,dây nối đất,C0114,electrical,alias_normalization_candidate,False,True,needs_real_asr_validation
+ASRC2_0154,nối đất,tiếp địa,C0115,electrical,alias_normalization_candidate,False,True,needs_real_asr_validation
+ASRC2_0155,ngắn mạch,chập điện,C0116,electrical,alias_normalization_candidate,False,True,needs_real_asr_validation
+ASRC2_0156,chạm đất,lỗi chạm đất,C0117,electrical,alias_normalization_candidate,False,True,needs_real_asr_validation
+ASRC2_0157,điện áp,điện thế,C0119,electrical,alias_normalization_candidate,False,True,needs_real_asr_validation
+ASRC2_0158,dòng điện,ampe,C0120,electrical,alias_normalization_candidate,False,True,needs_real_asr_validation
+ASRC2_0159,máy biến áp,biến áp,C0121,electrical,alias_normalization_candidate,False,True,needs_real_asr_validation
+ASRC2_0160,máy phát điện,máy phát,C0122,electrical,alias_normalization_candidate,False,True,needs_real_asr_validation
+ASRC2_0161,cáp điện,dây cáp điện,C0123,electrical,alias_normalization_candidate,False,True,needs_real_asr_validation
+ASRC2_0162,đầu cốt cáp,đầu cos,C0124,electrical,alias_normalization_candidate,False,True,needs_real_asr_validation
+ASRC2_0163,đầu cốt cáp,cos cáp,C0124,electrical,alias_normalization_candidate,False,True,needs_real_asr_validation
+ASRC2_0164,rơ le,relay,C0125,electrical,alias_normalization_candidate,False,True,needs_real_asr_validation
+ASRC2_0165,khóa liên động,interlock,C0126,electrical,alias_normalization_candidate,False,True,needs_real_asr_validation
+ASRC2_0166,vòng bi,bạc đạn,C0127,mechanical,alias_normalization_candidate,False,True,needs_real_asr_validation
+ASRC2_0167,ổ trục thanh truyền,bạc biên,C0128,mechanical,alias_normalization_candidate,False,True,needs_real_asr_validation
+ASRC2_0168,ổ trục thanh truyền,bạc dên,C0128,mechanical,alias_normalization_candidate,False,True,needs_real_asr_validation
+ASRC2_0169,dây đai truyền động,dây curoa,C0129,mechanical,alias_normalization_candidate,False,True,needs_real_asr_validation
+ASRC2_0170,dây đai truyền động,dây cua-roa,C0129,mechanical,alias_normalization_candidate,False,True,needs_real_asr_validation
+ASRC2_0171,phớt làm kín,phớt,C0135,mechanical,alias_normalization_candidate,False,True,needs_real_asr_validation
+ASRC2_0172,bu lông,bulông,C0136,mechanical,alias_normalization_candidate,False,True,needs_real_asr_validation
+ASRC2_0174,đai ốc,ê-cu,C0137,mechanical,alias_normalization_candidate,False,True,needs_real_asr_validation
+ASRC2_0175,đai ốc,ecu,C0137,mechanical,alias_normalization_candidate,False,True,needs_real_asr_validation
+ASRC2_0176,ống thủy lực,tuy ô thủy lực,C0138,mechanical,alias_normalization_candidate,False,True,needs_real_asr_validation
+ASRC2_0177,ống thủy lực,tuy-ô thủy lực,C0138,mechanical,alias_normalization_candidate,False,True,needs_real_asr_validation
+ASRC2_0178,dầu thủy lực,nhớt thủy lực,C0139,mechanical,alias_normalization_candidate,False,True,needs_real_asr_validation
+ASRC2_0179,rò dầu,rỉ dầu,C0140,mechanical,alias_normalization_candidate,False,True,needs_real_asr_validation
+ASRC2_0180,rò nhớt,rỉ nhớt,C0141,mechanical,alias_normalization_candidate,False,True,needs_real_asr_validation
+ASRC2_0181,két làm mát,két nước,C0142,mechanical,alias_normalization_candidate,False,True,needs_real_asr_validation
+ASRC2_0182,ống xả,ống bô,C0143,mechanical,alias_normalization_candidate,False,True,needs_real_asr_validation
+ASRC2_0183,ống xả,ống pô,C0143,mechanical,alias_normalization_candidate,False,True,needs_real_asr_validation
+ASRC2_0184,bộ lọc,lọc,C0144,mechanical,alias_normalization_candidate,False,True,needs_real_asr_validation
+ASRC2_0185,máy hàn,máy hàn điện,C0145,welding_hotwork,alias_normalization_candidate,False,True,needs_real_asr_validation
+ASRC2_0186,que hàn,que điện,C0146,welding_hotwork,alias_normalization_candidate,False,True,needs_real_asr_validation
+ASRC2_0187,xỉ hàn,xỉ,C0152,welding_hotwork,alias_normalization_candidate,False,True,needs_real_asr_validation
+ASRC2_0188,bắn tóe hàn,tia hàn,C0153,welding_hotwork,alias_normalization_candidate,False,True,needs_real_asr_validation
+ASRC2_0189,mặt nạ hàn,mặt nạ,C0154,welding_hotwork,alias_normalization_candidate,False,True,needs_real_asr_validation
+ASRC2_0190,bình khí,bình gas,C0155,welding_hotwork,alias_normalization_candidate,False,True,needs_real_asr_validation
+ASRC2_0191,bình oxy,bình ô-xy,C0156,welding_hotwork,alias_normalization_candidate,False,True,needs_real_asr_validation
+ASRC2_0192,van điều áp,regulator,C0157,welding_hotwork,alias_normalization_candidate,False,True,needs_real_asr_validation
+ASRC2_0193,mỏ hàn,torch,C0158,welding_hotwork,alias_normalization_candidate,False,True,needs_real_asr_validation
+ASRC2_0194,cắt oxy-gas,cắt gió đá,C0159,welding_hotwork,alias_normalization_candidate,False,True,needs_real_asr_validation
+ASRC2_0195,ống dẫn khí,dây hơi,C0160,welding_hotwork,alias_normalization_candidate,False,True,needs_real_asr_validation
+ASRC2_0196,van bình khí,van bình,C0161,welding_hotwork,alias_normalization_candidate,False,True,needs_real_asr_validation
+ASRC2_0197,tấm chắn hàn,màn chắn hàn,C0162,welding_hotwork,alias_normalization_candidate,False,True,needs_real_asr_validation
+ASRC2_0198,ống cấp nước,ống nước,C0163,piping_plumbing,alias_normalization_candidate,False,True,needs_real_asr_validation
+ASRC2_0199,ống thoát nước,ống thoát,C0164,piping_plumbing,alias_normalization_candidate,False,True,needs_real_asr_validation
+ASRC2_0200,ống thép mạ kẽm,ống GI,C0166,piping_plumbing,alias_normalization_candidate,False,True,needs_real_asr_validation
+ASRC2_0201,van một chiều,van 1 chiều,C0169,piping_plumbing,alias_normalization_candidate,False,True,needs_real_asr_validation
+ASRC2_0202,cút 90 độ,co 90,C0170,piping_plumbing,alias_normalization_candidate,False,True,needs_real_asr_validation
+ASRC2_0203,tê ống,tê,C0171,piping_plumbing,alias_normalization_candidate,False,True,needs_real_asr_validation
+ASRC2_0204,măng sông,nối ống thẳng,C0172,piping_plumbing,alias_normalization_candidate,False,True,needs_real_asr_validation
+ASRC2_0205,đồng hồ áp suất,đồng hồ áp,C0173,piping_plumbing,alias_normalization_candidate,False,True,needs_real_asr_validation
+ASRC2_0206,rò nước,xì nước,C0174,piping_plumbing,alias_normalization_candidate,False,True,needs_real_asr_validation
+ASRC2_0207,rò khí,xì gas,C0175,piping_plumbing,alias_normalization_candidate,False,True,needs_real_asr_validation
+ASRC2_0208,rò khí,xì khí,C0175,piping_plumbing,alias_normalization_candidate,False,True,needs_real_asr_validation
+ASRC2_0209,giá đỡ ống,support ống,C0178,piping_plumbing,alias_normalization_candidate,False,True,needs_real_asr_validation
+ASRC2_0210,độ dốc ống,slope ống,C0179,piping_plumbing,alias_normalization_candidate,False,True,needs_real_asr_validation
+ASRC2_0211,thử áp,test áp,C0180,piping_plumbing,alias_normalization_candidate,False,True,needs_real_asr_validation
+ASRC2_0212,đá dăm,đá 1x2,C0183,material_logistics,alias_normalization_candidate,False,True,needs_real_asr_validation
+ASRC2_0213,ván ép,ván plywood,C0185,material_logistics,alias_normalization_candidate,False,True,needs_real_asr_validation
+ASRC2_0214,thép hình,thép H,C0186,material_logistics,alias_normalization_candidate,False,True,needs_real_asr_validation
+ASRC2_0215,thép hình,thép I,C0186,material_logistics,alias_normalization_candidate,False,True,needs_real_asr_validation
+ASRC2_0216,pallet,pa-lét,C0187,material_logistics,alias_normalization_candidate,False,True,needs_real_asr_validation
+ASRC2_0217,kho vật tư,kho,C0188,material_logistics,alias_normalization_candidate,False,True,needs_real_asr_validation
+ASRC2_0218,bãi tập kết,bãi vật tư,C0189,material_logistics,alias_normalization_candidate,False,True,needs_real_asr_validation
+ASRC2_0219,lối đi bộ,lối người đi,C0190,material_logistics,alias_normalization_candidate,False,True,needs_real_asr_validation
+ASRC2_0220,lối xe chạy,đường xe chạy,C0191,material_logistics,alias_normalization_candidate,False,True,needs_real_asr_validation
+ASRC2_0221,container kho,container vật tư,C0192,material_logistics,alias_normalization_candidate,False,True,needs_real_asr_validation
+ASRC2_0222,phiếu xuất kho,phiếu xuất,C0193,material_logistics,alias_normalization_candidate,False,True,needs_real_asr_validation
+ASRC2_0223,mã vật tư,part number,C0194,material_logistics,alias_normalization_candidate,False,True,needs_real_asr_validation
+ASRC2_0224,mã vật tư,mã hàng,C0194,material_logistics,alias_normalization_candidate,False,True,needs_real_asr_validation
+ASRC2_0225,số lượng,qty,C0195,material_logistics,alias_normalization_candidate,False,True,needs_real_asr_validation
+ASRC2_0226,khối lượng,trọng lượng,C0196,material_logistics,alias_normalization_candidate,False,True,needs_real_asr_validation
+ASRC2_0227,kiện hàng,kiện,C0197,material_logistics,alias_normalization_candidate,False,True,needs_real_asr_validation
+ASRC2_0228,dây chằng hàng,dây chằng,C0198,material_logistics,alias_normalization_candidate,False,True,needs_real_asr_validation
+ASRC2_0229,cao độ,level,C0199,survey_measurement,alias_normalization_candidate,False,True,needs_real_asr_validation
+ASRC2_0230,tim trục,tim,C0200,survey_measurement,alias_normalization_candidate,False,True,needs_real_asr_validation
+ASRC2_0231,tim trục,trục định vị,C0200,survey_measurement,alias_normalization_candidate,False,True,needs_real_asr_validation
+ASRC2_0232,mốc chuẩn,mốc cao độ,C0201,survey_measurement,alias_normalization_candidate,False,True,needs_real_asr_validation
+ASRC2_0233,máy toàn đạc,total station,C0202,survey_measurement,alias_normalization_candidate,False,True,needs_real_asr_validation
+ASRC2_0234,máy thủy bình,máy level,C0203,survey_measurement,alias_normalization_candidate,False,True,needs_real_asr_validation
+ASRC2_0235,mia thủy chuẩn,mia,C0204,survey_measurement,alias_normalization_candidate,False,True,needs_real_asr_validation
+ASRC2_0236,thước thép,thước cuộn,C0205,survey_measurement,alias_normalization_candidate,False,True,needs_real_asr_validation
+ASRC2_0237,thước laser,máy đo laser,C0206,survey_measurement,alias_normalization_candidate,False,True,needs_real_asr_validation
+ASRC2_0238,độ thẳng đứng,độ đứng,C0207,survey_measurement,alias_normalization_candidate,False,True,needs_real_asr_validation
+ASRC2_0239,đường kính,phi,C0214,survey_measurement,alias_normalization_candidate,False,True,needs_real_asr_validation
+ASRC2_0240,đường kính,Ø,C0214,survey_measurement,alias_normalization_candidate,False,True,needs_real_asr_validation
+ASRC2_0241,sai số,dung sai,C0215,survey_measurement,alias_normalization_candidate,False,True,needs_real_asr_validation

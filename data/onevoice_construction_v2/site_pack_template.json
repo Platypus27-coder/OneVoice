@@ -1,0 +1,25 @@
+{
+  "site_id": "REPLACE_ME",
+  "site_name": "REPLACE_ME",
+  "project_type": "building|industrial|infrastructure|MEP|other",
+  "enabled_domains": [
+    "safety_general",
+    "fall_scaffold",
+    "excavation",
+    "concrete_rebar_formwork",
+    "lifting_rigging",
+    "heavy_equipment",
+    "electrical",
+    "mechanical",
+    "welding_hotwork",
+    "piping_plumbing",
+    "material_logistics",
+    "survey_measurement"
+  ],
+  "local_terms": [],
+  "equipment_ids": [],
+  "zone_names": [],
+  "company_abbreviations": [],
+  "safety_overrides": [],
+  "translation_memory": []
+}
