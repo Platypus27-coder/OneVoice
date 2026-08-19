@@ -96,15 +96,66 @@ NOISE_URLS = {
     "worker_babble.wav": f"{ESC50_BASE}/1-26143-A-43.wav",
 }
 
+def generate_synthetic_noise(noise_type: str, duration_sec: int = 10, sr: int = 16000) -> np.ndarray:
+    """Bulletproof fallback: generate realistic industrial noise if download fails/corrupt."""
+    t = np.linspace(0, duration_sec, int(sr * duration_sec))
+    if "grinder" in noise_type or "drill" in noise_type:
+        # Metallic high-frequency FM modulation + white noise
+        noise = 0.6 * np.sin(2 * np.pi * 3200 * t + np.sin(2 * np.pi * 50 * t))
+        noise += 0.4 * np.random.normal(0, 1, len(t))
+    elif "engine" in noise_type or "excavator" in noise_type or "generator" in noise_type or "truck" in noise_type:
+        # Low frequency diesel hum + rumble
+        noise = 0.5 * np.sin(2 * np.pi * 60 * t) + 0.3 * np.sin(2 * np.pi * 120 * t)
+        noise += 0.3 * np.random.normal(0, 1, len(t))
+    elif "hammer" in noise_type:
+        # Periodic impact pulses
+        noise = 0.2 * np.random.normal(0, 1, len(t))
+        pulse_idx = np.arange(0, len(t), int(sr * 0.8))
+        for idx in pulse_idx:
+            end = min(idx + int(sr * 0.05), len(t))
+            noise[idx:end] += np.random.normal(0, 3, end - idx)
+    else: # wind / babble
+        # Pink noise approximation
+        b = [0.049922035, -0.095993537, 0.050612699, -0.004408786]
+        a = [1.0, -2.494956002, 2.017265875, -0.522189400]
+        white = np.random.normal(0, 1, len(t))
+        noise = np.convolve(white, b, mode='same')
+    return np.clip(noise / (np.max(np.abs(noise)) + 1e-9), -1.0, 1.0)
+
+
 def download_noise_bank():
     os.makedirs(NOISE_DIR, exist_ok=True)
     for fname, url in NOISE_URLS.items():
         dst = os.path.join(NOISE_DIR, fname)
-        if not os.path.exists(dst):
+        need_download = True
+        if os.path.exists(dst):
+            # Check if valid wav file (> 10KB)
+            if os.path.getsize(dst) > 10000:
+                try:
+                    sf.read(dst)
+                    need_download = False
+                except Exception:
+                    os.remove(dst)
+            else:
+                os.remove(dst)
+
+        if need_download:
             print(f"Downloading {fname}...")
             os.system(f'wget -q -O "{dst}" "{url}"')
+            # If download resulted in corrupt/LFS file, create realistic synthetic noise
+            if not os.path.exists(dst) or os.path.getsize(dst) < 10000:
+                print(f"  ⚡ Download corrupt/LFS, auto-generating synthetic {fname}...")
+                synth_audio = generate_synthetic_noise(fname)
+                sf.write(dst, synth_audio, 16000)
+            else:
+                try:
+                    sf.read(dst)
+                except Exception:
+                    print(f"  ⚡ Corrupt WAV format, auto-generating synthetic {fname}...")
+                    synth_audio = generate_synthetic_noise(fname)
+                    sf.write(dst, synth_audio, 16000)
         else:
-            print(f"  {fname} already exists, skipping.")
+            print(f"  {fname} verified OK.")
 
 # ── TTS synthesis using edge-tts (Python 3.12 Compatible) ────
 import asyncio
