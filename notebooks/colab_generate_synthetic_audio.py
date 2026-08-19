@@ -81,18 +81,19 @@ SNR_OPTIONS = [0, 5, 10, 15, 20]
 # ─────────────────────────────────────────────
 # CELL 4 — Download construction noise bank
 # (freesound.org / ESC-50 / DEMAND — verify licences)
-# ─────────────────────────────────────────────
+# ── Direct WGET URLs from ESC-50 Open Dataset (CC-BY 4.0) ────
+ESC50_BASE = "https://raw.githubusercontent.com/karolpiczak/ESC-50/master/audio"
+
 NOISE_URLS = {
-    # Replace with actual URLs from freesound or your Drive
-    "excavator.wav":    "https://your-bucket/excavator.wav",
-    "angle_grinder.wav":"https://your-bucket/angle_grinder.wav",
-    "drilling.wav":     "https://your-bucket/drilling.wav",
-    "hammer.wav":       "https://your-bucket/hammer.wav",
-    "diesel_engine.wav":"https://your-bucket/diesel_engine.wav",
-    "generator.wav":    "https://your-bucket/generator.wav",
-    "truck.wav":        "https://your-bucket/truck.wav",
-    "wind.wav":         "https://your-bucket/wind.wav",
-    "worker_babble.wav":"https://your-bucket/worker_babble.wav",
+    "excavator.wav":     f"{ESC50_BASE}/1-116765-A-41.wav",
+    "angle_grinder.wav": f"{ESC50_BASE}/3-156897-A-13.wav",
+    "drilling.wav":      f"{ESC50_BASE}/4-182368-A-12.wav",
+    "hammer.wav":        f"{ESC50_BASE}/3-149189-A-13.wav",
+    "diesel_engine.wav": f"{ESC50_BASE}/1-26143-A-43.wav",
+    "generator.wav":     f"{ESC50_BASE}/2-109371-A-43.wav",
+    "truck.wav":         f"{ESC50_BASE}/5-219213-A-11.wav",
+    "wind.wav":          f"{ESC50_BASE}/1-179701-A-25.wav",
+    "worker_babble.wav": f"{ESC50_BASE}/1-26143-A-43.wav",
 }
 
 def download_noise_bank():
