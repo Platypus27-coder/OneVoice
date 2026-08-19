@@ -187,6 +187,20 @@ def generate_dataset():
     for d in [CLEAN_DIR, NOISY_DIR, OUTPUT_ROOT]:
         os.makedirs(d, exist_ok=True)
 
+    # ── Load existing manifest checkpoint (if resuming) ──
+    existing_audios = set()
+    if os.path.exists(MANIFEST):
+        with open(MANIFEST, "r", encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if line:
+                    try:
+                        data = json.loads(line)
+                        existing_audios.add(data.get("audio"))
+                    except Exception:
+                        pass
+        print(f"🔄 Resuming checkpoint: found {len(existing_audios)} existing manifest entries.")
+
     # ── Load utterances ──
     utt_path = os.path.join(DATA_DIR, "utterances_all.csv")
     df = pd.read_csv(utt_path)
@@ -204,84 +218,111 @@ def generate_dataset():
         else:
             print(f"  [WARN] Noise file missing: {nc}")
 
-    manifest_lines = []
-    sample_idx = 0
+    usable_noises = [n for n in NOISE_CLASSES if n in noise_cache]
+    if not usable_noises:
+        print("[WARN] No noise files found in noise_bank. Using silence fallback.")
+        noise_cache["silence.wav"] = np.zeros(SAMPLE_RATE)
+        usable_noises = ["silence.wav"]
 
-    for _, row in tqdm(df.iterrows(), total=len(df), desc="Generating"):
-        utt_id   = row["utterance_id"]
-        vi_text  = str(row["vi"])
-        en_text  = str(row.get("en", ""))
-        domain   = str(row.get("domain", "unknown"))
-        intent   = str(row.get("intent", "unknown"))
-        risk     = str(row.get("risk_level", "unknown"))
-        split    = str(row.get("split", "train"))
+    sample_idx = len(existing_audios)
+    skipped_count = 0
 
-        # ── Pick language (VI or EN depending on pipeline direction) ──
-        lang = "vi"
-        text = vi_text
-        speaker_pool = VI_SPEAKERS
+    # ── Open manifest in APPEND mode for instant streaming ──
+    with open(MANIFEST, "a", encoding="utf-8") as manifest_file:
+        for _, row in tqdm(df.iterrows(), total=len(df), desc="Generating (Checkpoint-enabled)"):
+            utt_id   = str(row["utterance_id"])
+            vi_text  = str(row["vi"])
+            en_text  = str(row.get("en", ""))
+            domain   = str(row.get("domain", "unknown"))
+            intent   = str(row.get("intent", "unknown"))
+            risk     = str(row.get("risk_level", "unknown"))
+            split    = str(row.get("split", "train"))
 
-        # ── Synthesize clean wav ──
-        clean_fname = f"{utt_id}_clean.wav"
-        clean_path  = os.path.join(CLEAN_DIR, clean_fname)
+            # Check if all variants for this utterance already exist
+            all_done = True
+            for v in range(SAMPLES_PER_TEXT):
+                noisy_fname = f"{utt_id}_n{v+1:02d}.wav"
+                noisy_path  = os.path.join(NOISY_DIR, noisy_fname)
+                if noisy_fname not in existing_audios or not os.path.exists(noisy_path):
+                    all_done = False
+                    break
+            if all_done:
+                continue  # Fast skip fully processed utterance
 
-        if not os.path.exists(clean_path):
-            tts_model, speaker = random.choice(speaker_pool)
-            ok = tts_synthesize(text, lang, clean_path, tts_model, speaker)
-            if not ok:
+            # ── Synthesize clean wav ──
+            lang = "vi"
+            text = vi_text
+            speaker_pool = VI_SPEAKERS
+
+            clean_fname = f"{utt_id}_clean.wav"
+            clean_path  = os.path.join(CLEAN_DIR, clean_fname)
+
+            if not os.path.exists(clean_path):
+                tts_model, speaker = random.choice(speaker_pool)
+                ok = tts_synthesize(text, lang, clean_path, tts_model, speaker)
+                if not ok:
+                    skipped_count += 1
+                    continue
+            else:
+                tts_model, speaker = random.choice(speaker_pool)
+
+            try:
+                clean_audio, _ = librosa.load(clean_path, sr=SAMPLE_RATE, mono=True)
+            except Exception:
+                skipped_count += 1
                 continue
-        else:
-            tts_model, speaker = random.choice(speaker_pool)
 
-        clean_audio, _ = librosa.load(clean_path, sr=SAMPLE_RATE, mono=True)
+            # ── Apply RIR ──
+            rir_applied = apply_rir(clean_audio, SAMPLE_RATE)
 
-        # ── Apply RIR ──
-        rir_applied = apply_rir(clean_audio, SAMPLE_RATE)
+            # ── Generate SAMPLES_PER_TEXT noisy variants ──
+            for v in range(SAMPLES_PER_TEXT):
+                noisy_fname = f"{utt_id}_n{v+1:02d}.wav"
+                noisy_path  = os.path.join(NOISY_DIR, noisy_fname)
 
-        # ── Generate SAMPLES_PER_TEXT noisy variants ──
-        for v in range(SAMPLES_PER_TEXT):
-            # Random choices
-            noise_name = random.choice([n for n in NOISE_CLASSES if n in noise_cache])
-            snr_db     = random.choice(SNR_OPTIONS)
-            use_reverb = random.random() > 0.4
+                # Skip if this specific noisy file is already generated and logged
+                if noisy_fname in existing_audios and os.path.exists(noisy_path):
+                    continue
 
-            speech_for_mix = rir_applied if use_reverb else clean_audio
-            mixed = mix_noise(speech_for_mix, noise_cache[noise_name],
-                              snr_db, SAMPLE_RATE)
-            mixed = gain_variation(mixed)
-            mixed = random_clip(mixed)
+                noise_name = random.choice(usable_noises)
+                snr_db     = random.choice(SNR_OPTIONS)
+                use_reverb = random.random() > 0.4
 
-            noisy_fname = f"{utt_id}_n{v+1:02d}.wav"
-            noisy_path  = os.path.join(NOISY_DIR, noisy_fname)
-            sf.write(noisy_path, mixed, SAMPLE_RATE)
+                speech_for_mix = rir_applied if use_reverb else clean_audio
+                mixed = mix_noise(speech_for_mix, noise_cache[noise_name],
+                                  snr_db, SAMPLE_RATE)
+                mixed = gain_variation(mixed)
+                mixed = random_clip(mixed)
 
-            # ── Write manifest entry ──
-            entry = {
-                "audio":              noisy_fname,
-                "clean_audio":        clean_fname,
-                "text":               text,
-                "translation":        en_text,
-                "domain":             domain,
-                "intent":             intent,
-                "risk_level":         risk,
-                "split":              split,
-                "speaker_id":         f"{tts_model}_{speaker or 'default'}",
-                "noise_type":         noise_name.replace(".wav", ""),
-                "snr_db":             snr_db,
-                "reverb":             use_reverb,
-                "rir_id":             "simulated_echo" if use_reverb else "none",
-                "synthetic_speech":   True,
-                "synthetic_noise_mix":True,
-                "sample_rate":        SAMPLE_RATE,
-            }
-            manifest_lines.append(json.dumps(entry, ensure_ascii=False))
-            sample_idx += 1
+                sf.write(noisy_path, mixed, SAMPLE_RATE)
 
-    # ── Write manifest ──
-    with open(MANIFEST, "w", encoding="utf-8") as f:
-        f.write("\n".join(manifest_lines))
+                # ── Write and flush manifest entry immediately ──
+                entry = {
+                    "audio":              noisy_fname,
+                    "clean_audio":        clean_fname,
+                    "text":               text,
+                    "translation":        en_text,
+                    "domain":             domain,
+                    "intent":             intent,
+                    "risk_level":         risk,
+                    "split":              split,
+                    "speaker_id":         f"{tts_model}_{speaker or 'default'}",
+                    "noise_type":         noise_name.replace(".wav", ""),
+                    "snr_db":             snr_db,
+                    "reverb":             use_reverb,
+                    "rir_id":             "simulated_echo" if use_reverb else "none",
+                    "synthetic_speech":   True,
+                    "synthetic_noise_mix":True,
+                    "sample_rate":        SAMPLE_RATE,
+                }
+                manifest_file.write(json.dumps(entry, ensure_ascii=False) + "\n")
+                manifest_file.flush()  # Instant write to Google Drive / Disk
 
-    print(f"\n✅ Done! Generated {sample_idx} noisy samples.")
+                existing_audios.add(noisy_fname)
+                sample_idx += 1
+
+    print(f"\n✅ Generation complete!")
+    print(f"   Total samples in manifest: {sample_idx}")
     print(f"   Clean wavs : {CLEAN_DIR}")
     print(f"   Noisy wavs : {NOISY_DIR}")
     print(f"   Manifest   : {MANIFEST}")
