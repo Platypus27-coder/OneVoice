@@ -35,7 +35,7 @@ import os, json, random, hashlib
 from pathlib import Path
 
 # ── Paths ──────────────────────────────────────────────────
-DATA_DIR     = "/content/OneVoice/onevoice-edge/data/onevoice_construction_v2"
+DATA_DIR     = "/content/OneVoice/data/onevoice_construction_v2"
 OUTPUT_ROOT  = "/content/drive/MyDrive/onevoice_audio_v1"   # change for Kaggle
 NOISE_DIR    = os.path.join(OUTPUT_ROOT, "noise_bank")      # pre-downloaded noise files
 CLEAN_DIR    = os.path.join(OUTPUT_ROOT, "clean")
@@ -47,16 +47,19 @@ SAMPLES_PER_TEXT   = 2          # each utterance → 2 noisy versions ≈ 16,000
 SAMPLE_RATE        = 16000
 MAX_UTTERANCES     = None       # None = all 8,064; set int to limit for quick test
 
-# ── Speaker pool (Coqui TTS model IDs) ────────────────────
-# Each entry: (tts_model, speaker_name_or_None)
-# Requires: pip install TTS
+# ── Install packages ────────────────────────────────────────
+# !pip install -q edge-tts soundfile librosa audiomentations pandas tqdm
+
+# ── Speaker pool (Microsoft Edge Neural Voices) ─────────────
 VI_SPEAKERS = [
-    ("tts_models/vi/vivos/vits",         None),           # Vietnamese VITS
+    ("vi-VN-HoaiMyNeural", None),  # Vietnamese Female
+    ("vi-VN-NamMinhNeural", None), # Vietnamese Male
 ]
 EN_SPEAKERS = [
-    ("tts_models/en/vctk/vits",          "p225"),         # EN female
-    ("tts_models/en/vctk/vits",          "p226"),         # EN male
-    ("tts_models/en/ljspeech/tacotron2-DDC", None),       # EN neutral
+    ("en-US-JennyNeural", None),   # US Female
+    ("en-US-GuyNeural", None),     # US Male
+    ("en-GB-SoniaNeural", None),   # UK Female
+    ("en-AU-WilliamNeural", None), # AU Male
 ]
 
 # ── Noise classes (filenames in NOISE_DIR/*.wav) ───────────
@@ -102,31 +105,30 @@ def download_noise_bank():
         else:
             print(f"  {fname} already exists, skipping.")
 
+# ── TTS synthesis using edge-tts (Python 3.12 Compatible) ────
+import asyncio
+import edge_tts
+
+def tts_synthesize(text: str, lang: str, out_path: str,
+                   voice_name: str, speaker: str = None) -> bool:
+    """Synthesize text → clean wav using Microsoft Edge Neural TTS."""
+    try:
+        async def _synth():
+            communicate = edge_tts.Communicate(text, voice_name)
+            await communicate.save(out_path)
+
+        asyncio.run(_synth())
+        return True
+    except Exception as e:
+        print(f"  [TTS ERROR] {e}")
+        return False
+
 # ─────────────────────────────────────────────
 # CELL 5 — Core pipeline functions
 # ─────────────────────────────────────────────
 import numpy as np
 import soundfile as sf
 import librosa
-
-def tts_synthesize(text: str, lang: str, out_path: str,
-                   tts_model: str, speaker: str = None) -> bool:
-    """
-    Synthesize text → clean wav using Coqui TTS.
-    Returns True on success.
-    """
-    try:
-        from TTS.api import TTS
-        tts = TTS(model_name=tts_model, progress_bar=False, gpu=True)
-        if speaker:
-            tts.tts_to_file(text=text, speaker=speaker, file_path=out_path)
-        else:
-            tts.tts_to_file(text=text, file_path=out_path)
-        return True
-    except Exception as e:
-        print(f"  [TTS ERROR] {e}")
-        return False
-
 
 def apply_rir(speech: np.ndarray, sr: int,
               rir_wav_path: str = None) -> np.ndarray:
