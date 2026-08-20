@@ -1,78 +1,80 @@
-# OneVoice Edge — Hệ Thống Phiên Dịch Giọng Nói Thời Gian Thực
+# OneVoice Edge — Hệ Thống Phiên Dịch Giọng Nói Thời Gian Thực (Edge AI)
 
-<img width="2352" height="1792" alt="Gemini_Generated_Image_tyw15ltyw15ltyw1" src="https://github.com/user-attachments/assets/f4747894-01d8-4889-bbf5-a0d2a5c01de7" />
+<img width="2352" height="1792" alt="OneVoice Edge Banner" src="https://github.com/user-attachments/assets/f4747894-01d8-4889-bbf5-a0d2a5c01de7" />
 
-Hệ thống dịch thuật Speech-to-Speech chạy **100% Offline**, được thiết kế đặc biệt cho môi trường công nghiệp (nhà máy, công trường). Dự án được tối ưu hóa để chạy trên chip **Qualcomm Snapdragon NPU** với độ trễ (latency) dưới **1 giây** và mức ngốn RAM dưới **200 MB**.
-
+Hệ thống dịch thuật Speech-to-Speech chạy **100% Offline**, được thiết kế đặc biệt cho môi trường công nghiệp (nhà máy, công trường). Dự án được tối ưu hóa để chạy trên thiết bị Edge / chip **Qualcomm Snapdragon NPU** với độ trễ (latency) dưới **1 giây** và mức ngốn RAM cực thấp (< **200 MB**).
 
 ---
 
-## Vấn Đề Thực Tế
-Rào cản ngôn ngữ giữa chuyên gia nước ngoài và kỹ sư bản địa gây giảm năng suất và nguy cơ mất an toàn. Các ứng dụng như Google Translate không thể dùng được vì:
+## 🎯 Vấn Đề Thực Tế & Giải Pháp Edge AI
+
+Rào cản ngôn ngữ giữa chuyên gia nước ngoài và kỹ sư bản địa gây giảm năng suất và nguy cơ mất an toàn lao động. Các ứng dụng như Google Translate không thể dùng được tại công trường vì:
 - Bắt buộc phải có Internet (Cloud-based).
-- Chết hoàn toàn khi gặp tiếng ồn máy móc công trường.
+- Không hoạt động được trong môi trường tiếng ồn máy móc lớn (máy xúc, máy cắt, gió công trường).
 
-## Giải pháp — Kiến Trúc 4 Trạm Cục Bộ (Edge AI)
+---
 
-### Luồng 1: VI → EN
+## 🏗️ Kiến Trúc Luồng Xử Lý 4 Trạm Cục Bộ (Production Architecture)
+
+### 🇻🇳 Luồng 1: VI → EN (Tiếng Việt → Tiếng Anh)
 
 ```text
 Microphone 
     │
     ▼
 ┌─────────────────────────────────┐
-│  Trạm 0: Lọc Ồn (Denoise)       │  GIPFormer ONNX (INT8)
-│  Khử tiếng máy cắt, gió, ồn...  │  ~10ms
+│  Trạm 0: Capture & VAD          │  Silero VAD + SoundDevice
+│  Tách đoạn thoại thực tế        │  ~10ms
 └─────────────────────────────────┘
     │
     ▼
 ┌─────────────────────────────────┐
-│  Trạm 1: Nhận Diện (ASR)        │  GIPFormer
-│  Giọng nói → Văn bản Tiếng Việt │  Chuyên dụng cho tiếng ồn công nghiệp
+│  Trạm 1: Nhận Diện ASR (VI)     │  GIPFormer INT8 ONNX (VietAI)
+│  Giọng nói → Văn bản Tiếng Việt │  Noise-Robust Acoustic Modeling
 └─────────────────────────────────┘
     │
     ▼
 ┌─────────────────────────────────┐
-│  Trạm 2: Dịch Thuật (MT)        │  VietAI/envit5-translation
-│  Văn bản VI → EN                │  1 model cho cả 2 chiều (~600MB)
+│  Trạm 2: Dịch Thuật MT (VI→EN)  │  VietAI/envit5-translation
+│  Văn bản VI → EN                │  Tích hợp Terminology & Normalizer
 └─────────────────────────────────┘
     │
     ▼
 ┌─────────────────────────────────┐
-│  Trạm 3: Phát Âm (TTS)          │  F5-TTS (voice clone) / OmniVoice
-│  Văn bản EN → Giọng nói         │  Bảo toàn giọng nói qua ngôn ngữ
+│  Trạm 3: Tổng Hợp Âm Thanh (TTS)│  F5-TTS (Voice Clone) / Fallback Engine
+│  Văn bản EN → Giọng nói         │  Bảo toàn chất giọng / Đọc tức thì
 └─────────────────────────────────┘
     │
     ▼
 Speaker / Earphone 
 ```
 
-### Luồng 2: EN → VI
+### 🇬🇧 Luồng 2: EN → VI (Tiếng Anh → Tiếng Việt)
 
 ```text
 Microphone
     │
     ▼
 ┌─────────────────────────────────┐
-│  Trạm 0: Lọc Ồn (Denoise)       │  GIPFormer ONNX (INT8)
-│  Khử tiếng máy cắt, gió, ồn...  │  ~10ms
+│  Trạm 0: Capture & VAD          │  Silero VAD + SoundDevice
+│  Tách đoạn thoại thực tế        │  ~10ms
 └─────────────────────────────────┘
     │
     ▼
 ┌─────────────────────────────────┐
-│  Trạm 1: Nhận Diện (ASR)        │  SenseVoice Small
+│  Trạm 1: Nhận Diện ASR (EN)     │  SenseVoice Small ONNX / Whisper
 │  Giọng nói → Văn bản Tiếng Anh  │  + Trích xuất Cảm Xúc (Emotion)
 └─────────────────────────────────┘
     │ metadata: [text, emotion]
     ▼
 ┌─────────────────────────────────┐
-│  Trạm 2: Dịch Thuật (MT)        │  VietAI/envit5-translation
+│  Trạm 2: Dịch Thuật MT (EN→VI)  │  VietAI/envit5-translation
 │  Văn bản EN → VI                │  Luân chuyển metadata cảm xúc
 └─────────────────────────────────┘
     │ metadata: [translated_text, emotion]
     ▼
 ┌─────────────────────────────────┐
-│  Trạm 3: Phát Âm (TTS)          │  OmniVoice (Voice Design)
+│  Trạm 3: Tổng Hợp Âm Thanh (TTS)│  OmniVoice (Voice Design) / PyTTSx3
 │  Văn bản VI → Giọng nói         │  Đọc Tiếng Việt mô phỏng cảm xúc
 └─────────────────────────────────┘
     │
@@ -80,22 +82,24 @@ Microphone
 Speaker / Earphone 
 ```
 
-**Mục tiêu Độ trễ tổng: < 600ms (Vượt chỉ tiêu 1s của giải)**
+**⚡ Chỉ tiêu hiệu năng tổng:** Độ trễ < **1000ms**, 100% Offline, chống crash tuyệt đối với cơ chế Fallback thông minh.
 
 ---
 
-## Các Chế Độ Hoạt Động (Translation Directions)
-Hệ thống là một đường ống hai chiều, cho phép bạn chuyển đổi linh hoạt.
+## 🎛️ Các Chế Độ Hoạt Động (Translation Directions)
+
+Hệ thống là một đường ống hai chiều, cho phép chuyển đổi linh hoạt qua cờ lệnh runtime:
 
 | Hướng (Direction) | Đầu vào (Người nói) | Đầu ra (Loa phát) | Lệnh chạy (Flag) |
-|-------------------|---------------------|-------------------|------------------|
-| **VI → EN** (Mặc định) | Người Việt | Người Anh | `--direction vi2en` |
-| **EN → VI** | Người Anh | Người Việt | `--direction en2vi` |
+|---|---|---|---|
+| **VI → EN** (Mặc định) | Người Việt | Người Anh | `python src/pipeline.py --direction vi2en` |
+| **EN → VI** | Người Anh | Người Việt | `python src/pipeline.py --direction en2vi` |
 
 ---
 
-## Demo Kết Quả Dịch Thuật & Voice Cloning
-Dưới đây là 7 kịch bản kiểm thử (Test Scenarios) đầy rẫy các thuật ngữ chuyên ngành hóc búa, từ lóng thi công và các tình huống thực tế tại công trường. Hệ thống đã dịch chuẩn xác và trích xuất thành file âm thanh thành công vào thư mục `demo_outputs/`.
+## 🎬 Demo Kết Quả Dịch Thuật & Voice Cloning
+
+Dưới đây là 7 kịch bản kiểm thử (Test Scenarios) với các thuật ngữ chuyên ngành hóc búa, từ lóng thi công và các tình huống thực tế tại công trường. Hệ thống dịch chuẩn xác và xuất file âm thanh thành công vào thư mục `demo_outputs/`:
 
 1. **Test 1 (VI→EN)**
    - **Đầu vào**: Cậu đã làm gì với nó vậy thêm năng lượng hả nó hoạt động như thế nào vậy cho mình mượn chút đừng có keo kiệt vậy chứ hôm nay lớp mình có bài kiểm tra môn thể dục nên mình rất là cần nó luôn xài xong mình trả lại liền
@@ -167,55 +171,35 @@ Dưới đây là 7 kịch bản kiểm thử (Test Scenarios) đầy rẫy các
 
 </details>
 
-*(Lưu ý: Các file âm thanh trên đã được áp dụng công nghệ Voice Cloning. Tiếng Việt lấy cảm hứng từ giọng của nhân vật Nobita, còn tiếng Anh sử dụng giọng mẫu F5-TTS).*
-
 ---
 
-## Hướng dẫn Cài Đặt (Self-Contained)
+## 🛠️ Hướng Dẫn Cài Đặt & Chạy Hệ Thống
 
 ```bash
 # 1. Tạo môi trường Conda
-conda create -n onevoice python=3.11.8
+conda create -n onevoice python=3.11.8 -y
 conda activate onevoice
 
-# 2. Cài đặt FFmpeg (Bắt buộc cho F5-TTS)
-# - Trên Windows (dùng terminal admin): winget install ffmpeg
-# - Trên Linux/Colab: sudo apt-get install ffmpeg
-
-# 3. Cài đặt các thư viện 
+# 2. Cài đặt các thư viện phụ thuộc
 pip install -r requirements.txt
 
-# 4. Tải các file âm thanh giọng mẫu (Voice Presets)
+# 3. Tải voice presets (Voice Reference Files)
 python scripts/download_voice_preset.py
-```
 
-*(Lưu ý: Lần chạy đầu tiên, hệ thống sẽ tự động tải các file weights của GIPFormer và SenseVoice từ HuggingFace/ModelScope về cache cục bộ. Để chạy 100% Offline không cần Wifi, hãy đảm bảo bạn đã chạy pipeline ít nhất 1 lần khi có mạng).*
-
----
-
-## Cách Chạy Dự Án
-
-### 1. Dịch từ Người Việt sang Tiếng Anh (VI → EN)
-Đây là chế độ mặc định. Hệ thống sẽ bật mic, nghe bạn nói Tiếng Việt, khử ồn bằng GIPFormer, dịch sang Tiếng Anh và đọc ra loa.
-
-```bash
+# 4. Chạy hệ thống dịch thời gian thực (VI → EN)
 python src/pipeline.py --direction vi2en
-```
 
-### 2. Dịch từ Người Anh sang Tiếng Việt (EN → VI)
-Hệ thống sẽ nghe tiếng Anh. Đặc biệt, **SenseVoice** sẽ tự động trích xuất cảm xúc (Ví dụ: Giận dữ, Vui vẻ). Thái độ này sẽ được truyền thẳng xuống **OmniVoice** để đọc Tiếng Việt với đúng tông giọng gắt gỏng hoặc vui nhộn của người gốc.
-
-```bash
+# 5. Chạy hệ thống dịch thời gian thực (EN → VI)
 python src/pipeline.py --direction en2vi
 ```
 
 ---
 
-## Giấy phép & Tri ân tác giả
+## 📜 Giấy Phép & Tri Ạn Tác Giả
+
 Dự án tuân thủ Giấy phép **CC BY-NC 4.0**.
-Chúng tôi đã tích hợp trực tiếp, trích xuất và tinh chỉnh mã nguồn từ các tác giả:
+Chúng tôi trân trọng tri ân các công trình mã nguồn mở được tích hợp:
 - **BetterBox-TTS & OmniVoice**: Dolly VN / ContextBoxAI (CC BY-NC 4.0)
 - **GIPFormer**: G-Group AI Lab (MIT)
 - **SenseVoice**: FunAudioLLM / Alibaba (MIT)
 - **VietAI/envit5**: VietAI (MIT)
-
