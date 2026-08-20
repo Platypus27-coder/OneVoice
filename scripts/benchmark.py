@@ -17,7 +17,7 @@ import soundfile as sf
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "../src"))
 
 from audio.denoise import Denoiser
-from asr.whisper_asr import ASRManager
+from asr.asr_manager import ASRManager
 from translation.mt_engine import Translator
 from tts.tts_engine import TTSEngine
 from utils.text_normalizer import normalize
@@ -114,8 +114,10 @@ def run_benchmark():
                 clean_audio = denoiser.denoise(sample_audio)
                 denoise_ms = (time.perf_counter() - t0) * 1000
 
-                # Trạm 1: ASR (use pre-written sentence as mock)
-                asr_ms = 0.0  # ASR depends on audio; use text directly for MT/TTS bench
+                # Trạm 1: ASR
+                t0 = time.perf_counter()
+                asr_result = asr.transcribe(clean_audio, direction=direction)
+                asr_ms = (time.perf_counter() - t0) * 1000
 
                 # Trạm 2: MT
                 t0 = time.perf_counter()
@@ -132,6 +134,7 @@ def run_benchmark():
                 total_ms = (time.perf_counter() - t_start) * 1000
 
                 run_times["denoise"].append(denoise_ms)
+                run_times["asr"].append(asr_ms)
                 run_times["mt"].append(mt_ms)
                 run_times["tts"].append(tts_ms)
                 run_times["total"].append(total_ms)
@@ -147,6 +150,7 @@ def run_benchmark():
             print(f"     → \"{translated}\"")
             print(
                 f"     Denoise:{avg['denoise']:.0f}ms | "
+                f"ASR:{avg['asr']:.0f}ms | "
                 f"MT:{avg['mt']:.0f}ms | "
                 f"TTS:{avg['tts']:.0f}ms | "
                 f"Total:{avg['total']:.0f}ms"
@@ -154,17 +158,20 @@ def run_benchmark():
             results.append(avg)
 
     # Summary
-    all_totals = [r["total"] for r in results]
-    all_mts    = [r["mt"] for r in results]
-    all_tts    = [r["tts"] for r in results]
+    all_totals   = [r["total"] for r in results]
+    all_asrs     = [r["asr"] for r in results]
+    all_mts      = [r["mt"] for r in results]
+    all_tts      = [r["tts"] for r in results]
 
     print("\n" + "=" * 65)
     print("  BENCHMARK SUMMARY")
     print("=" * 65)
     print(f"  Sentences tested : {len(results)}")
+    print(f"  Avg ASR latency  : {sum(all_asrs)/len(all_asrs):.0f}ms")
     print(f"  Avg MT latency   : {sum(all_mts)/len(all_mts):.0f}ms")
     print(f"  Avg TTS latency  : {sum(all_tts)/len(all_tts):.0f}ms")
     print(f"  Avg E2E latency  : {sum(all_totals)/len(all_totals):.0f}ms")
+
     print(f"  Max E2E latency  : {max(all_totals):.0f}ms")
     print(f"  Min E2E latency  : {min(all_totals):.0f}ms")
     target_met = sum(1 for t in all_totals if t < 1000)
