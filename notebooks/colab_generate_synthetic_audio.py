@@ -1,4 +1,3 @@
-
 # ============================================================
 # OneVoice Edge — Synthetic Noisy Construction Speech Generator
 # Run on: Google Colab (T4 GPU) or Kaggle (P100 GPU)
@@ -8,61 +7,56 @@
 # ─────────────────────────────────────────────
 # CELL 1 — Mount Drive & Install dependencies
 # ─────────────────────────────────────────────
-# In Colab:
-# from google.colab import drive
-# drive.mount('/content/drive')
-# OUTPUT_ROOT = "/content/drive/MyDrive/onevoice_audio_v1"
+import os
+import sys
+import json
+import random
+import re
+import time
+import unicodedata
+import asyncio
+import numpy as np
+import pandas as pd
+import soundfile as sf
+import librosa
+from tqdm import tqdm
 
-# In Kaggle:
-# OUTPUT_ROOT = "/kaggle/working/onevoice_audio_v1"
+# Check environment
+try:
+    from google.colab import drive
+    IN_COLAB = True
+except ImportError:
+    IN_COLAB = False
 
-# !pip install -q TTS soundfile librosa audiomentations numpy pandas tqdm
+if IN_COLAB:
+    drive.mount('/content/drive')
+    OUTPUT_ROOT = "/content/drive/MyDrive/onevoice_audio_v1"
+else:
+    OUTPUT_ROOT = "./onevoice_audio_v1"
+
+print(f"Output Directory: {OUTPUT_ROOT}")
 
 # ─────────────────────────────────────────────
-# CELL 2 — Upload / clone dataset CSV
+# CELL 2 — Config
 # ─────────────────────────────────────────────
-# Option A: clone from GitHub
-# !git clone --depth 1 https://github.com/Platypus27-coder/OneVoice.git
-# DATA_DIR = "OneVoice/onevoice-edge/data/onevoice_construction_v2"
-
-# Option B: upload utterances_all.csv manually via Colab Files panel
-# DATA_DIR = "/content"
-
-# ─────────────────────────────────────────────
-# CELL 3 — Config (edit these before running)
-# ─────────────────────────────────────────────
-import os, json, random, hashlib
-from pathlib import Path
-
-# ── Paths ──────────────────────────────────────────────────
-DATA_DIR     = "/content/OneVoice/data/onevoice_construction_v2"
-OUTPUT_ROOT  = "/content/drive/MyDrive/onevoice_audio_v1"   # change for Kaggle
-NOISE_DIR    = os.path.join(OUTPUT_ROOT, "noise_bank")      # pre-downloaded noise files
+DATA_DIR     = "/content/OneVoice/data/onevoice_construction_v2" if IN_COLAB else "../data/onevoice_construction_v2"
+NOISE_DIR    = os.path.join(OUTPUT_ROOT, "noise_bank")
 CLEAN_DIR    = os.path.join(OUTPUT_ROOT, "clean")
 NOISY_DIR    = os.path.join(OUTPUT_ROOT, "noisy")
 MANIFEST     = os.path.join(OUTPUT_ROOT, "manifest.jsonl")
 
-# ── Sampling config ────────────────────────────────────────
-SAMPLES_PER_TEXT   = 2          # each utterance → 2 noisy versions ≈ 16,000 total
+for d in [OUTPUT_ROOT, NOISE_DIR, CLEAN_DIR, NOISY_DIR]:
+    os.makedirs(d, exist_ok=True)
+
+SAMPLES_PER_TEXT   = 2          # each utterance → 2 noisy versions
 SAMPLE_RATE        = 16000
-MAX_UTTERANCES     = None       # None = all 8,064; set int to limit for quick test
+MAX_UTTERANCES     = None       # None = all 8,064
 
-# ── Install packages ────────────────────────────────────────
-# !pip install -q edge-tts soundfile librosa audiomentations pandas tqdm
-
-# ── Speaker pool (Microsoft Edge Neural Voices) ─────────────
 VI_SPEAKERS = [
-    ("vi-VN-HoaiMyNeural", None),  # Vietnamese Female
-    ("vi-VN-NamMinhNeural", None), # Vietnamese Male
-]
-EN_SPEAKERS = [
-    ("en-US-JennyNeural", None),   # US Female
-    ("en-US-GuyNeural", None),     # US Male
-    ("en-GB-SoniaNeural", None),   # UK Female
-    ("en-AU-WilliamNeural", None), # AU Male
+    "vi-VN-HoaiMyNeural",
+    "vi-VN-NamMinhNeural",
 ]
 
-# ── Noise classes (filenames in NOISE_DIR/*.wav) ───────────
 NOISE_CLASSES = [
     "excavator.wav",
     "angle_grinder.wav",
@@ -75,13 +69,11 @@ NOISE_CLASSES = [
     "worker_babble.wav",
 ]
 
-# ── SNR options (dB) ───────────────────────────────────────
 SNR_OPTIONS = [0, 5, 10, 15, 20]
 
 # ─────────────────────────────────────────────
-# CELL 4 — Download construction noise bank
-# (freesound.org / ESC-50 / DEMAND — verify licences)
-# ── Direct WGET URLs from ESC-50 Open Dataset (CC-BY 4.0) ────
+# CELL 3 — Download & Auto-Repair Noise Bank
+# ─────────────────────────────────────────────
 ESC50_BASE = "https://raw.githubusercontent.com/karolpiczak/ESC-50/master/audio"
 
 NOISE_URLS = {
@@ -93,321 +85,282 @@ NOISE_URLS = {
     "generator.wav":     f"{ESC50_BASE}/2-109371-A-43.wav",
     "truck.wav":         f"{ESC50_BASE}/5-219213-A-11.wav",
     "wind.wav":          f"{ESC50_BASE}/1-179701-A-25.wav",
-    "worker_babble.wav": f"{ESC50_BASE}/1-26143-A-43.wav",
+    "worker_babble.wav": f"{ESC50_BASE}/4-167642-A-26.wav",
 }
 
 def generate_synthetic_noise(noise_type: str, duration_sec: int = 10, sr: int = 16000) -> np.ndarray:
     """Bulletproof fallback: generate realistic industrial noise if download fails/corrupt."""
     t = np.linspace(0, duration_sec, int(sr * duration_sec))
     if "grinder" in noise_type or "drill" in noise_type:
-        # Metallic high-frequency FM modulation + white noise
-        noise = 0.6 * np.sin(2 * np.pi * 3200 * t + np.sin(2 * np.pi * 50 * t))
-        noise += 0.4 * np.random.normal(0, 1, len(t))
-    elif "engine" in noise_type or "excavator" in noise_type or "generator" in noise_type or "truck" in noise_type:
-        # Low frequency diesel hum + rumble
-        noise = 0.5 * np.sin(2 * np.pi * 60 * t) + 0.3 * np.sin(2 * np.pi * 120 * t)
-        noise += 0.3 * np.random.normal(0, 1, len(t))
+        noise = 0.6 * np.sin(2 * np.pi * 3200 * t + np.sin(2 * np.pi * 50 * t)) + 0.4 * np.random.normal(0, 1, len(t))
+    elif any(k in noise_type for k in ("engine", "excavator", "generator", "truck")):
+        noise = 0.5 * np.sin(2 * np.pi * 60 * t) + 0.3 * np.sin(2 * np.pi * 120 * t) + 0.3 * np.random.normal(0, 1, len(t))
     elif "hammer" in noise_type:
-        # Periodic impact pulses
         noise = 0.2 * np.random.normal(0, 1, len(t))
-        pulse_idx = np.arange(0, len(t), int(sr * 0.8))
+        pulse_idx = np.arange(0, len(t), int(sr * 0.8), dtype=int)
         for idx in pulse_idx:
             end = min(idx + int(sr * 0.05), len(t))
             noise[idx:end] += np.random.normal(0, 3, end - idx)
     else: # wind / babble
-        # Pink noise approximation
-        b = [0.049922035, -0.095993537, 0.050612699, -0.004408786]
-        a = [1.0, -2.494956002, 2.017265875, -0.522189400]
-        white = np.random.normal(0, 1, len(t))
-        noise = np.convolve(white, b, mode='same')
+        noise = np.convolve(np.random.normal(0, 1, len(t)), [0.05, -0.09, 0.05], mode='same')
     return np.clip(noise / (np.max(np.abs(noise)) + 1e-9), -1.0, 1.0)
 
-
-def download_noise_bank():
-    os.makedirs(NOISE_DIR, exist_ok=True)
-    for fname, url in NOISE_URLS.items():
-        dst = os.path.join(NOISE_DIR, fname)
-        need_download = True
-        if os.path.exists(dst):
-            # Check if valid wav file (> 10KB)
-            if os.path.getsize(dst) > 10000:
-                try:
-                    sf.read(dst)
-                    need_download = False
-                except Exception:
-                    os.remove(dst)
-            else:
-                os.remove(dst)
-
-        if need_download:
-            print(f"Downloading {fname}...")
-            os.system(f'wget -q -O "{dst}" "{url}"')
-            # If download resulted in corrupt/LFS file, create realistic synthetic noise
-            if not os.path.exists(dst) or os.path.getsize(dst) < 10000:
-                print(f"  ⚡ Download corrupt/LFS, auto-generating synthetic {fname}...")
-                synth_audio = generate_synthetic_noise(fname)
-                sf.write(dst, synth_audio, 16000)
-            else:
-                try:
-                    sf.read(dst)
-                except Exception:
-                    print(f"  ⚡ Corrupt WAV format, auto-generating synthetic {fname}...")
-                    synth_audio = generate_synthetic_noise(fname)
-                    sf.write(dst, synth_audio, 16000)
-        else:
-            print(f"  {fname} verified OK.")
-
-# ── TTS synthesis using edge-tts (Python 3.12 Compatible) ────
-import asyncio
-import edge_tts
-
-def tts_synthesize(text: str, lang: str, out_path: str,
-                   voice_name: str, speaker: str = None) -> bool:
-    """Synthesize text → clean wav using Microsoft Edge Neural TTS."""
+def ok_wav(p):
     try:
-        async def _synth():
-            communicate = edge_tts.Communicate(text, voice_name)
-            await communicate.save(out_path)
-
-        asyncio.run(_synth())
-        return True
-    except Exception as e:
-        print(f"  [TTS ERROR] {e}")
+        return os.path.exists(p) and os.path.getsize(p) > 10000 and sf.read(p) is not None
+    except Exception:
         return False
 
+def download_noise_bank():
+    print("[Noise Bank] Verifying industrial noise files...")
+    for fname, url in NOISE_URLS.items():
+        dst = os.path.join(NOISE_DIR, fname)
+        if ok_wav(dst):
+            continue
+        if os.path.exists(dst):
+            os.remove(dst)
+        print(f"  Downloading {fname}...")
+        os.system(f'wget -q -O "{dst}" "{url}"')
+        if not ok_wav(dst):
+            print(f"  ⚡ Auto-generating synthetic noise fallback for {fname}...")
+            if os.path.exists(dst):
+                os.remove(dst)
+            sf.write(dst, generate_synthetic_noise(fname), SAMPLE_RATE)
+
 # ─────────────────────────────────────────────
-# CELL 5 — Core pipeline functions
+# CELL 4 — TTS + Audio Functions
 # ─────────────────────────────────────────────
-import numpy as np
-import soundfile as sf
-import librosa
+try:
+    import edge_tts
+    import nest_asyncio
+    nest_asyncio.apply()
+    HAS_EDGE_TTS = True
+except ImportError:
+    HAS_EDGE_TTS = False
+    print("⚠ edge-tts or nest_asyncio not installed. Please run: pip install edge-tts nest_asyncio pydub")
 
-def apply_rir(speech: np.ndarray, sr: int,
-              rir_wav_path: str = None) -> np.ndarray:
+def clean_text(text):
+    if not text or pd.isna(text):
+        return None
+    text = unicodedata.normalize("NFC", str(text))
+    text = re.sub(r'[^\w\s\u00C0-\u024F\u1E00-\u1EFF.,!?;:()\'\-]', ' ', text)
+    text = re.sub(r'\s+', ' ', text).strip()
+    return text if len(text) >= 2 else None
+
+def tts_one(text: str, out_wav_path: str, voice: str) -> bool:
     """
-    Convolve speech with a Room Impulse Response (RIR).
-    If no RIR file, simulate simple reverb via librosa.
+    Synthesize ONE file via edge_tts.
+    CRITICAL FIX: edge_tts outputs MP3 data. We MUST save to temporary .mp3 first,
+    then decode & convert to proper 16kHz mono PCM WAV via librosa / soundfile / pydub.
     """
-    if rir_wav_path and os.path.exists(rir_wav_path):
-        rir, _ = librosa.load(rir_wav_path, sr=sr, mono=True)
-        convolved = np.convolve(speech, rir, mode="full")[:len(speech)]
-        return convolved / (np.max(np.abs(convolved)) + 1e-9)
-    else:
-        # Lightweight: add small reverb via echo
-        delay = int(sr * 0.05)
-        reverb = np.zeros_like(speech)
-        reverb[delay:] = speech[:-delay] * 0.3
-        return (speech + reverb) / 1.15
+    if not HAS_EDGE_TTS:
+        return False
 
+    tmp_mp3 = out_wav_path.replace(".wav", "_tmp.mp3")
+    
+    for attempt in range(3):
+        try:
+            if attempt > 0:
+                time.sleep(1.5 * attempt)
+            
+            # Synthesize MP3 stream
+            loop = asyncio.get_event_loop()
+            loop.run_until_complete(
+                edge_tts.Communicate(text, voice).save(tmp_mp3)
+            )
 
-def mix_noise(speech: np.ndarray, noise: np.ndarray,
-              snr_db: float, sr: int) -> np.ndarray:
-    """Mix speech + noise at target SNR (dB)."""
-    # Trim / loop noise to match speech length
+            # Convert MP3 -> 16kHz Mono WAV
+            if os.path.exists(tmp_mp3) and os.path.getsize(tmp_mp3) > 100:
+                try:
+                    # Load MP3 with librosa (uses ffmpeg / audioread)
+                    audio, _ = librosa.load(tmp_mp3, sr=SAMPLE_RATE, mono=True)
+                    sf.write(out_wav_path, audio, SAMPLE_RATE)
+                    if os.path.exists(tmp_mp3):
+                        os.remove(tmp_mp3)
+                    return True
+                except Exception as load_err:
+                    # Fallback to pydub if librosa load fails
+                    from pydub import AudioSegment
+                    seg = AudioSegment.from_file(tmp_mp3)
+                    seg = seg.set_frame_rate(SAMPLE_RATE).set_channels(1)
+                    seg.export(out_wav_path, format="wav")
+                    if os.path.exists(tmp_mp3):
+                        os.remove(tmp_mp3)
+                    return True
+
+        except Exception as e:
+            if attempt == 2:
+                print(f"  [TTS FAIL] {os.path.basename(out_wav_path)}: {e}")
+                if os.path.exists(tmp_mp3):
+                    try: os.remove(tmp_mp3)
+                    except: pass
+                return False
+    return False
+
+def apply_rir(speech: np.ndarray, sr: int) -> np.ndarray:
+    delay = int(sr * random.uniform(0.03, 0.08))
+    echo = np.zeros_like(speech)
+    echo[delay:] = speech[:-delay] * random.uniform(0.2, 0.4)
+    out = speech + echo
+    return out / (np.max(np.abs(out)) + 1e-9)
+
+def mix_noise(speech: np.ndarray, noise: np.ndarray, snr_db: float) -> np.ndarray:
     if len(noise) < len(speech):
         repeats = int(np.ceil(len(speech) / len(noise)))
-        noise   = np.tile(noise, repeats)
-    start = random.randint(0, max(0, len(noise) - len(speech)))
-    noise = noise[start: start + len(speech)]
-
-    # RMS-based SNR
-    rms_speech = np.sqrt(np.mean(speech ** 2) + 1e-9)
-    rms_noise  = np.sqrt(np.mean(noise  ** 2) + 1e-9)
-    scale = rms_speech / (rms_noise * (10 ** (snr_db / 20)))
-    mixed = speech + scale * noise
+        noise = np.tile(noise, repeats)
+    noise = noise[:len(speech)]
+    
+    rms_speech = np.sqrt(np.mean(speech**2) + 1e-9)
+    rms_noise  = np.sqrt(np.mean(noise**2) + 1e-9)
+    scaled_noise = noise * (rms_speech / (rms_noise * (10**(snr_db / 20))))
+    mixed = speech + scaled_noise
     return np.clip(mixed / (np.max(np.abs(mixed)) + 1e-9), -1.0, 1.0)
 
-
-def gain_variation(audio: np.ndarray, min_db=-3.0, max_db=3.0) -> np.ndarray:
-    gain = random.uniform(min_db, max_db)
-    return audio * (10 ** (gain / 20))
-
-
-def random_clip(audio: np.ndarray, p=0.05) -> np.ndarray:
-    """Very light optional clipping to simulate mic saturation."""
-    if random.random() < p:
+def augment(audio: np.ndarray) -> np.ndarray:
+    gain = random.uniform(-3.0, 3.0)
+    audio = audio * (10**(gain / 20))
+    if random.random() < 0.05:
         threshold = random.uniform(0.7, 0.95)
-        return np.clip(audio, -threshold, threshold)
+        audio = np.clip(audio, -threshold, threshold)
     return audio
 
 # ─────────────────────────────────────────────
-# CELL 6 — Main generation loop
+# CELL 5 — Main Generation Loop
 # ─────────────────────────────────────────────
-import pandas as pd
-from tqdm import tqdm
-
 def generate_dataset():
-    # ── Setup dirs ──
-    for d in [CLEAN_DIR, NOISY_DIR, OUTPUT_ROOT]:
-        os.makedirs(d, exist_ok=True)
+    download_noise_bank()
 
-    # ── Load existing manifest checkpoint (if resuming) ──
-    existing_audios = set()
+    # Load existing manifest entries
+    existing = set()
     if os.path.exists(MANIFEST):
         with open(MANIFEST, "r", encoding="utf-8") as f:
             for line in f:
-                line = line.strip()
-                if line:
+                if line.strip():
                     try:
-                        data = json.loads(line)
-                        existing_audios.add(data.get("audio"))
+                        existing.add(json.loads(line.strip()).get("audio"))
                     except Exception:
                         pass
-        print(f"🔄 Resuming checkpoint: found {len(existing_audios)} existing manifest entries.")
+        print(f"🔄 Resuming checkpoint: {len(existing)} samples done.")
 
-    # ── Load utterances ──
-    utt_path = os.path.join(DATA_DIR, "utterances_all.csv")
-    df = pd.read_csv(utt_path)
+    # Find dataset CSV
+    possible_csvs = [
+        os.path.join(DATA_DIR, "utterances_all.csv"),
+        os.path.join(os.path.dirname(__file__), "../data/onevoice_construction_v2/utterances_all.csv"),
+        os.path.join(os.path.dirname(__file__), "../data/synthetic_dataset_10k.csv"),
+    ]
+    csv_path = None
+    for p in possible_csvs:
+        if os.path.exists(p):
+            csv_path = p
+            break
+
+    if not csv_path:
+        raise FileNotFoundError(f"Cannot find utterances CSV in {possible_csvs}")
+
+    df = pd.read_csv(csv_path)
     if MAX_UTTERANCES:
         df = df.head(MAX_UTTERANCES)
-    print(f"Loaded {len(df)} utterances.")
+    print(f"Loaded {len(df)} utterances from {os.path.basename(csv_path)}.")
 
-    # ── Load noise files ──
-    noise_cache = {}
+    # Cache noise files
+    NC = {}
     for nc in NOISE_CLASSES:
-        path = os.path.join(NOISE_DIR, nc)
-        if os.path.exists(path):
-            audio, _ = librosa.load(path, sr=SAMPLE_RATE, mono=True)
-            noise_cache[nc] = audio
-        else:
-            print(f"  [WARN] Noise file missing: {nc}")
+        p = os.path.join(NOISE_DIR, nc)
+        if not os.path.exists(p):
+            continue
+        try:
+            NC[nc], _ = librosa.load(p, sr=SAMPLE_RATE, mono=True)
+        except Exception:
+            s = generate_synthetic_noise(nc)
+            sf.write(p, s, SAMPLE_RATE)
+            NC[nc] = s
 
-    usable_noises = [n for n in NOISE_CLASSES if n in noise_cache]
-    if not usable_noises:
-        print("[WARN] No noise files found in noise_bank. Using silence fallback.")
-        noise_cache["silence.wav"] = np.zeros(SAMPLE_RATE)
-        usable_noises = ["silence.wav"]
+    if not NC:
+        NC["_silence"] = np.zeros(SAMPLE_RATE)
 
-    sample_idx = len(existing_audios)
-    skipped_count = 0
+    noises = list(NC.keys())
+    print(f"Active noise types: {noises}")
 
-    # ── Open manifest in APPEND mode for instant streaming ──
-    with open(MANIFEST, "a", encoding="utf-8") as manifest_file:
-        for _, row in tqdm(df.iterrows(), total=len(df), desc="Generating (Checkpoint-enabled)"):
-            utt_id   = str(row["utterance_id"])
-            vi_text  = str(row["vi"])
-            en_text  = str(row.get("en", ""))
-            domain   = str(row.get("domain", "unknown"))
-            intent   = str(row.get("intent", "unknown"))
-            risk     = str(row.get("risk_level", "unknown"))
-            split    = str(row.get("split", "train"))
+    total_generated = len(existing)
+    skipped = 0
 
-            # Check if all variants for this utterance already exist
-            all_done = True
-            for v in range(SAMPLES_PER_TEXT):
-                noisy_fname = f"{utt_id}_n{v+1:02d}.wav"
-                noisy_path  = os.path.join(NOISY_DIR, noisy_fname)
-                if noisy_fname not in existing_audios or not os.path.exists(noisy_path):
-                    all_done = False
-                    break
-            if all_done:
-                continue  # Fast skip fully processed utterance
+    with open(MANIFEST, "a", encoding="utf-8") as mf:
+        for _, row in tqdm(df.iterrows(), total=len(df), desc="Generating synthetic audio"):
+            uid  = str(row.get("utterance_id", row.get("id", f"utt_{_}")))
+            vi   = str(row.get("vi", row.get("vi_text", "")))
+            en   = str(row.get("en", row.get("en_text", "")))
+            dom  = str(row.get("domain", "unknown"))
+            inte = str(row.get("intent", "unknown"))
+            risk = str(row.get("risk_level", "unknown"))
+            spl  = str(row.get("split", "train"))
 
-            # ── Synthesize clean wav ──
-            lang = "vi"
-            text = vi_text
-            speaker_pool = VI_SPEAKERS
-
-            clean_fname = f"{utt_id}_clean.wav"
-            clean_path  = os.path.join(CLEAN_DIR, clean_fname)
-
-            if not os.path.exists(clean_path):
-                tts_model, speaker = random.choice(speaker_pool)
-                ok = tts_synthesize(text, lang, clean_path, tts_model, speaker)
-                if not ok:
-                    skipped_count += 1
-                    continue
-            else:
-                tts_model, speaker = random.choice(speaker_pool)
-
-            try:
-                clean_audio, _ = librosa.load(clean_path, sr=SAMPLE_RATE, mono=True)
-            except Exception:
-                skipped_count += 1
+            # Skip if all variants already generated
+            if all(f"{uid}_n{v+1:02d}.wav" in existing for v in range(SAMPLES_PER_TEXT)):
                 continue
 
-            # ── Apply RIR ──
-            rir_applied = apply_rir(clean_audio, SAMPLE_RATE)
-
-            # ── Generate SAMPLES_PER_TEXT noisy variants ──
-            for v in range(SAMPLES_PER_TEXT):
-                noisy_fname = f"{utt_id}_n{v+1:02d}.wav"
-                noisy_path  = os.path.join(NOISY_DIR, noisy_fname)
-
-                # Skip if this specific noisy file is already generated and logged
-                if noisy_fname in existing_audios and os.path.exists(noisy_path):
+            # TTS Clean WAV synthesis
+            cf = f"{uid}_clean.wav"
+            cp = os.path.join(CLEAN_DIR, cf)
+            if not os.path.exists(cp):
+                txt = clean_text(vi)
+                if not txt:
+                    skipped += 1
+                    continue
+                voice = random.choice(VI_SPEAKERS)
+                if not tts_one(txt, cp, voice):
+                    skipped += 1
                     continue
 
-                noise_name = random.choice(usable_noises)
-                snr_db     = random.choice(SNR_OPTIONS)
-                use_reverb = random.random() > 0.4
+            # Load clean audio PCM WAV
+            try:
+                ca, _ = librosa.load(cp, sr=SAMPLE_RATE, mono=True)
+            except Exception as e:
+                print(f"⚠ Could not read clean audio {cp}: {e}")
+                skipped += 1
+                continue
 
-                speech_for_mix = rir_applied if use_reverb else clean_audio
-                mixed = mix_noise(speech_for_mix, noise_cache[noise_name],
-                                  snr_db, SAMPLE_RATE)
-                mixed = gain_variation(mixed)
-                mixed = random_clip(mixed)
+            rev = apply_rir(ca, SAMPLE_RATE)
+            voice = random.choice(VI_SPEAKERS)
 
-                sf.write(noisy_path, mixed, SAMPLE_RATE)
+            # Generate SAMPLES_PER_TEXT noisy variants
+            for v in range(SAMPLES_PER_TEXT):
+                nf = f"{uid}_n{v+1:02d}.wav"
+                np_path = os.path.join(NOISY_DIR, nf)
 
-                # ── Write and flush manifest entry immediately ──
+                if nf in existing and os.path.exists(np_path):
+                    continue
+
+                nn     = random.choice(noises)
+                snr    = random.choice(SNR_OPTIONS)
+                rev_on = random.random() > 0.35
+
+                mixed = augment(mix_noise(rev if rev_on else ca, NC[nn], snr))
+                sf.write(np_path, mixed, SAMPLE_RATE)
+
                 entry = {
-                    "audio":              noisy_fname,
-                    "clean_audio":        clean_fname,
-                    "text":               text,
-                    "translation":        en_text,
-                    "domain":             domain,
-                    "intent":             intent,
-                    "risk_level":         risk,
-                    "split":              split,
-                    "speaker_id":         f"{tts_model}_{speaker or 'default'}",
-                    "noise_type":         noise_name.replace(".wav", ""),
-                    "snr_db":             snr_db,
-                    "reverb":             use_reverb,
-                    "rir_id":             "simulated_echo" if use_reverb else "none",
-                    "synthetic_speech":   True,
-                    "synthetic_noise_mix":True,
-                    "sample_rate":        SAMPLE_RATE,
+                    "audio": nf,
+                    "clean_audio": cf,
+                    "text": vi,
+                    "translation": en,
+                    "domain": dom,
+                    "intent": inte,
+                    "risk_level": risk,
+                    "split": spl,
+                    "speaker_id": voice,
+                    "noise_type": nn.replace(".wav", ""),
+                    "snr_db": snr,
+                    "reverb": rev_on,
+                    "rir_id": "simulated_echo" if rev_on else "none",
+                    "synthetic_speech": True,
+                    "synthetic_noise_mix": True,
+                    "sample_rate": SAMPLE_RATE,
                 }
-                manifest_file.write(json.dumps(entry, ensure_ascii=False) + "\n")
-                manifest_file.flush()  # Instant write to Google Drive / Disk
+                mf.write(json.dumps(entry, ensure_ascii=False) + "\n")
+                mf.flush()
+                existing.add(nf)
+                total_generated += 1
 
-                existing_audios.add(noisy_fname)
-                sample_idx += 1
+    print(f"\n✅ Generation finished! Total: {total_generated} samples | Skipped: {skipped}")
 
-    print(f"\n✅ Generation complete!")
-    print(f"   Total samples in manifest: {sample_idx}")
-    print(f"   Clean wavs : {CLEAN_DIR}")
-    print(f"   Noisy wavs : {NOISY_DIR}")
-    print(f"   Manifest   : {MANIFEST}")
-
-
-# ─────────────────────────────────────────────
-# CELL 7 — Stats verification
-# ─────────────────────────────────────────────
-def verify_stats():
-    entries = []
-    with open(MANIFEST) as f:
-        for line in f:
-            entries.append(json.loads(line))
-
-    df_m = pd.DataFrame(entries)
-    print("=== Dataset Stats ===")
-    print(f"Total samples   : {len(df_m)}")
-    print(f"\nBy domain:\n{df_m['domain'].value_counts()}")
-    print(f"\nBy intent:\n{df_m['intent'].value_counts()}")
-    print(f"\nBy noise_type:\n{df_m['noise_type'].value_counts()}")
-    print(f"\nBy snr_db:\n{df_m['snr_db'].value_counts().sort_index()}")
-
-# ─────────────────────────────────────────────
-# CELL 8 — ENTRY POINT (run in Colab)
-# ─────────────────────────────────────────────
 if __name__ == "__main__":
-    # Step 0: download noise bank (fill NOISE_URLS above first)
-    # download_noise_bank()
-
-    # Step 1: generate
     generate_dataset()
-
-    # Step 2: verify
-    verify_stats()
