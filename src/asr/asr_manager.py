@@ -23,13 +23,22 @@ except ImportError:
 
 # ── GIPFormer model config ────────────────────────────────────────────────────
 GIPFORMER_REPO   = "g-group-ai-lab/gipformer-65M-rnnt"
+# Pin the public artifact revision: the model card renamed the ONNX files in
+# August 2026, so resolving ``main`` with the old epoch-based names returns 404.
+GIPFORMER_REVISION = "29621ec87ffec8fde06be25ed2150d4a1f41dbc9"
 GIPFORMER_SAMPLE_RATE = 16000
 GIPFORMER_FEATURE_DIM = 80
 GIPFORMER_INT8_FILES  = {
+    "encoder": "encoder.int8.onnx",
+    "decoder": "decoder.int8.onnx",
+    "joiner":  "joiner.int8.onnx",
+    "tokens":  "tokens.txt",
+}
+GIPFORMER_LEGACY_FILES = {
     "encoder": "encoder-epoch-35-avg-6.int8.onnx",
     "decoder": "decoder-epoch-35-avg-6.int8.onnx",
-    "joiner":  "joiner-epoch-35-avg-6.int8.onnx",
-    "tokens":  "tokens.txt",
+    "joiner": "joiner-epoch-35-avg-6.int8.onnx",
+    "tokens": "tokens.txt",
 }
 
 
@@ -53,15 +62,30 @@ class GIPFormerASR:
 
         paths = {}
         for key, filename in GIPFORMER_INT8_FILES.items():
-            local = os.path.join(self.model_dir, filename) if self.model_dir else None
-            if local and os.path.isfile(local):
+            candidates = (filename, GIPFORMER_LEGACY_FILES[key])
+            local = next(
+                (
+                    os.path.join(self.model_dir, candidate)
+                    for candidate in candidates
+                    if self.model_dir and os.path.isfile(os.path.join(self.model_dir, candidate))
+                ),
+                None,
+            )
+            if local:
                 paths[key] = local
             elif self.offline:
-                raise FileNotFoundError(f"Missing offline GIPFormer artifact: {local or filename}")
+                raise FileNotFoundError(
+                    f"Missing offline GIPFormer artifact: {filename} "
+                    f"(legacy {GIPFORMER_LEGACY_FILES[key]} is also accepted)"
+                )
             else:
                 from huggingface_hub import hf_hub_download
 
-                paths[key] = hf_hub_download(repo_id=GIPFORMER_REPO, filename=filename)
+                paths[key] = hf_hub_download(
+                    repo_id=GIPFORMER_REPO,
+                    filename=filename,
+                    revision=GIPFORMER_REVISION,
+                )
         print("[GIPFormer ASR] Model files ready.")
 
         self._recognizer = sherpa_onnx.OfflineRecognizer.from_transducer(

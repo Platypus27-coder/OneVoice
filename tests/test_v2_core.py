@@ -15,6 +15,7 @@ sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(ROOT / "src"))
 
 from audio.denoise import Denoiser
+from asr.asr_manager import GIPFORMER_INT8_FILES, GIPFORMER_REVISION
 from context.engine import ConstructionContextEngine
 from context.site_pack import SitePackError, SitePackLoader
 from contracts import ASRHypothesis, AudioFrame, CommitKind
@@ -265,6 +266,18 @@ class StreamingTests(unittest.TestCase):
 
 
 class RuntimeSafetyTests(unittest.TestCase):
+    def test_gipformer_download_uses_pinned_current_artifact_names(self):
+        self.assertEqual(GIPFORMER_REVISION, "29621ec87ffec8fde06be25ed2150d4a1f41dbc9")
+        self.assertEqual(
+            GIPFORMER_INT8_FILES,
+            {
+                "encoder": "encoder.int8.onnx",
+                "decoder": "decoder.int8.onnx",
+                "joiner": "joiner.int8.onnx",
+                "tokens": "tokens.txt",
+            },
+        )
+
     def test_parallel_physical_audio_audit(self):
         import types
         from unittest import mock

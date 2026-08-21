@@ -15,6 +15,7 @@ import sys
 import time
 
 MODELS_DIR = os.path.join(os.path.dirname(__file__), "../models")
+GIPFORMER_REVISION = "29621ec87ffec8fde06be25ed2150d4a1f41dbc9"
 
 def ensure_dir(path: str):
     os.makedirs(path, exist_ok=True)
@@ -26,9 +27,9 @@ def download_gipformer():
 
     REPO = "g-group-ai-lab/gipformer-65M-rnnt"
     FILES = [
-        "encoder-epoch-35-avg-6.int8.onnx",
-        "decoder-epoch-35-avg-6.int8.onnx",
-        "joiner-epoch-35-avg-6.int8.onnx",
+        "encoder.int8.onnx",
+        "decoder.int8.onnx",
+        "joiner.int8.onnx",
         "tokens.txt",
     ]
     out_dir = os.path.join(MODELS_DIR, "gipformer")
@@ -36,8 +37,12 @@ def download_gipformer():
 
     for fname in FILES:
         t0 = time.time()
-        path = hf_hub_download(repo_id=REPO, filename=fname,
-                                local_dir=out_dir)
+        path = hf_hub_download(
+            repo_id=REPO,
+            filename=fname,
+            revision=GIPFORMER_REVISION,
+            local_dir=out_dir,
+        )
         print(f"  ✅ {fname} → {path} ({time.time()-t0:.1f}s)")
 
 
