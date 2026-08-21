@@ -34,7 +34,7 @@ Rào cản ngôn ngữ giữa chuyên gia nước ngoài và kỹ sư bản đ�
 
 ## Kiến Trúc Luồng Xử Lý 4 Trạm Cục Bộ (Production Architecture)
 
-### 🇻🇳 Luồng 1: VI → EN (Tiếng Việt → Tiếng Anh)
+### Luồng 1: VI → EN (Tiếng Việt → Tiếng Anh)
 
 ```text
 Microphone
@@ -67,7 +67,7 @@ Microphone
 Speaker / Earphone
 ```
 
-### 🇬🇧 Luồng 2: EN → VI (Tiếng Anh → Tiếng Việt)
+### Luồng 2: EN → VI (Tiếng Anh → Tiếng Việt)
 
 ```text
 Microphone
@@ -100,7 +100,7 @@ Microphone
 Speaker / Earphone
 ```
 
-** Mục tiêu nghiệm thu V2:** normal commit→first-audio p95 < **1000 ms**, safety p95 < **300 ms**, runtime Edge không truy cập mạng và peak RAM < **200 MB**. Chỉ công nhận khi có report đo thật.
+**Mục tiêu nghiệm thu V2:** normal commit→first-audio p95 < **1000 ms**, safety p95 < **300 ms**, runtime Edge không truy cập mạng và peak RAM < **200 MB**. Chỉ công nhận khi có report đo thật.
 
 ---
 
