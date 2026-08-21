@@ -21,7 +21,10 @@ import queue
 import sys
 import os
 import numpy as np
-import sounddevice as sd
+try:
+    import sounddevice as sd
+except ImportError:
+    sd = None
 
 
 class TTSEngine:
@@ -33,8 +36,11 @@ class TTSEngine:
       "en2vi" direction → output is Vietnamese → OmniVoice/BetterBox
     """
 
-    def __init__(self, config: dict):
+    def __init__(self, config: dict, profile: str = "development", offline: bool = False):
         self.cfg = config["tts"]
+        self.profile = profile
+        self.offline = offline
+        self.tts_tier = config.get("profiles", {}).get(profile, {}).get("tts_tier", "premium")
         self.sample_rate = config["audio"]["sample_rate"]
         self.default_engine = self.cfg.get("default_engine", "betterbox")
         self.en_speed = float(self.cfg.get("en_speed", 0.85))
@@ -44,13 +50,20 @@ class TTSEngine:
         self._omni = None          # OmniVoice for Vietnamese TTS
         self._en_tts = None        # English TTS engine
         self._vallex = None        # VALL-E X (Premium Mode)
+        self._vi_tts_engine = None
 
-    def load(self):
+    def load(self, direction: str | None = None):
         """Initialize all TTS backends."""
         print(f"[TTS] Initializing engines...")
-        self._load_omnivoice()
-        self._load_english_tts()
-        self._auto_prepare_preset()   # Tự động chuẩn bị giọng mẫu tiếng Anh
+        if direction in (None, "en2vi"):
+            if self.tts_tier == "premium":
+                self._load_omnivoice()
+            else:
+                self._load_edge_vi_tts()
+        if direction in (None, "vi2en"):
+            self._load_english_tts()
+            if getattr(self, "_en_tts_engine", None) == "f5tts":
+                self._auto_prepare_preset()
         print("[TTS] ✅ TTS Engine ready.")
 
     def _apply_speed(self, audio: np.ndarray, sr: int) -> tuple[np.ndarray, int]:
@@ -85,6 +98,11 @@ class TTSEngine:
         if os.path.exists(self.en_preset_audio):
             print(f"[TTS] 🎤 Voice preset ready: {os.path.basename(self.en_preset_audio)}")
             return   # Đã có sẵn rồi, không cần tải lại
+
+        if self.offline:
+            raise FileNotFoundError(
+                f"Offline English voice preset not found: {self.en_preset_audio}"
+            )
 
         # Đảm bảo thư mục tồn tại
         os.makedirs(os.path.dirname(self.en_preset_audio), exist_ok=True)
@@ -149,6 +167,8 @@ class TTSEngine:
             model_path = self.cfg.get("betterbox", {}).get(
                 "model_path", os.path.join("models", "omnivoice")
             )
+            if not os.path.exists(model_path) and self.offline:
+                raise FileNotFoundError(f"Offline OmniVoice model not found: {model_path}")
             if not os.path.exists(model_path):
                 print(f"[TTS] ⚠ Thư mục '{model_path}' không tồn tại. Đang tự động tải mô hình từ 'splendor1811/omnivoice-vietnamese' để test tạm...")
                 model_path = "splendor1811/omnivoice-vietnamese"
@@ -165,6 +185,10 @@ class TTSEngine:
             
             ref_path = os.path.join(root_wavs, "reference_sound.wav")
             if not os.path.exists(ref_path):
+                if self.offline:
+                    raise FileNotFoundError(
+                        f"Offline OmniVoice reference audio not found: {ref_path}"
+                    )
                 # Ưu tiên sử dụng Nobita.wav do người dùng cung cấp
                 nobita_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "Nobita.wav")
                 # Normalize path
@@ -206,29 +230,25 @@ class TTSEngine:
                     
             print(f"[TTS] ✅ OmniVoice loaded from: {self._omni.model_path}")
         except Exception as e:
+            if self.offline:
+                raise RuntimeError(f"Offline OmniVoice startup failed: {e}") from e
             print(f"[TTS] ⚠ Failed to load OmniVoice: {e}")
             self._omni = None
 
     def _load_english_tts(self):
         """
-        Load lightweight English TTS.
-        Priority: VITS-ONNX → XTTS v2 (voice clone) → pyttsx3 → gTTS
-        """
-        vits_path = self.cfg.get("vits", {}).get("model_path", "models/vits_en_tiny.onnx")
-        if os.path.exists(vits_path):
-            try:
-                import onnxruntime as ort
-                self._en_tts = ort.InferenceSession(
-                    vits_path, providers=["CPUExecutionProvider"]
-                )
-                self._en_tts_engine = "vits"
-                print(f"[TTS] ✅ VITS English TTS loaded from: {vits_path}")
-                return
-            except Exception as e:
-                print(f"[TTS] ⚠ VITS load failed: {e}")
+        Load English TTS.
+        Priority: F5-TTS (premium) → local pyttsx3 → development-only gTTS.
 
-        # Priority 2: F5-TTS — voice cloning (Python 3.10+, offline, GPU)
+        A bare VITS ONNX graph is deliberately not accepted: text phonemization,
+        speaker/language metadata and output scaling are part of the deployable
+        artifact contract. Loading a graph without its adapter previously caused
+        the runtime to claim VITS while actually falling through to pyttsx3.
+        """
+        # Priority 1: F5-TTS — premium profile only
         try:
+            if self.tts_tier != "premium":
+                raise ImportError("F5-TTS disabled by edge profile")
             if os.name == 'nt':
                 # Fix DLL loading for torchcodec/ffmpeg on Windows Conda (Python 3.8+)
                 conda_prefix = os.environ.get("CONDA_PREFIX")
@@ -247,7 +267,7 @@ class TTSEngine:
         except Exception as e:
             print(f"[TTS] ⚠ F5-TTS not available ({e})")
 
-        # Priority 3: pyttsx3 (offline, no voice clone)
+        # Priority 2: pyttsx3 (offline, no voice clone)
         try:
             import pyttsx3
             engine = pyttsx3.init()
@@ -259,7 +279,10 @@ class TTSEngine:
         except Exception as e:
             print(f"[TTS] ⚠ pyttsx3 not available ({e})")
 
-        # Priority 4: gTTS (internet, no voice clone, Colab test only)
+        # Priority 3: gTTS (development-only online fallback)
+        if self.offline:
+            print("[TTS] ⚠ No offline English TTS backend available.")
+            return
         try:
             from gtts import gTTS
             self._en_tts = "gtts"
@@ -270,6 +293,19 @@ class TTSEngine:
             pass
 
         print("[TTS] ⚠ No English TTS available — using silence stub.")
+        if self.offline:
+            raise RuntimeError("No offline English TTS backend available")
+
+    def _load_edge_vi_tts(self):
+        """Load a lightweight local VI fallback without remote model access."""
+        try:
+            import pyttsx3
+            engine = pyttsx3.init()
+            engine.setProperty("rate", 165)
+            self._vi_tts_engine = engine
+            print("[TTS] ✅ Local pyttsx3 VI fallback loaded for edge profile.")
+        except Exception as exc:
+            raise RuntimeError(f"No local Vietnamese edge TTS available: {exc}") from exc
 
     def synthesize_vi(self, text: str, emotion: str = "neutral") -> np.ndarray:
         """
@@ -331,6 +367,20 @@ class TTSEngine:
                     print(f"[TTS VI] ⚠ OmniVoice failed: {status}")
             except Exception as e:
                 print(f"[TTS VI] ⚠ OmniVoice error: {e}")
+
+        if self._vi_tts_engine is not None:
+            try:
+                import tempfile
+                import soundfile as sf
+                with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as tmp:
+                    tmp_path = tmp.name
+                self._vi_tts_engine.save_to_file(text, tmp_path)
+                self._vi_tts_engine.runAndWait()
+                audio, sr = sf.read(tmp_path, dtype="float32")
+                os.unlink(tmp_path)
+                return audio, sr
+            except Exception as exc:
+                print(f"[TTS VI] ⚠ Local edge TTS failed: {exc}")
 
         # Stub: silence
         return np.zeros(int(self.sample_rate * 0.5), dtype=np.float32), self.sample_rate
@@ -459,12 +509,28 @@ class TTSEngine:
 
     def play(self, audio: np.ndarray, sample_rate: int = None):
         """Play synthesized audio through the speaker."""
+        if sd is None:
+            raise RuntimeError("sounddevice is required for speaker playback")
         sr = sample_rate or self.sample_rate
         try:
             sd.play(audio, samplerate=sr)
             sd.wait()
         except Exception as e:
             print(f"[TTS] ⚠ Playback error: {e}")
+
+    @staticmethod
+    def is_silence(audio: np.ndarray, threshold: float = 1e-5) -> bool:
+        value = np.asarray(audio)
+        return value.size == 0 or float(np.max(np.abs(value), initial=0.0)) <= threshold
+
+    def engine_name(self, direction: str) -> str:
+        if direction == "vi2en":
+            return str(getattr(self, "_en_tts_engine", None) or "unavailable")
+        if self._omni is not None:
+            return "omnivoice"
+        if self._vi_tts_engine is not None:
+            return "pyttsx3"
+        return "unavailable"
 
     def run(self, text_queue: queue.Queue):
         """Worker loop: reads translated text, synthesizes, plays to speaker."""

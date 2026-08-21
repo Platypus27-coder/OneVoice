@@ -1,102 +1,156 @@
-"""
-[Colab] Fine-tune VietAI/envit5-translation with Construction Terminology
-========================================================================
-Fine-tunes VietAI/envit5-translation on 8,064 bi-directional construction
-utterances to ensure domain accuracy for industrial speech translation.
+"""Fine-tune EnViT5 without train/dev/test leakage.
 
-Target Model: VietAI/envit5-translation (~600MB)
+Despite the legacy filename this trains VietAI/envit5-translation, not MarianMT.
+Test data is never opened by this training program.
 """
 
-import os
+from __future__ import annotations
+
+import argparse
 import csv
+import json
+import sys
+from pathlib import Path
+
 import torch
-from torch.utils.data import Dataset, DataLoader
-from transformers import AutoTokenizer, AutoModelForSeq2SeqLM, AdamW
+from torch.optim import AdamW
+from torch.utils.data import DataLoader, Dataset
 from tqdm import tqdm
+from transformers import AutoModelForSeq2SeqLM, AutoTokenizer
 
-# ── Config ────────────────────────────────────────────────────────────────
-MODEL_NAME  = "VietAI/envit5-translation"
-DATA_FILE   = "data/onevoice_construction_v2/test.csv"
-OUTPUT_DIR  = "envit5_finetuned_construction"
-EPOCHS      = 3
-BATCH_SIZE  = 8
-LR          = 3e-5
-MAX_LENGTH  = 128
-DEVICE      = "cuda" if torch.cuda.is_available() else "cpu"
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / "src"))
 
-print(f"Using device: {DEVICE}")
+from evaluation.reporting import create_run_manifest
 
-# ── Dataset ───────────────────────────────────────────────────────────────
+
 class ConstructionTranslationDataset(Dataset):
-    def __init__(self, filepath, tokenizer, max_length=128):
-        self.samples = []
+    def __init__(self, filepath: str | Path, tokenizer, max_length: int = 128):
+        self.samples: list[tuple[str, str]] = []
         self.tokenizer = tokenizer
         self.max_length = max_length
-        if os.path.exists(filepath):
-            with open(filepath, "r", encoding="utf-8") as f:
-                reader = csv.DictReader(f)
-                for row in reader:
-                    vi = row.get("vi_text", "").strip()
-                    en = row.get("en_text", "").strip()
-                    if vi and en:
-                        # Add EnViT5 prefixes
-                        self.samples.append(("vi: " + vi, en))
-                        self.samples.append(("en: " + en, vi))
+        path = Path(filepath)
+        if not path.is_file():
+            raise FileNotFoundError(path)
+        with path.open("r", encoding="utf-8-sig", newline="") as handle:
+            for row in csv.DictReader(handle):
+                vi, en = row.get("vi", "").strip(), row.get("en", "").strip()
+                if vi and en:
+                    self.samples.extend((("vi: " + vi, en), ("en: " + en, vi)))
+        if not self.samples:
+            raise ValueError(f"No valid vi/en pairs found in {path}")
 
-    def __len__(self):
+    def __len__(self) -> int:
         return len(self.samples)
 
-    def __getitem__(self, idx):
-        src, tgt = self.samples[idx]
-        enc = self.tokenizer(
-            src, max_length=self.max_length, padding="max_length",
-            truncation=True, return_tensors="pt"
+    def __getitem__(self, index: int) -> dict[str, torch.Tensor]:
+        source, target = self.samples[index]
+        encoded = self.tokenizer(
+            source,
+            max_length=self.max_length,
+            padding="max_length",
+            truncation=True,
+            return_tensors="pt",
         )
-        tgt_enc = self.tokenizer(
-            tgt, max_length=self.max_length, padding="max_length",
-            truncation=True, return_tensors="pt"
+        target_encoded = self.tokenizer(
+            target,
+            max_length=self.max_length,
+            padding="max_length",
+            truncation=True,
+            return_tensors="pt",
         )
-        labels = tgt_enc["input_ids"].squeeze()
+        labels = target_encoded["input_ids"].squeeze(0)
         labels[labels == self.tokenizer.pad_token_id] = -100
         return {
-            "input_ids": enc["input_ids"].squeeze(),
-            "attention_mask": enc["attention_mask"].squeeze(),
+            "input_ids": encoded["input_ids"].squeeze(0),
+            "attention_mask": encoded["attention_mask"].squeeze(0),
             "labels": labels,
         }
 
-# ── Load Model & Tokenizer ────────────────────────────────────────────────
-print(f"Loading {MODEL_NAME}...")
-tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
-model = AutoModelForSeq2SeqLM.from_pretrained(MODEL_NAME).to(DEVICE)
 
-if os.path.exists(DATA_FILE):
-    dataset = ConstructionTranslationDataset(DATA_FILE, tokenizer, MAX_LENGTH)
-    loader  = DataLoader(dataset, batch_size=BATCH_SIZE, shuffle=True)
-    optimizer = AdamW(model.parameters(), lr=LR)
-
-    print(f"Dataset size: {len(dataset)} sentence pairs")
-
-    # ── Training Loop ─────────────────────────────────────────────────────────
+def evaluate_loss(model, loader, device: str) -> float:
+    model.eval()
+    total = 0.0
+    with torch.no_grad():
+        for batch in loader:
+            batch = {key: value.to(device) for key, value in batch.items()}
+            total += float(model(**batch).loss.item())
     model.train()
-    for epoch in range(EPOCHS):
-        total_loss = 0
-        for batch in tqdm(loader, desc=f"Epoch {epoch+1}/{EPOCHS}"):
-            input_ids      = batch["input_ids"].to(DEVICE)
-            attention_mask = batch["attention_mask"].to(DEVICE)
-            labels         = batch["labels"].to(DEVICE)
+    return total / max(len(loader), 1)
 
-            optimizer.zero_grad()
-            outputs = model(input_ids=input_ids, attention_mask=attention_mask, labels=labels)
-            loss = outputs.loss
+
+def main() -> None:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--model", default="VietAI/envit5-translation")
+    parser.add_argument("--train", default="data/onevoice_construction_v2/train.csv")
+    parser.add_argument("--dev", default="data/onevoice_construction_v2/dev.csv")
+    parser.add_argument("--output", default="models/envit5_finetuned_construction")
+    parser.add_argument("--epochs", type=int, default=3)
+    parser.add_argument("--batch-size", type=int, default=8)
+    parser.add_argument("--learning-rate", type=float, default=3e-5)
+    parser.add_argument("--max-length", type=int, default=128)
+    parser.add_argument("--seed", type=int, default=1337)
+    args = parser.parse_args()
+
+    device = "cuda" if torch.cuda.is_available() else "cpu"
+    torch.manual_seed(args.seed)
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed_all(args.seed)
+    tokenizer = AutoTokenizer.from_pretrained(args.model)
+    model = AutoModelForSeq2SeqLM.from_pretrained(args.model).to(device)
+    train_data = ConstructionTranslationDataset(args.train, tokenizer, args.max_length)
+    dev_data = ConstructionTranslationDataset(args.dev, tokenizer, args.max_length)
+    generator = torch.Generator().manual_seed(args.seed)
+    train_loader = DataLoader(
+        train_data, batch_size=args.batch_size, shuffle=True, generator=generator
+    )
+    dev_loader = DataLoader(dev_data, batch_size=args.batch_size, shuffle=False)
+    optimizer = AdamW(model.parameters(), lr=args.learning_rate)
+    output = Path(args.output)
+    output.mkdir(parents=True, exist_ok=True)
+    best_dev = float("inf")
+    history = []
+
+    for epoch in range(args.epochs):
+        model.train()
+        total = 0.0
+        for batch in tqdm(train_loader, desc=f"Epoch {epoch + 1}/{args.epochs}"):
+            batch = {key: value.to(device) for key, value in batch.items()}
+            optimizer.zero_grad(set_to_none=True)
+            loss = model(**batch).loss
             loss.backward()
             optimizer.step()
-            total_loss += loss.item()
+            total += float(loss.item())
+        dev_loss = evaluate_loss(model, dev_loader, device)
+        print(
+            f"Epoch {epoch + 1}: train_loss={total / len(train_loader):.4f}, "
+            f"dev_loss={dev_loss:.4f}"
+        )
+        history.append(
+            {
+                "epoch": epoch + 1,
+                "train_loss": total / len(train_loader),
+                "dev_loss": dev_loss,
+            }
+        )
+        model.save_pretrained(output / f"epoch-{epoch + 1}")
+        tokenizer.save_pretrained(output / f"epoch-{epoch + 1}")
+        if dev_loss < best_dev:
+            best_dev = dev_loss
+            model.save_pretrained(output / "best")
+            tokenizer.save_pretrained(output / "best")
 
-        avg_loss = total_loss / len(loader)
-        print(f"Epoch {epoch+1} — Loss: {avg_loss:.4f}")
+    (output / "training_history.json").write_text(
+        json.dumps(history, indent=2), encoding="utf-8"
+    )
+    create_run_manifest(
+        output / "run_manifest.json",
+        command="finetune_envit5",
+        inputs=[args.train, args.dev, output / "best"],
+        metadata={**vars(args), "device": device, "best_dev_loss": best_dev},
+    )
+    print(f"Best dev loss: {best_dev:.4f}; checkpoint: {output / 'best'}")
 
-    # Save Fine-tuned Model
-    os.makedirs(OUTPUT_DIR, exist_ok=True)
-    model.save_pretrained(OUTPUT_DIR)
-    tokenizer.save_pretrained(OUTPUT_DIR)
-    print(f"\n✅ Fine-tuned model saved to: {OUTPUT_DIR}/")
+
+if __name__ == "__main__":
+    main()

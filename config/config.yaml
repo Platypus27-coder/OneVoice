@@ -5,19 +5,23 @@
 # ─────────────────────────────────────────────
 audio:
   sample_rate: 16000
-  chunk_size: 1024
+  chunk_size: 512        # 32 ms frames at 16 kHz
   channels: 1
   format: int16           # pyaudio.paInt16
   vad_threshold: 0.5      # Silero VAD sensitivity (0.0 - 1.0)
   vad_min_speech_ms: 300  # Minimum speech duration to trigger pipeline
+  vad_energy_threshold: 0.015
+  vad_pre_roll_ms: 192
+  vad_endpoint_ms: 500
+  max_utterance_ms: 15000
 
 # ─────────────────────────────────────────────
 # Trạm 0: Denoise (GIPFormer ONNX)
 # ─────────────────────────────────────────────
 denoise:
   enabled: true
-  model_path: "models/gipformer_denoise.onnx"
-  use_gpu: false           # ONNX CPU inference on edge device
+  backend: "passthrough"   # passthrough baseline | rnnoise candidate | deepfilter reference
+  rnnoise_factory: ""       # explicit module:callable adapter; never auto-download
 
 # ─────────────────────────────────────────────
 # Trạm 1: ASR (GIPFormer VI & SenseVoice EN)
@@ -26,9 +30,11 @@ asr:
   num_threads: 2
   streaming: true
   chunk_length_s: 3        # Process 3-second audio chunks for low latency
+  gipformer_model_dir: "models/gipformer"
   
 sensevoice:
-  model_path: "iic/SenseVoiceSmall"  # Auto-download from ModelScope if not local
+  model_path: "models/sensevoice"    # Production path must be local
+  remote_model: "iic/SenseVoiceSmall"
 
 # ─────────────────────────────────────────────
 # Trạm 2: Machine Translation (VietAI envit5)
@@ -36,14 +42,15 @@ sensevoice:
 translation:
   model: "VietAI/envit5-translation"     # 1 model duy nhất cho cả VI↔EN (~600MB)
   model_dir: "models/envit5/"            # Local checkpoint (tùy chọn)
+  edge_model_dir: "models/envit5_ort_genai/"  # validated encoder/decoder GenAI bundle
   max_length: 512
   direction: "vi2en"                     # Default direction
 
 # ─────────────────────────────────────────────
-# Trạm 3: TTS (BetterBox-TTS / Tiny VITS)
+# Trạm 3: TTS (premium F5/OmniVoice or lightweight local system voice)
 # ─────────────────────────────────────────────
 tts:
-  default_engine: "betterbox"     # "betterbox" | "vits" | "vallex" (premium)
+  default_engine: "betterbox"
   en_speed: 0.85                  # Tốc độ đọc (0.7=rất chậm, 0.85=chậm chắc, 1.0=bình thường, 1.2=nhanh)
 
   # ── Giọng mẫu tiếng Anh (Voice Preset) ─────────────────────────────
@@ -56,9 +63,6 @@ tts:
     language: "vi"
     speed: 1.0
     pitch: 0
-  vits:
-    model_path: "models/vits_en_tiny.onnx"
-    language: "en"
   vallex:                         # Premium Mode (requires Wi-Fi or charging)
     enabled: false
     model_path: "models/vallex/"
@@ -67,6 +71,27 @@ tts:
 # Pipeline Orchestrator
 # ─────────────────────────────────────────────
 pipeline:
-  queue_maxsize: 10        # Max items in each inter-stage queue
+  queue_maxsize: 128       # 4 seconds of 32 ms audio frames; text queues use the same bound
   target_latency_ms: 1000  # Alert if total latency exceeds this
+  safety_target_latency_ms: 300
   log_latency: true        # Print per-stage timing to console
+  profile: "development"   # development | edge | premium
+  offline: false
+  artifact_manifest: "artifacts/manifest.json"
+  construction_data_dir: "data/onevoice_construction_v2"
+  safety_audio_manifest: "artifacts/safety_audio/manifest.json"
+  frame_ms: 32
+  vad_endpoint_ms: 500
+  rolling_window_ms: 2000
+  rolling_stride_ms: 500
+
+profiles:
+  development:
+    allow_downloads: true
+    tts_tier: premium
+  edge:
+    allow_downloads: false
+    tts_tier: edge
+  premium:
+    allow_downloads: true
+    tts_tier: premium

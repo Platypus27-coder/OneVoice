@@ -1,6 +1,7 @@
 # Python
 __pycache__/
 *.py[cod]
+.tmp/
 *.pyo
 *.pyd
 .Python
@@ -35,6 +36,13 @@ quantized_models/
 # Audio data (use DVC or separate storage)
 data/raw_audio/
 data/calibration/*.wav
+wavs/
+
+# Local runtime assets and generated reports
+models/
+reports/
+artifacts/manifest.json
+artifacts/safety_audio/
 
 # API Keys / secrets
 .env

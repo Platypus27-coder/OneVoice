@@ -1,0 +1,21 @@
+{
+  "schema_version": 2,
+  "sample_rates": [16000],
+  "required_backends": [
+    {
+      "name": "ONNX Runtime GenAI CPU",
+      "python_module": "onnxruntime_genai",
+      "profiles": ["edge"],
+      "directions": ["vi2en", "en2vi"]
+    }
+  ],
+  "artifacts": [
+    {
+      "name": "replace-with-frozen-model",
+      "source_path": "../models/replace.onnx",
+      "license": "REPLACE_WITH_SPDX_OR_LICENSE_FILE",
+      "profiles": ["edge"],
+      "directions": ["vi2en"]
+    }
+  ]
+}

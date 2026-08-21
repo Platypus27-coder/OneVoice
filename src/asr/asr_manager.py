@@ -10,8 +10,8 @@ nhờ khả năng nhận diện siêu nhanh và trích xuất nhãn cảm xúc.
 
 import time
 import queue
+import os
 import numpy as np
-from huggingface_hub import hf_hub_download
 
 from .sensevoice_asr import SenseVoiceASR
 
@@ -39,20 +39,30 @@ class GIPFormerASR:
     Callable module wrapping gipformer/infer_onnx.py logic.
     """
 
-    def __init__(self, num_threads: int = 2, decoding_method: str = "greedy_search"):
+    def __init__(self, num_threads: int = 2, decoding_method: str = "greedy_search",
+                 model_dir: str | None = None, offline: bool = False):
         self.num_threads = num_threads
         self.decoding_method = decoding_method
+        self.model_dir = model_dir
+        self.offline = offline
         self._recognizer = None
 
     def load(self):
         if not HAS_SHERPA:
             raise ImportError("sherpa-onnx not installed. Run: pip install sherpa-onnx")
 
-        print("[GIPFormer ASR] Downloading INT8 model from HuggingFace...")
         paths = {}
         for key, filename in GIPFORMER_INT8_FILES.items():
-            paths[key] = hf_hub_download(repo_id=GIPFORMER_REPO, filename=filename)
-        print("[GIPFormer ASR] Model downloaded.")
+            local = os.path.join(self.model_dir, filename) if self.model_dir else None
+            if local and os.path.isfile(local):
+                paths[key] = local
+            elif self.offline:
+                raise FileNotFoundError(f"Missing offline GIPFormer artifact: {local or filename}")
+            else:
+                from huggingface_hub import hf_hub_download
+
+                paths[key] = hf_hub_download(repo_id=GIPFORMER_REPO, filename=filename)
+        print("[GIPFormer ASR] Model files ready.")
 
         self._recognizer = sherpa_onnx.OfflineRecognizer.from_transducer(
             encoder=paths["encoder"],
@@ -95,18 +105,25 @@ class ASRManager:
       direction="en2vi" → SenseVoice (English input with emotion detection)
     """
 
-    def __init__(self, config: dict):
+    def __init__(self, config: dict, offline: bool = False):
         self.cfg = config
+        self.offline = offline
         self._vi_asr = GIPFormerASR(
-            num_threads=self.cfg["asr"].get("num_threads", 2)
+            num_threads=self.cfg["asr"].get("num_threads", 2),
+            model_dir=self.cfg["asr"].get("gipformer_model_dir"),
+            offline=offline,
         )
-        self._en_asr = SenseVoiceASR(config)
-        self._loaded = False
+        self._en_asr = SenseVoiceASR(config, offline=offline)
+        self._loaded_directions: set[str] = set()
 
-    def load(self):
-        self._vi_asr.load()
-        # SenseVoice load occurs during init, but we ensure it's ready here
-        self._loaded = True
+    def load(self, direction: str = "vi2en"):
+        if direction == "vi2en":
+            self._vi_asr.load()
+        elif direction == "en2vi":
+            self._en_asr.load()
+        else:
+            raise ValueError(f"Unsupported direction: {direction}")
+        self._loaded_directions.add(direction)
 
     def transcribe(self, audio: np.ndarray, direction: str = "vi2en") -> dict:
         """
@@ -115,8 +132,8 @@ class ASRManager:
         Returns:
             dict: {"text": str, "lang": str, "direction": str, "emotion": str, "event": str}
         """
-        if not self._loaded:
-            raise RuntimeError("ASRManager not loaded. Call .load() first.")
+        if direction not in self._loaded_directions:
+            raise RuntimeError(f"ASR direction '{direction}' not loaded. Call .load(direction) first.")
 
         if direction == "vi2en":
             result = self._vi_asr.transcribe(audio)

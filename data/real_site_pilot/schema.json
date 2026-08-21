@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "OneVoice real-site utterance",
+  "type": "object",
+  "required": [
+    "utterance_id", "audio", "language", "transcript", "translation",
+    "site_id", "session_id", "speaker_id", "split", "domain", "intent",
+    "risk_level", "consent_recorded"
+  ],
+  "properties": {
+    "utterance_id": {"type": "string", "minLength": 1},
+    "audio": {"type": "string", "pattern": "\\.wav$"},
+    "language": {"enum": ["vi", "en"]},
+    "transcript": {"type": "string", "minLength": 1},
+    "translation": {"type": "string", "minLength": 1},
+    "site_id": {"type": "string", "minLength": 1},
+    "session_id": {"type": "string", "minLength": 1},
+    "speaker_id": {"type": "string", "minLength": 1},
+    "split": {"enum": ["train", "dev", "test"]},
+    "domain": {"type": "string", "minLength": 1},
+    "intent": {"type": "string", "minLength": 1},
+    "entities": {"type": "object"},
+    "risk_level": {"enum": ["low", "medium", "high", "critical"]},
+    "noise_type": {"type": "string"},
+    "approx_snr_db": {"type": ["number", "null"]},
+    "microphone_distance_m": {"type": ["number", "null"], "minimum": 0},
+    "consent_recorded": {"const": true}
+  },
+  "additionalProperties": true
+}

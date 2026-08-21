@@ -1,0 +1,15 @@
+This file preserves the uncommitted pre-V2 denoise experiment that existed when the V2 upgrade began.
+It changed the apparent GIPFormer source from g-group-ai-lab epoch-35 files to VietAI epoch-20 files and
+updated comments, but retained the behavior that decoded audio and returned the original waveform.
+
+Preserved experimental constants:
+
+    GIPFORMER_REPO = "VietAI/gipformer-65M-rnnt"
+    encoder = "encoder-epoch-20-avg-10.int8.onnx"
+    decoder = "decoder-epoch-20-avg-10.onnx"
+    joiner  = "joiner-epoch-20-avg-10.int8.onnx"
+    tokens  = "tokens.txt"
+
+V2 does not execute this experiment because GIPFormer is ASR, not waveform speech enhancement. The tracked V1
+implementation remains recoverable at tag `v1-working-baseline`.
+

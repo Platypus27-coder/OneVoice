@@ -1,0 +1,30 @@
+{
+  "schema_version": 2,
+  "sample_rates": [16000],
+  "required_backends": [
+    {
+      "name": "ONNX Runtime GenAI CPU",
+      "python_module": "onnxruntime_genai",
+      "profiles": ["edge"],
+      "directions": ["vi2en", "en2vi"]
+    }
+  ],
+  "artifacts": [
+    {
+      "name": "gipformer_encoder_int8",
+      "path": "../models/gipformer/encoder-epoch-35-avg-6.int8.onnx",
+      "sha256": "REPLACE_WITH_SHA256",
+      "license": "REPLACE_WITH_SPDX_OR_LICENSE_FILE",
+      "directions": ["vi2en"],
+      "profiles": ["edge"]
+    },
+    {
+      "name": "envit5_local_config",
+      "path": "../models/envit5/config.json",
+      "sha256": "REPLACE_WITH_SHA256",
+      "license": "REPLACE_WITH_SPDX_OR_LICENSE_FILE",
+      "directions": ["vi2en", "en2vi"],
+      "profiles": ["edge"]
+    }
+  ]
+}

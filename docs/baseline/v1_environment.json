@@ -1,0 +1,26 @@
+{
+  "baseline_tag": "v1-working-baseline",
+  "baseline_commit": "ce35ac5832c6eb273ee6e1fee9320a98c0074962",
+  "captured_on": "2026-08-21",
+  "reproduction_attempted": false,
+  "reproduction_blocker": "No local models directory or complete model artifact bundle was present.",
+  "python": "3.13.11 | packaged by Anaconda, Inc. | MSC v.1929 64 bit (AMD64)",
+  "platform": "Windows-11-10.0.26200-SP0",
+  "processor": "Intel64 Family 6 Model 141 Stepping 1, GenuineIntel",
+  "dependencies": {
+    "numpy": "2.4.2",
+    "torch": null,
+    "transformers": "4.45.0",
+    "sherpa-onnx": null,
+    "funasr-onnx": null,
+    "soundfile": null,
+    "sounddevice": null,
+    "PyYAML": "6.0.3"
+  },
+  "model_artifacts": [],
+  "model_hashes": {},
+  "direction_runs": {
+    "vi2en": "NOT_RUN_MISSING_LOCAL_ARTIFACTS",
+    "en2vi": "NOT_RUN_MISSING_LOCAL_ARTIFACTS"
+  }
+}

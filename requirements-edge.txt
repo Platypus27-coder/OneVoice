@@ -1,0 +1,10 @@
+# OneVoice edge runtime only. No training, downloads, F5-TTS or OmniVoice.
+numpy
+PyYAML
+soundfile
+sounddevice
+pyttsx3
+psutil
+sherpa-onnx
+funasr_onnx
+onnxruntime-genai
