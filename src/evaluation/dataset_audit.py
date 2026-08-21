@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 from collections import Counter, defaultdict
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 
@@ -31,6 +32,8 @@ def audit_audio_manifest(
     language: str | None = None,
     min_speakers: int | None = None,
     require_realized_snr: bool = False,
+    workers: int = 1,
+    progress_every: int = 0,
 ) -> dict:
     manifest = Path(manifest_path)
     if not manifest.is_file():
@@ -97,34 +100,43 @@ def audit_audio_manifest(
             import soundfile as sf
         except ImportError as exc:
             raise RuntimeError("soundfile is required for physical audio audit") from exc
+        def inspect_audio(item: tuple[str, str]):
+            kind, name = item
+            path = root / kind / name
+            try:
+                info = sf.info(path)
+                if info.samplerate != 16000 or info.frames <= 0 or info.channels != 1:
+                    return kind, name, "invalid", None
+                return kind, name, "ok", info
+            except (OSError, RuntimeError):
+                return kind, name, "missing" if not path.is_file() else "invalid", None
+
         noisy_info = {}
         clean_info = {}
-        for name in sorted(set(noisy_names)):
-            path = root / "noisy" / name
-            if not path.is_file():
-                missing_noisy.append(name)
-                continue
-            try:
-                info = sf.info(path)
-                if info.samplerate != 16000 or info.frames <= 0 or info.channels != 1:
+        work = [
+            *(('noisy', name) for name in sorted(set(noisy_names))),
+            *(('clean', name) for name in sorted(set(clean_names))),
+        ]
+        worker_count = max(1, int(workers))
+        print(
+            f"[Physical audit] checking {len(work)} WAV files with "
+            f"{worker_count} workers...",
+            flush=True,
+        )
+        with ThreadPoolExecutor(max_workers=worker_count) as executor:
+            for index, (kind, name, status, info) in enumerate(
+                executor.map(inspect_audio, work), start=1
+            ):
+                if status == "missing":
+                    (missing_noisy if kind == "noisy" else missing_clean).append(name)
+                elif status == "invalid":
                     invalid_audio.append(name)
-                else:
+                elif kind == "noisy":
                     noisy_info[name] = info
-            except RuntimeError:
-                invalid_audio.append(name)
-        for name in sorted(set(clean_names)):
-            path = root / "clean" / name
-            if not path.is_file():
-                missing_clean.append(name)
-                continue
-            try:
-                info = sf.info(path)
-                if info.samplerate != 16000 or info.frames <= 0 or info.channels != 1:
-                    invalid_audio.append(name)
                 else:
                     clean_info[name] = info
-            except RuntimeError:
-                invalid_audio.append(name)
+                if progress_every and (index % progress_every == 0 or index == len(work)):
+                    print(f"[Physical audit] checked {index}/{len(work)} WAV files", flush=True)
         if missing_noisy:
             errors.append(f"missing noisy WAV files: {len(missing_noisy)}")
         if missing_clean:

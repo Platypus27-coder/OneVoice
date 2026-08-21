@@ -23,6 +23,8 @@ def main() -> None:
     parser.add_argument("--language", choices=["vi", "en"])
     parser.add_argument("--min-speakers", type=int)
     parser.add_argument("--require-realized-snr", action="store_true")
+    parser.add_argument("--workers", type=int, default=8)
+    parser.add_argument("--progress-every", type=int, default=500)
     parser.add_argument("--report-dir", default="reports/data_audit")
     args = parser.parse_args()
 
@@ -34,6 +36,8 @@ def main() -> None:
         language=args.language,
         min_speakers=args.min_speakers,
         require_realized_snr=args.require_realized_snr,
+        workers=args.workers,
+        progress_every=args.progress_every,
     )
     output = Path(args.report_dir)
     output.mkdir(parents=True, exist_ok=True)

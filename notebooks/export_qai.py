@@ -32,7 +32,13 @@ def _job_record(job) -> dict:
 
 def _wait(job) -> None:
     if hasattr(job, "wait"):
+        print(f"[Qualcomm AI Hub] waiting for job {_job_record(job)['job_id']}...", flush=True)
         job.wait()
+        print(
+            f"[Qualcomm AI Hub] job {_job_record(job)['job_id']} finished: "
+            f"{_job_record(job)['status']}",
+            flush=True,
+        )
 
 
 def _load_inputs(path: Path) -> dict[str, list[np.ndarray]]:
@@ -124,6 +130,7 @@ def main() -> None:
         name=f"onevoice-{args.model.stem}",
         options=args.compile_options,
     )
+    print(f"[Qualcomm AI Hub] compile submitted: {_job_record(compile_job)}", flush=True)
     _wait(compile_job)
     target_model = compile_job.get_target_model()
 
@@ -139,6 +146,8 @@ def main() -> None:
         name=f"onevoice-{args.model.stem}-correctness",
         inputs=inputs,
     )
+    print(f"[Qualcomm AI Hub] profile submitted: {_job_record(profile_job)}", flush=True)
+    print(f"[Qualcomm AI Hub] inference submitted: {_job_record(inference_job)}", flush=True)
     _wait(profile_job)
     _wait(inference_job)
     hosted_outputs = inference_job.download_output_data()

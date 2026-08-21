@@ -38,8 +38,15 @@ def recover(dataset_root: Path, metadata_csv: Path) -> tuple[list[dict], dict]:
     entries: list[dict] = []
     errors: list[str] = []
     used_clean: set[str] = set()
+    clean_names = {path.name for path in clean_dir.glob("*.wav")}
+    noisy_paths = sorted(noisy_dir.glob("*.wav"))
+    print(
+        f"[Manifest recovery] indexed {len(clean_names)} clean and "
+        f"{len(noisy_paths)} noisy WAV filenames",
+        flush=True,
+    )
 
-    for noisy_path in sorted(noisy_dir.glob("*.wav")):
+    for index, noisy_path in enumerate(noisy_paths, start=1):
         match = NOISY_PATTERN.fullmatch(noisy_path.stem)
         if match is None:
             errors.append(f"unrecognized noisy filename: {noisy_path.name}")
@@ -50,7 +57,7 @@ def recover(dataset_root: Path, metadata_csv: Path) -> tuple[list[dict], dict]:
             errors.append(f"utterance not found in metadata: {uid}")
             continue
         clean_name = f"{uid}_clean.wav"
-        if not (clean_dir / clean_name).is_file():
+        if clean_name not in clean_names:
             errors.append(f"missing paired clean WAV: {clean_name}")
             continue
         used_clean.add(clean_name)
@@ -80,8 +87,12 @@ def recover(dataset_root: Path, metadata_csv: Path) -> tuple[list[dict], dict]:
                 "noisy_variant": int(match.group("variant")),
             }
         )
+        if index % 1000 == 0 or index == len(noisy_paths):
+            print(
+                f"[Manifest recovery] paired {index}/{len(noisy_paths)} noisy WAVs",
+                flush=True,
+            )
 
-    clean_names = {path.name for path in clean_dir.glob("*.wav")}
     unused_clean = sorted(clean_names - used_clean)
     if unused_clean:
         errors.append(f"clean WAVs without noisy pairs: {len(unused_clean)}")
@@ -89,7 +100,7 @@ def recover(dataset_root: Path, metadata_csv: Path) -> tuple[list[dict], dict]:
         "status": "PARTIAL" if entries else "FAILED",
         "entries": len(entries),
         "clean_files": len(clean_names),
-        "noisy_files": len(list(noisy_dir.glob("*.wav"))),
+        "noisy_files": len(noisy_paths),
         "unrecoverable_fields": ["speaker_id", "noise_type", "snr_db", "reverb", "rir_id"],
         "errors": errors,
     }
@@ -108,10 +119,12 @@ def main() -> None:
     if output.exists():
         raise FileExistsError(f"Refusing to overwrite existing manifest: {output}")
     entries, report = recover(args.dataset_root, args.metadata_csv)
-    output.write_text(
+    temporary = output.with_name(output.name + ".tmp")
+    temporary.write_text(
         "".join(json.dumps(row, ensure_ascii=False) + "\n" for row in entries),
         encoding="utf-8",
     )
+    temporary.replace(output)
     report_path = output.with_name("manifest_recovery_report.json")
     report_path.write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
     print(json.dumps({**report, "manifest": str(output)}, ensure_ascii=False, indent=2))
