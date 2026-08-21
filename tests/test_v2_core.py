@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import shutil
 import sys
 import time
 import unittest
@@ -10,6 +11,7 @@ from pathlib import Path
 import numpy as np
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(ROOT / "src"))
 
 from audio.denoise import Denoiser
@@ -20,6 +22,7 @@ from evaluation.dataset_audit import audit_audio_manifest
 from evaluation.real_site import audit_real_site_manifest, write_holdout_lock
 from evaluation.metrics import cer, corpus_error_rate, wer
 from runtime.preflight import ArtifactPreflightError, verify_artifacts
+from scripts.recover_v1_manifest import UNRECOVERABLE, recover
 from streaming.semantic_commit import (
     RollingHypothesisAssembler,
     SemanticCommitController,
@@ -262,6 +265,29 @@ class StreamingTests(unittest.TestCase):
 
 
 class RuntimeSafetyTests(unittest.TestCase):
+    def test_recover_v1_manifest_from_legacy_filenames(self):
+        root = ROOT / "tests" / ".tmp" / "recover-v1"
+        clean = root / "clean"
+        noisy = root / "noisy"
+        metadata = root / "utterances.csv"
+        try:
+            clean.mkdir(parents=True, exist_ok=True)
+            noisy.mkdir(parents=True, exist_ok=True)
+            (clean / "OV2_000001_clean.wav").touch()
+            (noisy / "OV2_000001_n01.wav").touch()
+            metadata.write_text(
+                "utterance_id,pair_id,frame_pattern_id,split,domain,intent,risk_level,vi,en\n"
+                "OV2_000001,P1,F1,test,safety,STOP,critical,Dá»«ng láº¡i,Stop\n",
+                encoding="utf-8",
+            )
+            entries, report = recover(root, metadata)
+            self.assertEqual(len(entries), 1)
+            self.assertEqual(entries[0]["clean_audio"], "OV2_000001_clean.wav")
+            self.assertEqual(entries[0]["speaker_id"], UNRECOVERABLE)
+            self.assertEqual(report["status"], "PARTIAL")
+        finally:
+            shutil.rmtree(root, ignore_errors=True)
+
     def test_passthrough_denoiser(self):
         denoiser = Denoiser({"backend": "passthrough"})
         denoiser.load()

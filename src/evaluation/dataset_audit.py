@@ -60,7 +60,8 @@ def audit_audio_manifest(
         errors.append("missing split")
     if any(
         not str(row.get("speaker_id", "")).strip()
-        or str(row.get("speaker_id", "")).casefold() == "unknown"
+        or "unknown" in str(row.get("speaker_id", "")).casefold()
+        or "unrecoverable" in str(row.get("speaker_id", "")).casefold()
         for row in rows
     ):
         errors.append("missing or unknown speaker identity")

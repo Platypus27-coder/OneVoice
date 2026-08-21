@@ -1,7 +1,8 @@
 # OneVoice V2 notebooks
 
 Notebooks clone or fast-forward `main` from `https://github.com/Platypus27-coder/OneVoice.git` into
-`/content/OneVoice`, while datasets, model caches and reports remain under `/content/drive/MyDrive/OneVoice`.
+`/content/OneVoice`. Existing datasets remain at `/content/drive/MyDrive/onevoice_audio_v1` and
+`/content/drive/MyDrive/onevoice_audio_v2_1`; model caches and reports live under `/content/drive/MyDrive/OneVoice`.
 They only orchestrate Colab/Drive and call checked-in logic from `scripts/` and `src/evaluation/`. A measured run
 must produce `run_manifest.json`, `predictions.csv` and `aggregate.json` (the physical audit produces `audit.json`
 instead of predictions).
@@ -19,3 +20,8 @@ Fine-tuning uses only `train.csv`; model selection uses only `dev.csv`; `test.cs
 acoustic-adapter notebook was removed because its adapted mel was never passed to GIPFormer and its post-WER was made
 by copying the baseline prediction and multiplying the score by a constant. The original source remains auditable at
 tag `v1-working-baseline`.
+
+If V1 Drive audio has no `manifest.jsonl`, the data-audit notebook reconstructs pairing/transcript/split metadata from
+the original filenames and `utterances_all.csv`. Random speaker, noise, SNR and reverb choices cannot be recovered and
+remain a reported V1 limitation; the reconstructed manifest is sufficient for VI-ASR benchmarking, not for claiming
+speaker/noise-stratified dataset quality.
