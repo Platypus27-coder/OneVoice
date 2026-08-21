@@ -7,7 +7,7 @@ OneVoice là hệ thống dịch thuật Speech-to-Speech Việt ↔ Anh dành c
 ---
 
 
-## 🚧 Trạng Thái OneVoice V2
+## Trạng Thái OneVoice V2
 
 V2 nâng cấp trực tiếp runtime hiện tại nhưng vẫn giữ tag `v1-working-baseline` để rollback. Trạng thái được ghi theo bằng chứng, không suy diễn từ notebook:
 
@@ -24,7 +24,7 @@ Chi tiết bằng chứng: [V1 baseline](docs/V1_BASELINE_STATUS.md), [kế ho�
 
 ---
 
-## 🎯 Vấn Đề Thực Tế & Giải Pháp Edge AI
+## Vấn Đề Thực Tế & Giải Pháp Edge AI
 
 Rào cản ngôn ngữ giữa chuyên gia nước ngoài và kỹ sư bản địa gây giảm năng suất và nguy cơ mất an toàn lao động. Các ứng dụng như Google Translate không thể dùng được tại công trường vì:
 - Bắt buộc phải có Internet (Cloud-based).
@@ -32,7 +32,7 @@ Rào cản ngôn ngữ giữa chuyên gia nước ngoài và kỹ sư bản đ�
 
 ---
 
-## 🏗️ Kiến Trúc Luồng Xử Lý 4 Trạm Cục Bộ (Production Architecture)
+## Kiến Trúc Luồng Xử Lý 4 Trạm Cục Bộ (Production Architecture)
 
 ### 🇻🇳 Luồng 1: VI → EN (Tiếng Việt → Tiếng Anh)
 
@@ -100,12 +100,12 @@ Microphone
 Speaker / Earphone
 ```
 
-**⚡ Mục tiêu nghiệm thu V2:** normal commit→first-audio p95 < **1000 ms**, safety p95 < **300 ms**, runtime Edge không truy cập mạng và peak RAM < **200 MB**. Chỉ công nhận khi có report đo thật.
+** Mục tiêu nghiệm thu V2:** normal commit→first-audio p95 < **1000 ms**, safety p95 < **300 ms**, runtime Edge không truy cập mạng và peak RAM < **200 MB**. Chỉ công nhận khi có report đo thật.
 
 ---
 
 
-### 🧠 Các lớp V2 bổ sung quanh hai luồng trên
+### Các lớp V2 bổ sung quanh hai luồng trên
 
 ```text
 AudioFrame 32 ms
@@ -124,7 +124,7 @@ Hai sơ đồ VI→EN và EN→VI ở trên mô tả hướng model; chuỗi V2 
 
 ---
 
-## 🎛️ Các Chế Độ Hoạt Động (Translation Directions)
+## Các Chế Độ Hoạt Động (Translation Directions)
 
 Hệ thống là một đường ống hai chiều, cho phép chuyển đổi linh hoạt qua cờ lệnh runtime:
 
@@ -135,7 +135,7 @@ Hệ thống là một đường ống hai chiều, cho phép chuyển đổi li
 
 ---
 
-## 🎬 Demo Kết Quả Dịch Thuật & Voice Cloning
+## Demo Kết Quả Dịch Thuật & Voice Cloning
 
 Dưới đây là 7 kịch bản demo đã có từ baseline V1, gồm thuật ngữ chuyên ngành, từ lóng thi công và tình huống công trường. Đây là bằng chứng demo lịch sử, không thay thế benchmark V2 trên fixed test set. Các bản MP4 vẫn được lưu trong `demo_outputs/`:
 
@@ -279,7 +279,7 @@ python src/pipeline.py --direction en2vi
 
 ---
 
-## 📜 Giấy Phép & Tri Ạn Tác Giả
+## Giấy Phép & Tri Ạn Tác Giả
 
 Dự án tuân thủ Giấy phép **CC BY-NC 4.0**.
 Chúng tôi trân trọng tri ân các công trình mã nguồn mở được tích hợp:
