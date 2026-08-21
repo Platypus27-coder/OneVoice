@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 from collections import Counter, defaultdict
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 
 
@@ -39,6 +39,7 @@ def audit_audio_manifest(
     if not manifest.is_file():
         raise FileNotFoundError(f"Manifest not found: {manifest}")
     rows = _read_jsonl(manifest)
+    print(f"[Audit] loaded {len(rows)} manifest rows", flush=True)
     if language is not None:
         rows = [row for row in rows if row.get("language", "vi") == language]
         if not rows:
@@ -90,6 +91,7 @@ def audit_audio_manifest(
     pattern_split_leaks = sum(len(splits) > 1 for splits in split_by_pattern.values())
     if pattern_split_leaks:
         errors.append(f"frame patterns crossing splits: {pattern_split_leaks}")
+    print("[Audit] logical consistency checks completed", flush=True)
 
     missing_noisy: list[str] = []
     missing_clean: list[str] = []
@@ -124,9 +126,9 @@ def audit_audio_manifest(
             flush=True,
         )
         with ThreadPoolExecutor(max_workers=worker_count) as executor:
-            for index, (kind, name, status, info) in enumerate(
-                executor.map(inspect_audio, work), start=1
-            ):
+            futures = {executor.submit(inspect_audio, item): item for item in work}
+            for index, future in enumerate(as_completed(futures), start=1):
+                kind, name, status, info = future.result()
                 if status == "missing":
                     (missing_noisy if kind == "noisy" else missing_clean).append(name)
                 elif status == "invalid":
@@ -135,7 +137,9 @@ def audit_audio_manifest(
                     noisy_info[name] = info
                 else:
                     clean_info[name] = info
-                if progress_every and (index % progress_every == 0 or index == len(work)):
+                if progress_every and (
+                    index == 1 or index % progress_every == 0 or index == len(work)
+                ):
                     print(f"[Physical audit] checked {index}/{len(work)} WAV files", flush=True)
         if missing_noisy:
             errors.append(f"missing noisy WAV files: {len(missing_noisy)}")

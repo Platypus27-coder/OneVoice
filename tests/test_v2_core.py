@@ -265,6 +265,50 @@ class StreamingTests(unittest.TestCase):
 
 
 class RuntimeSafetyTests(unittest.TestCase):
+    def test_parallel_physical_audio_audit(self):
+        import types
+        from unittest import mock
+
+        root = ROOT / "tests" / ".tmp" / "physical-audit"
+        manifest = root / "manifest.jsonl"
+        try:
+            (root / "clean").mkdir(parents=True, exist_ok=True)
+            (root / "noisy").mkdir(parents=True, exist_ok=True)
+            (root / "clean" / "u1_clean.wav").touch()
+            (root / "noisy" / "u1_n01.wav").touch()
+            manifest.write_text(
+                json.dumps(
+                    {
+                        "audio": "u1_n01.wav",
+                        "clean_audio": "u1_clean.wav",
+                        "text": "dá»«ng láº¡i",
+                        "translation": "stop",
+                        "split": "test",
+                        "speaker_id": "speaker-1",
+                    },
+                    ensure_ascii=False,
+                )
+                + "\n",
+                encoding="utf-8",
+            )
+            fake_soundfile = types.SimpleNamespace(
+                info=lambda path: types.SimpleNamespace(
+                    samplerate=16000, frames=1600, channels=1
+                )
+            )
+            with mock.patch.dict(sys.modules, {"soundfile": fake_soundfile}):
+                report = audit_audio_manifest(
+                    manifest,
+                    physical=True,
+                    expected_clean=1,
+                    expected_noisy=1,
+                    workers=2,
+                    progress_every=1,
+                )
+            self.assertTrue(report["passed"])
+        finally:
+            shutil.rmtree(root, ignore_errors=True)
+
     def test_recover_v1_manifest_from_legacy_filenames(self):
         root = ROOT / "tests" / ".tmp" / "recover-v1"
         clean = root / "clean"

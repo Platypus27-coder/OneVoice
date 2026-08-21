@@ -24,7 +24,7 @@ def main() -> None:
     parser.add_argument("--min-speakers", type=int)
     parser.add_argument("--require-realized-snr", action="store_true")
     parser.add_argument("--workers", type=int, default=8)
-    parser.add_argument("--progress-every", type=int, default=500)
+    parser.add_argument("--progress-every", type=int, default=100)
     parser.add_argument("--report-dir", default="reports/data_audit")
     args = parser.parse_args()
 

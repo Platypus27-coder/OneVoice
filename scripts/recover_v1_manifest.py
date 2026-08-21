@@ -38,6 +38,7 @@ def recover(dataset_root: Path, metadata_csv: Path) -> tuple[list[dict], dict]:
     entries: list[dict] = []
     errors: list[str] = []
     used_clean: set[str] = set()
+    print("[Manifest recovery] indexing Drive WAV filenames...", flush=True)
     clean_names = {path.name for path in clean_dir.glob("*.wav")}
     noisy_paths = sorted(noisy_dir.glob("*.wav"))
     print(
