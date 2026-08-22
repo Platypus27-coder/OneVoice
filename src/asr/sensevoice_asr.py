@@ -61,7 +61,10 @@ class SenseVoiceASR:
         audio_f32 = np.asarray(audio, dtype=np.float32)
         if np.max(np.abs(audio_f32), initial=0.0) > 1.0:
             audio_f32 /= 32768.0
-        result = self.model([audio_f32], language="en", use_itn=True)
+        # ``funasr_onnx`` interprets a list as a list of audio *paths*.
+        # Pass the mono waveform directly so its ndarray branch is selected.
+        # Its public option is ``textnorm`` (not ``use_itn``).
+        result = self.model(audio_f32, language="en", textnorm="withitn")
         if not result:
             return {"text": "", "emotion": "neutral", "event": "speech"}
         return self._parse_output(str(result[0]))

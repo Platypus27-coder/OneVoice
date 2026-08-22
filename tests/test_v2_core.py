@@ -16,6 +16,7 @@ sys.path.insert(0, str(ROOT / "src"))
 
 from audio.denoise import Denoiser
 from asr.asr_manager import GIPFORMER_INT8_FILES, GIPFORMER_REVISION
+from asr.sensevoice_asr import SenseVoiceASR
 from context.engine import ConstructionContextEngine
 from context.site_pack import SitePackError, SitePackLoader
 from contracts import ASRHypothesis, AudioFrame, CommitKind
@@ -269,6 +270,24 @@ class StreamingTests(unittest.TestCase):
 
 
 class RuntimeSafetyTests(unittest.TestCase):
+    def test_sensevoice_adapter_passes_pcm_array_not_path_list(self):
+        class FakeSenseVoice:
+            def __call__(self, waveform, **kwargs):
+                self.waveform = waveform
+                self.kwargs = kwargs
+                return ["<|en|><|NEUTRAL|><|Speech|>secure the load"]
+
+        adapter = SenseVoiceASR({})
+        fake_model = FakeSenseVoice()
+        adapter.model = fake_model
+
+        result = adapter.transcribe(np.array([0.1, -0.2], dtype=np.float32), 16000)
+
+        self.assertIsInstance(fake_model.waveform, np.ndarray)
+        self.assertEqual(fake_model.waveform.dtype, np.float32)
+        self.assertEqual(fake_model.kwargs, {"language": "en", "textnorm": "withitn"})
+        self.assertEqual(result["text"], "secure the load")
+
     def test_split_reconciliation_preserves_test_holdout_and_pattern_groups(self):
         rows, report = reconcile_rows(
             [
