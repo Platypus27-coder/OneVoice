@@ -4,6 +4,8 @@ openai-whisper                     # Whisper (EN ASR, dùng bởi F5-TTS khi tra
 funasr_onnx                        # SenseVoice ONNX (EN/VI ASR + emotion detection)
 funasr                             # required by funasr_onnx when exporting a missing SenseVoice ONNX bundle
 modelscope                         # SenseVoice model loader
+onnx                               # SenseVoice first-run ONNX export
+onnxscript                         # required by the current PyTorch ONNX exporter
 
 # ── Machine Translation ─────────────────────────────────────────────────
 # EnViT5 SentencePiece tokenizer fails with Transformers 5.x; keep this measured Colab-compatible set.
