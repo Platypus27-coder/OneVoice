@@ -50,6 +50,12 @@ def main() -> None:
         "--denoiser", choices=["passthrough", "rnnoise", "deepfilter"], default="passthrough"
     )
     parser.add_argument("--max-samples", type=int)
+    parser.add_argument(
+        "--progress-every",
+        type=int,
+        default=25,
+        help="Print measured progress every N samples (0 disables periodic progress).",
+    )
     parser.add_argument("--config", default="config/config.yaml")
     parser.add_argument("--report-dir", default="reports/asr_v2")
     args = parser.parse_args()
@@ -66,6 +72,8 @@ def main() -> None:
     rows = read_manifest(manifest, args.split, language)
     if args.max_samples:
         rows = rows[: args.max_samples]
+    if args.progress_every < 0:
+        parser.error("--progress-every must be zero or a positive integer")
 
     asr = ASRManager(config, offline=False)
     asr.load(args.direction)
@@ -78,8 +86,14 @@ def main() -> None:
     )
     predictions: list[dict] = []
     root = manifest.parent
+    benchmark_started = time.perf_counter()
+    print(
+        f"[ASR benchmark] {args.direction}/{args.audio}: {len(rows)} {args.split} samples "
+        f"(progress every {args.progress_every or 'disabled'})",
+        flush=True,
+    )
 
-    for row in rows:
+    for index, row in enumerate(rows, start=1):
         name = row["clean_audio"] if args.audio == "clean" else row["audio"]
         audio_path = root / args.audio / name
         audio, _ = librosa.load(audio_path, sr=16000, mono=True)
@@ -120,6 +134,15 @@ def main() -> None:
                 "safety_total": int(safety_ref is not None),
             }
         )
+        if args.progress_every and (index % args.progress_every == 0 or index == len(rows)):
+            elapsed_s = time.perf_counter() - benchmark_started
+            rate = index / elapsed_s if elapsed_s else 0.0
+            remaining_s = (len(rows) - index) / rate if rate else 0.0
+            print(
+                f"[ASR benchmark] processed {index}/{len(rows)} "
+                f"({rate:.2f} samples/s; ETA {remaining_s / 60:.1f} min)",
+                flush=True,
+            )
 
     def summarize(items: list[dict]) -> dict:
         references = [item["reference"] for item in items]
