@@ -35,7 +35,7 @@ pedalboard                         # Audio effects
 # ── Infrastructure ────────────────────────────────────────────────────────────
 huggingface_hub                    # Tải model từ HuggingFace Hub
 PyYAML                             # Đọc config.yaml
-numpy
+numpy==2.2.6                      # Numba/Librosa Colab compatibility (NumPy 2.5 is unsupported)
 
 # ── OmniVoice & Text Processing ───────────────────────────────────────────────
 accelerate                         # HuggingFace Accelerate cho GPU inference
