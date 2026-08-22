@@ -2,6 +2,7 @@
 sherpa-onnx                        # GIPFormer ONNX runtime (VI ASR)
 openai-whisper                     # Whisper (EN ASR, dùng bởi F5-TTS khi transcribe ref audio)
 funasr_onnx                        # SenseVoice ONNX (EN/VI ASR + emotion detection)
+funasr                             # required by funasr_onnx when exporting a missing SenseVoice ONNX bundle
 modelscope                         # SenseVoice model loader
 
 # ── Machine Translation ─────────────────────────────────────────────────
