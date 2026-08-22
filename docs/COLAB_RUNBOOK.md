@@ -37,22 +37,24 @@ một Google Drive làm nơi lưu durable state.
 Mỗi link dưới đây luôn clone/pull code từ GitHub; dataset và output không nằm trong GitHub.
 
 1. [Data audit](https://colab.research.google.com/github/Platypus27-coder/OneVoice/blob/main/notebooks/colab_data_audit_v2.ipynb)
-2. [VI ASR benchmark](https://colab.research.google.com/github/Platypus27-coder/OneVoice/blob/main/notebooks/colab_vi_asr_v2.ipynb)
-3. [Denoiser benchmark](https://colab.research.google.com/github/Platypus27-coder/OneVoice/blob/main/notebooks/colab_denoiser_v2.ipynb)
-4. [EnViT5 VI→EN fine-tune](https://colab.research.google.com/github/Platypus27-coder/OneVoice/blob/main/notebooks/colab_mt_finetune_v2.ipynb)
-5. [MT benchmark](https://colab.research.google.com/github/Platypus27-coder/OneVoice/blob/main/notebooks/colab_mt_v2.ipynb)
+2. [Generate English V2.1](https://colab.research.google.com/github/Platypus27-coder/OneVoice/blob/main/notebooks/colab_generate_english_v2_1.ipynb)
+3. [VI ASR benchmark](https://colab.research.google.com/github/Platypus27-coder/OneVoice/blob/main/notebooks/colab_vi_asr_v2.ipynb)
+4. [Denoiser benchmark](https://colab.research.google.com/github/Platypus27-coder/OneVoice/blob/main/notebooks/colab_denoiser_v2.ipynb)
+5. [EnViT5 VI→EN fine-tune](https://colab.research.google.com/github/Platypus27-coder/OneVoice/blob/main/notebooks/colab_mt_finetune_v2.ipynb)
+6. [MT benchmark](https://colab.research.google.com/github/Platypus27-coder/OneVoice/blob/main/notebooks/colab_mt_v2.ipynb)
 
 Vào `Runtime → Change runtime type → T4 GPU` (hoặc GPU đang có) trước khi fine-tune/benchmark MT. Sau đó chọn
 `Runtime → Run all`, và cho phép mount Drive khi Colab hỏi.
 
 ## 3. Thứ tự chạy khuyến nghị
 
-1. `colab_data_audit_v2.ipynb`: chạy logical audit trước. Physical audit để `False` nếu chưa cần quét 24.192 WAV.
-2. `colab_vi_asr_v2.ipynb`: tạo baseline GIPFormer clean/noisy nếu Drive chưa có report đầy đủ.
-3. `colab_denoiser_v2.ipynb`: benchmark passthrough/DeepFilterNet khi dependency khả dụng.
-4. Không cần fine-tune lại checkpoint đã upload tại `platypus123/onevoice-envit5-vi-en`. Chỉ dùng
+1. `colab_generate_english_v2_1.ipynb`: chạy ngay nếu mục tiêu là sinh data; không cần data audit V1.
+2. `colab_data_audit_v2.ipynb`: chỉ chạy trước benchmark/ nghiệm thu V1. Physical audit để `False` nếu chưa cần quét lâu.
+3. `colab_vi_asr_v2.ipynb`: chỉ chạy khi Drive chưa có baseline GIPFormer clean/noisy hoàn chỉnh.
+4. `colab_denoiser_v2.ipynb`: chỉ chạy khi Drive chưa có report denoiser cần thiết.
+5. Không cần fine-tune lại checkpoint đã upload tại `platypus123/onevoice-envit5-vi-en`. Chỉ dùng
    `colab_mt_finetune_v2.ipynb` khi tạo một candidate VI→EN mới.
-5. `colab_mt_v2.ipynb`: chạy 12 baseline jobs và 6 candidate VI→EN jobs. Cuối notebook tạo
+6. `colab_mt_v2.ipynb`: chỉ chạy khi cần benchmark mới; job complete tự được skip. Cuối notebook tạo
    `MyDrive/OneVoice/reports/benchmark_dashboard.md`.
 
 English ASR và Qualcomm profile chỉ chạy sau khi có English V2.1 / model ONNX frozen tương ứng.

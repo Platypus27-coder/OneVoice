@@ -47,13 +47,14 @@ CLEAN_DIR    = os.path.join(OUTPUT_ROOT, "clean")
 NOISY_DIR    = os.path.join(OUTPUT_ROOT, "noisy")
 MANIFEST     = os.path.join(OUTPUT_ROOT, "manifest.jsonl")
 NOISE_MANIFEST = os.path.join(NOISE_DIR, "sources.json")
+STATE_PATH = os.path.join(OUTPUT_ROOT, "generation_state.json")
 
 for d in [OUTPUT_ROOT, NOISE_DIR, CLEAN_DIR, NOISY_DIR]:
     os.makedirs(d, exist_ok=True)
 
-SAMPLES_PER_TEXT   = 2          # each utterance → 2 noisy versions
+SAMPLES_PER_TEXT   = int(os.environ.get("ONEVOICE_SAMPLES_PER_TEXT", "2"))
 SAMPLE_RATE        = 16000
-MAX_UTTERANCES     = None       # None = all 8,064
+MAX_UTTERANCES     = int(os.environ["ONEVOICE_MAX_UTTERANCES"]) if os.environ.get("ONEVOICE_MAX_UTTERANCES") else None
 
 VI_SPEAKERS = [
     "vi-VN-HoaiMyNeural",
@@ -77,7 +78,7 @@ EN_SPEAKERS = [
 
 # v2.1 is a new dataset. Never append EN samples to onevoice_audio_v1.
 GENERATE_LANGUAGES = tuple(
-    item.strip() for item in os.environ.get("ONEVOICE_LANGUAGES", "vi,en").split(",")
+    item.strip() for item in os.environ.get("ONEVOICE_LANGUAGES", "en").split(",")
     if item.strip() in {"vi", "en"}
 )
 
@@ -252,12 +253,12 @@ def apply_rir(speech: np.ndarray, sr: int, rir_id: str) -> np.ndarray:
             out[delay:] += speech[:-delay] * gain
     return out / (np.max(np.abs(out)) + 1e-9)
 
-def mix_noise(speech: np.ndarray, noise: np.ndarray, snr_db: float) -> tuple[np.ndarray, float, int]:
+def mix_noise(speech: np.ndarray, noise: np.ndarray, snr_db: float, rng: random.Random) -> tuple[np.ndarray, float, int]:
     if len(noise) < len(speech):
         repeats = int(np.ceil(len(speech) / len(noise)))
         noise = np.tile(noise, repeats)
     max_offset = max(0, len(noise) - len(speech))
-    crop_offset = random.randint(0, max_offset) if max_offset else 0
+    crop_offset = rng.randint(0, max_offset) if max_offset else 0
     noise = noise[crop_offset:crop_offset + len(speech)]
     
     rms_speech = np.sqrt(np.mean(speech**2) + 1e-9)
@@ -271,9 +272,9 @@ def mix_noise(speech: np.ndarray, noise: np.ndarray, snr_db: float) -> tuple[np.
     mixed = np.clip(mixed / (np.max(np.abs(mixed)) + 1e-9), -1.0, 1.0)
     return mixed, float(realized_snr), crop_offset
 
-def augment(audio: np.ndarray) -> tuple[np.ndarray, float]:
+def augment(audio: np.ndarray, rng: random.Random) -> tuple[np.ndarray, float]:
     """Apply a linear gain only; nonlinear clipping would invalidate realized SNR."""
-    requested_gain = random.uniform(-3.0, 3.0)
+    requested_gain = rng.uniform(-3.0, 3.0)
     peak = float(np.max(np.abs(audio)) + 1e-9)
     max_safe_gain = 20 * np.log10(0.95 / peak)
     applied_gain = min(requested_gain, max_safe_gain)
@@ -282,6 +283,22 @@ def augment(audio: np.ndarray) -> tuple[np.ndarray, float]:
 # ─────────────────────────────────────────────
 # CELL 5 — Main Generation Loop
 # ─────────────────────────────────────────────
+def write_generation_state(status: str, generated: int, skipped: int, expected: int) -> None:
+    payload = {
+        "status": status,
+        "generated_noisy": generated,
+        "skipped": skipped,
+        "expected_noisy": expected,
+        "languages": list(GENERATE_LANGUAGES),
+        "samples_per_text": SAMPLES_PER_TEXT,
+        "manifest": MANIFEST,
+    }
+    temporary = STATE_PATH + ".tmp"
+    with open(temporary, "w", encoding="utf-8") as handle:
+        json.dump(payload, handle, ensure_ascii=False, indent=2)
+    os.replace(temporary, STATE_PATH)
+
+
 def generate_dataset():
     download_noise_bank()
     for language, speakers in (("vi", VI_SPEAKERS), ("en", EN_SPEAKERS)):
@@ -338,8 +355,10 @@ def generate_dataset():
     noises = list(NC.keys())
     print(f"Active noise types: {noises}")
 
+    expected_total = len(df) * len(GENERATE_LANGUAGES) * SAMPLES_PER_TEXT
     total_generated = len(existing)
     skipped = 0
+    write_generation_state("running", total_generated, skipped, expected_total)
 
     with open(MANIFEST, "a", encoding="utf-8") as mf:
         for _, row in tqdm(df.iterrows(), total=len(df), desc="Generating synthetic audio"):
@@ -363,7 +382,11 @@ def generate_dataset():
                 rir_id = list(RIR_PROFILES)[digest[3] % len(RIR_PROFILES)]
                 prefix = f"{uid}_{language}"
 
-                if all(f"{prefix}_n{v+1:02d}.wav" in existing for v in range(SAMPLES_PER_TEXT)):
+                if all(
+                    f"{prefix}_n{v+1:02d}.wav" in existing
+                    and os.path.exists(os.path.join(NOISY_DIR, f"{prefix}_n{v+1:02d}.wav"))
+                    for v in range(SAMPLES_PER_TEXT)
+                ):
                     continue
                 cf = f"{prefix}_clean.wav"
                 cp = os.path.join(CLEAN_DIR, cf)
@@ -385,13 +408,17 @@ def generate_dataset():
                     np_path = os.path.join(NOISY_DIR, nf)
                     if nf in existing and os.path.exists(np_path):
                         continue
-                    nn = random.choice(noises)
-                    target_snr = random.choice(SNR_OPTIONS)
-                    rev_on = random.random() > 0.35
-                    mixed, realized_snr, crop_offset = mix_noise(
-                        rev if rev_on else ca, NC[nn], target_snr
+                    sample_seed = int.from_bytes(
+                        hashlib.sha256(f"{uid}:{language}:{v}".encode()).digest()[:8], "big"
                     )
-                    mixed, applied_gain_db = augment(mixed)
+                    rng = random.Random(sample_seed)
+                    nn = rng.choice(noises)
+                    target_snr = rng.choice(SNR_OPTIONS)
+                    rev_on = rng.random() > 0.35
+                    mixed, realized_snr, crop_offset = mix_noise(
+                        rev if rev_on else ca, NC[nn], target_snr, rng
+                    )
+                    mixed, applied_gain_db = augment(mixed, rng)
                     sf.write(np_path, mixed, SAMPLE_RATE)
                     entry = {
                         "utterance_id": uid,
@@ -399,6 +426,7 @@ def generate_dataset():
                         "frame_pattern_id": pattern_id,
                         "audio": nf,
                         "clean_audio": cf,
+                        "noisy_audio": nf,
                         "language": language,
                         "text": source_text,
                         "translation": translation,
@@ -408,6 +436,7 @@ def generate_dataset():
                         "split": spl,
                         "speaker_id": voice,
                         "voice_id": voice,
+                        "voice_engine": "edge-tts",
                         "speaking_rate": speaking_rate,
                         "noise_type": nn.replace(".wav", ""),
                         "noise_source": NOISE_ORIGINS.get(nn, {"kind": "unknown"}),
@@ -420,12 +449,17 @@ def generate_dataset():
                         "synthetic_speech": True,
                         "synthetic_noise_mix": True,
                         "sample_rate": SAMPLE_RATE,
+                        "duration_s": round(len(mixed) / SAMPLE_RATE, 3),
+                        "generation_seed": sample_seed,
                     }
                     mf.write(json.dumps(entry, ensure_ascii=False) + "\n")
                     mf.flush()
                     existing.add(nf)
                     total_generated += 1
+                    if total_generated % 25 == 0:
+                        write_generation_state("running", total_generated, skipped, expected_total)
 
+    write_generation_state("complete", total_generated, skipped, expected_total)
     print(f"\n✅ Generation finished! Total: {total_generated} samples | Skipped: {skipped}")
 
 if __name__ == "__main__":
