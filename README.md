@@ -229,6 +229,7 @@ Dưới đây là 7 kịch bản demo đã có từ baseline V1, gồm thuật n
 ## ☁️ Chạy Trực Tiếp Trên Google Colab
 
 Source code được clone từ GitHub vào `/content/OneVoice`; dataset giữ nguyên trên Google Drive và report được lưu tại `MyDrive/OneVoice/reports`.
+Hướng dẫn Colab, Drive persistence và resume sau khi mất GPU: [COLAB_RUNBOOK.md](docs/COLAB_RUNBOOK.md).
 
 Cấu trúc Drive hiện dùng:
 

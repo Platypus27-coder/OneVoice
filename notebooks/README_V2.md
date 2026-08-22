@@ -15,15 +15,19 @@ Mỗi benchmark hợp lệ phải sinh `run_manifest.json`, `predictions.csv` v�
 2. `colab_vi_asr_v2.ipynb` — benchmark GIPFormer tiếng Việt với passthrough trên clean/noisy, split `test` cố định.
 3. `colab_denoiser_v2.ipynb` — baseline passthrough và DeepFilterNet khi dependency tương thích; kết quả denoiser
    chỉ được giữ khi vượt quality gate. RNNoise sẽ được bổ sung khi backend runtime hoàn thiện.
-4. `colab_mt_v2.ipynb` — benchmark EnViT5 raw/context trên `test`, `minimal_pairs` và `safety` cho cả hai chiều.
-5. `colab_en_asr_v2.ipynb` — chỉ chạy sau khi có audio English V2.1 và audit tối thiểu 6 speaker/voice đạt.
-6. `colab_edge_profile_v2.ipynb` — export/compile/profile model ONNX đã freeze trên Qualcomm AI Hub hosted device.
+4. `colab_mt_finetune_v2.ipynb` — fine-tune EnViT5 VI→EN có checkpoint/optimizer state trên Drive; chạy lại sẽ resume.
+5. `colab_mt_v2.ipynb` — benchmark EnViT5 raw/context trên `test`, `minimal_pairs` và `safety` cho cả hai chiều.
+6. `colab_en_asr_v2.ipynb` — chỉ chạy sau khi có audio English V2.1 và audit tối thiểu 6 speaker/voice đạt.
+7. `colab_edge_profile_v2.ipynb` — export/compile/profile model ONNX đã freeze trên Qualcomm AI Hub hosted device.
 
 `colab_vi_asr_finetune_submission.ipynb` đã bị loại: nó fine-tune Whisper Tiny, không phải kiến trúc GIPFormer của
 OneVoice. Fine-tune GIPFormer chỉ bắt đầu khi có checkpoint PyTorch/icefall tương thích và khi benchmark/context gate
 chứng minh cần thiết.
 
-Fine-tune MT chỉ dùng `train.csv`, chọn checkpoint bằng `dev.csv`; `test.csv` luôn được giữ cho đánh giá cuối. Nếu
+Fine-tune MT chỉ dùng `train.csv`, chọn checkpoint bằng `dev.csv`; `test.csv` luôn được giữ cho đánh giá cuối. Fine-tune
+VI→EN ghi `training_state.pt`, `checkpoints/epoch-*`, `best/`, `training_history.json` và `run_manifest.json` vào
+`MyDrive/OneVoice/models/envit5_finetuned_vi2en_v2`, nên có thể đổi Colab GPU/máy/tài khoản miễn là mount cùng Drive.
+Nếu
 Drive V1 chưa có `manifest.jsonl`, notebook audit có thể phục hồi pairing/transcript/split từ filename và
 `utterances_all.csv`. Speaker, crop noise, SNR, RIR ngẫu nhiên của V1 không thể phục hồi nên vẫn là giới hạn phải
 báo cáo, không được dùng để tuyên bố chất lượng theo speaker/noise.
