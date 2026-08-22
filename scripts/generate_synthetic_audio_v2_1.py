@@ -330,14 +330,20 @@ def generate_dataset():
     df = pd.read_csv(csv_path)
     if MAX_UTTERANCES:
         df = df.head(MAX_UTTERANCES)
-    split_by_english_text = {}
+    resolved_english_splits = {}
     if "en" in GENERATE_LANGUAGES:
-        groups = {}
-        for index, value in df["en"].items():
-            groups.setdefault(normalized_text(value), set()).add(str(df.at[index, "split"]))
-        split_by_english_text = {
-            text: max(splits, key=lambda split: SPLIT_PRIORITY.get(split, -1))
-            for text, splits in groups.items()
+        resolution_rows = [
+            {
+                "language": "en",
+                "text": row["en"],
+                "frame_pattern_id": row.get("frame_pattern_id", row.get("utterance_id", "")),
+                "split": row["split"],
+            }
+            for _, row in df.iterrows()
+        ]
+        resolved_rows, _ = reconcile_rows(resolution_rows, "en")
+        resolved_english_splits = {
+            index: row["split"] for index, row in enumerate(resolved_rows)
         }
     print(f"Loaded {len(df)} utterances from {os.path.basename(csv_path)}.")
 
@@ -366,7 +372,9 @@ def generate_dataset():
     write_generation_state("running", total_generated, skipped, expected_total)
 
     with open(MANIFEST, "a", encoding="utf-8") as mf:
-        for _, row in tqdm(df.iterrows(), total=len(df), desc="Generating synthetic audio"):
+        for row_index, (_, row) in enumerate(
+            tqdm(df.iterrows(), total=len(df), desc="Generating synthetic audio")
+        ):
             uid  = str(row.get("utterance_id", row.get("id", f"utt_{_}")))
             vi   = str(row.get("vi", row.get("vi_text", "")))
             en   = str(row.get("en", row.get("en_text", "")))
@@ -438,7 +446,7 @@ def generate_dataset():
                         "domain": dom,
                         "intent": inte,
                         "risk_level": risk,
-                        "split": split_by_english_text.get(normalized_text(en), spl) if language == "en" else spl,
+                        "split": resolved_english_splits.get(row_index, spl) if language == "en" else spl,
                         "source_split": spl,
                         "speaker_id": voice,
                         "voice_id": voice,

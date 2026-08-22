@@ -269,18 +269,19 @@ class StreamingTests(unittest.TestCase):
 
 
 class RuntimeSafetyTests(unittest.TestCase):
-    def test_exact_text_split_reconciliation_preserves_test_holdout(self):
+    def test_split_reconciliation_preserves_test_holdout_and_pattern_groups(self):
         rows, report = reconcile_rows(
             [
-                {"language": "en", "text": "Stop the machine", "split": "train"},
-                {"language": "en", "text": "stop   the machine", "split": "test"},
+                {"language": "en", "text": "Stop the machine", "frame_pattern_id": "A", "split": "train"},
+                {"language": "en", "text": "check the machine", "frame_pattern_id": "A", "split": "train"},
+                {"language": "en", "text": "stop   the machine", "frame_pattern_id": "B", "split": "test"},
                 {"language": "vi", "text": "dừng máy", "split": "train"},
             ],
             "en",
         )
-        self.assertEqual([row["split"] for row in rows[:2]], ["test", "test"])
+        self.assertEqual([row["split"] for row in rows[:3]], ["test", "test", "test"])
         self.assertEqual(rows[0]["source_split"], "train")
-        self.assertEqual(report["groups_reconciled"], 1)
+        self.assertEqual(report["components_reconciled"], 1)
 
     def test_benchmark_dashboard_keeps_missing_metrics_visible(self):
         report_root = ROOT / "tests" / "_tmp_dashboard"

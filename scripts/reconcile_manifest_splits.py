@@ -18,29 +18,61 @@ def normalized_text(value: object) -> str:
 
 
 def reconcile_rows(rows: list[dict], language: str) -> tuple[list[dict], dict]:
-    groups: dict[str, list[int]] = defaultdict(list)
+    """Keep both exact text and frame-pattern groups in one split.
+
+    A duplicate text can join two frame patterns, so resolving text groups alone
+    may create a frame-pattern leak.  Connected components across both keys are
+    the minimal safe repair unit.
+    """
+    text_groups: dict[str, list[int]] = defaultdict(list)
+    pattern_groups: dict[str, list[int]] = defaultdict(list)
     for index, row in enumerate(rows):
         if row.get("language") == language:
-            groups[normalized_text(row.get("text", ""))].append(index)
+            text_groups[normalized_text(row.get("text", ""))].append(index)
+            pattern = str(row.get("frame_pattern_id", "")).strip()
+            if pattern:
+                pattern_groups[pattern].append(index)
+
+    parent = {index: index for indices in text_groups.values() for index in indices}
+
+    def find(index: int) -> int:
+        while parent[index] != index:
+            parent[index] = parent[parent[index]]
+            index = parent[index]
+        return index
+
+    def union(left: int, right: int) -> None:
+        left, right = find(left), find(right)
+        if left != right:
+            parent[right] = left
+
+    for indices in (*text_groups.values(), *pattern_groups.values()):
+        for index in indices[1:]:
+            union(indices[0], index)
+
+    components: dict[int, list[int]] = defaultdict(list)
+    for index in parent:
+        components[find(index)].append(index)
     changed_rows = 0
-    changed_groups = 0
-    for indices in groups.values():
+    changed_components = 0
+    for indices in components.values():
         splits = {str(rows[index].get("split", "")) for index in indices}
         if len(splits) < 2:
             continue
         target = max(splits, key=lambda split: SPLIT_PRIORITY.get(split, -1))
-        changed_groups += 1
+        changed_components += 1
         for index in indices:
             row = rows[index]
             if row.get("split") != target:
                 row.setdefault("source_split", row.get("split"))
                 row["split"] = target
-                row["split_resolution"] = "exact_text_group_test_dev_train_priority"
+                row["split_resolution"] = "text_and_frame_pattern_component_test_dev_train_priority"
                 changed_rows += 1
     return rows, {
         "language": language,
-        "groups_checked": len(groups),
-        "groups_reconciled": changed_groups,
+        "text_groups_checked": len(text_groups),
+        "frame_pattern_groups_checked": len(pattern_groups),
+        "components_reconciled": changed_components,
         "rows_reassigned": changed_rows,
         "policy": "test > dev > train",
     }
