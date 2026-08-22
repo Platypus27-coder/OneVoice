@@ -24,6 +24,7 @@ from evaluation.real_site import audit_real_site_manifest, write_holdout_lock
 from evaluation.metrics import cer, corpus_error_rate, wer
 from runtime.preflight import ArtifactPreflightError, verify_artifacts
 from scripts.recover_v1_manifest import UNRECOVERABLE, recover
+from scripts.build_benchmark_dashboard import build_dashboard
 from streaming.semantic_commit import (
     RollingHypothesisAssembler,
     SemanticCommitController,
@@ -267,6 +268,27 @@ class StreamingTests(unittest.TestCase):
 
 
 class RuntimeSafetyTests(unittest.TestCase):
+    def test_benchmark_dashboard_keeps_missing_metrics_visible(self):
+        report_root = ROOT / "tests" / "_tmp_dashboard"
+        shutil.rmtree(report_root, ignore_errors=True)
+        report_dir = report_root / "mt" / "candidate" / "test"
+        report_dir.mkdir(parents=True)
+        (report_dir / "aggregate.json").write_text(
+            json.dumps({"samples": 2, "direction": "vi2en", "suite": "test", "reference_wer": 0.2}),
+            encoding="utf-8",
+        )
+        (report_dir / "run_manifest.json").write_text(
+            json.dumps({"command": "benchmark_mt_v2", "metadata": {"model_reference": {"source": "candidate"}}}),
+            encoding="utf-8",
+        )
+        dashboard = report_root / "dashboard.md"
+        rows = build_dashboard(report_root, dashboard)
+        content = dashboard.read_text(encoding="utf-8")
+        self.assertEqual(rows[0]["model"], "candidate")
+        self.assertIn("0.2000", content)
+        self.assertIn("—", content)
+        shutil.rmtree(report_root)
+
     def test_mt_registry_is_direction_specific_and_candidate_is_explicit(self):
         config = {
             "translation": {

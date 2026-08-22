@@ -296,12 +296,12 @@ onevoice-bundle/
 
 - [x] M2-01: MT notebook stream stderr/stdout và ghi job thất bại.
 - [x] M2-02: benchmark CLI nhận explicit base/candidate source/revision.
-- [ ] M2-03: VI-ASR breakdown domain/risk/clean/noisy.
+- [x] M2-03: VI-ASR breakdown domain/risk/clean/noisy.
 - [ ] M2-04: MT base raw/context trên test/minimal/safety, cả hai direction.
 - [ ] M2-05: candidate fine-tuned raw/context cho VI→EN.
 - [ ] M2-06: general regression benchmark.
 - [ ] M2-07: streaming hypothesis và queue-pressure suite.
-- [ ] M2-08: tự sinh Markdown dashboard từ aggregate JSON.
+- [x] M2-08: tự sinh Markdown dashboard từ aggregate JSON.
 
 **Exit:** official baseline/candidate numbers; không metric giả, empty pass hoặc silent success.
 

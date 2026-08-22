@@ -170,6 +170,9 @@ def main() -> None:
     (output / "aggregate.json").write_text(
         json.dumps(aggregate, ensure_ascii=False, indent=2), encoding="utf-8"
     )
+    (output / "breakdown.json").write_text(
+        json.dumps(aggregate["breakdowns"], ensure_ascii=False, indent=2), encoding="utf-8"
+    )
     create_run_manifest(
         output / "run_manifest.json",
         command="benchmark_asr_v2",
