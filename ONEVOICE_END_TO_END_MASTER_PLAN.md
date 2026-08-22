@@ -280,7 +280,7 @@ onevoice-bundle/
 **Thời lượng:** 1 tuần  
 **Dependency:** M0
 
-- [ ] M1-01: pin Python/packages/model revisions cho Colab/local.
+- [-] M1-01: pin Transformers/Tokenizers/SentencePiece tương thích EnViT5; còn thiếu lockfile Python/GPU và model revision đầy đủ.
 - [ ] M1-02: full physical audit VI V1.
 - [ ] M1-03: archive official VI-ASR reports từ Drive.
 - [ ] M1-04: process_file smoke cả hai direction với model thật.

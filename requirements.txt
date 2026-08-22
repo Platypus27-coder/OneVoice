@@ -5,8 +5,10 @@ funasr_onnx                        # SenseVoice ONNX (EN/VI ASR + emotion detect
 modelscope                         # SenseVoice model loader
 
 # ── Machine Translation ─────────────────────────────────────────────────
-transformers>=4.45.0               # Bản ổn định (tránh lỗi FP8 khi chạy trên PyTorch 2.6.0)
-sentencepiece                      # Tokenizer cho VietAI/envit5 (T5 SentencePiece)
+# EnViT5 SentencePiece tokenizer fails with Transformers 5.x; keep this measured Colab-compatible set.
+transformers==4.57.1
+tokenizers==0.22.1
+sentencepiece==0.2.0               # Tokenizer cho VietAI/envit5 (T5 SentencePiece)
 
 # ── Punctuation Restoration ───────────────────────────────────────────────────
 deepmultilingualpunctuation        # kredor/punctuate-all (hỗ trợ tiếng Việt)
