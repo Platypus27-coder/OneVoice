@@ -16,13 +16,40 @@ from pathlib import Path
 class Translator:
     PREFIX = {"vi2en": "vi: ", "en2vi": "en: "}
 
-    def __init__(self, config: dict, offline: bool = False, profile: str = "development"):
+    def __init__(
+        self,
+        config: dict,
+        offline: bool = False,
+        profile: str = "development",
+        direction: str | None = None,
+        model_source: str | None = None,
+        model_revision: str | None = None,
+    ):
         cfg = config["translation"]
+        configured_direction = direction or cfg.get("direction", "vi2en")
+        if configured_direction not in self.PREFIX:
+            raise ValueError("direction must be 'vi2en' or 'en2vi'")
+        direction_cfg = cfg.get("directions", {}).get(configured_direction, {})
+        if not isinstance(direction_cfg, dict):
+            raise ValueError(f"translation.directions.{configured_direction} must be a mapping")
+        self.direction = configured_direction
         self.profile = profile
         self.offline = bool(offline or profile == "edge")
-        self.model_name = str(cfg.get("model", "VietAI/envit5-translation"))
-        self.model_dir = Path(cfg.get("model_dir", "models/envit5"))
-        self.edge_model_dir = Path(cfg.get("edge_model_dir", "models/envit5_ort_genai"))
+        self.model_name = str(
+            model_source
+            or direction_cfg.get("development_model")
+            or cfg.get("model", "VietAI/envit5-translation")
+        )
+        self.model_revision = model_revision or direction_cfg.get("model_revision") or cfg.get(
+            "model_revision"
+        )
+        self.model_dir = Path(
+            direction_cfg.get("local_model_dir") or cfg.get("model_dir", "models/envit5")
+        )
+        self.edge_model_dir = Path(
+            direction_cfg.get("edge_model_dir")
+            or cfg.get("edge_model_dir", "models/envit5_ort_genai")
+        )
         self.max_length = int(cfg.get("max_length", 512))
         self._backend: str | None = None
         self._model = None
@@ -30,6 +57,17 @@ class Translator:
         self._torch = None
         self._device = "cpu"
         self._og = None
+
+    @property
+    def model_reference(self) -> dict[str, str | None]:
+        """Exact logical model requested for a measured run or runtime startup."""
+        return {
+            "direction": self.direction,
+            "source": self.model_name,
+            "revision": self.model_revision,
+            "local_model_dir": str(self.model_dir),
+            "edge_model_dir": str(self.edge_model_dir),
+        }
 
     def load(self) -> None:
         if self.profile == "edge":
@@ -75,9 +113,12 @@ class Translator:
             local_only = False
         self._device = "cuda" if torch.cuda.is_available() else "cpu"
         self._torch = torch
-        self._tokenizer = AutoTokenizer.from_pretrained(source, local_files_only=local_only)
+        load_kwargs = {"local_files_only": local_only}
+        if self.model_revision and not local_only:
+            load_kwargs["revision"] = self.model_revision
+        self._tokenizer = AutoTokenizer.from_pretrained(source, **load_kwargs)
         self._model = AutoModelForSeq2SeqLM.from_pretrained(
-            source, local_files_only=local_only
+            source, **load_kwargs
         ).to(self._device)
         self._model.eval()
         self._backend = "transformers"
@@ -86,6 +127,11 @@ class Translator:
     def translate(self, text: str, direction: str = "vi2en") -> str:
         if direction not in self.PREFIX:
             raise ValueError("direction must be 'vi2en' or 'en2vi'")
+        if direction != self.direction:
+            raise ValueError(
+                f"Translator loaded for {self.direction}; create a direction-specific "
+                f"Translator for {direction}"
+            )
         if not text.strip():
             return ""
         if self._backend is None:

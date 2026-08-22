@@ -111,7 +111,10 @@ class OneVoicePipeline:
         self.denoiser = Denoiser(self.cfg.get("denoise", {}))
         self.asr = ASRManager(self.cfg, offline=self.offline)
         self.translator = Translator(
-            self.cfg, offline=self.offline, profile=self.profile
+            self.cfg,
+            offline=self.offline,
+            profile=self.profile,
+            direction=self.direction,
         )
         self.tts = TTSEngine(self.cfg, profile=self.profile, offline=self.offline)
         self.srt = SRTGenerator(bilingual=True)

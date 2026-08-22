@@ -30,6 +30,7 @@ from streaming.semantic_commit import (
     StablePrefixAligner,
 )
 from streaming.session import RollingUtteranceSession
+from translation.mt_engine import Translator
 
 
 DATA = ROOT / "data" / "onevoice_construction_v2"
@@ -266,6 +267,37 @@ class StreamingTests(unittest.TestCase):
 
 
 class RuntimeSafetyTests(unittest.TestCase):
+    def test_mt_registry_is_direction_specific_and_candidate_is_explicit(self):
+        config = {
+            "translation": {
+                "max_length": 128,
+                "directions": {
+                    "vi2en": {
+                        "development_model": "base-vi-en",
+                        "candidate_model": "candidate-vi-en",
+                        "local_model_dir": "models/mt/vi2en",
+                        "edge_model_dir": "models/mt/vi2en_ort",
+                    },
+                    "en2vi": {
+                        "development_model": "base-en-vi",
+                        "local_model_dir": "models/mt/en2vi",
+                        "edge_model_dir": "models/mt/en2vi_ort",
+                    },
+                },
+            }
+        }
+        base = Translator(config, direction="vi2en")
+        candidate = Translator(
+            config, direction="vi2en", model_source="candidate-vi-en", model_revision="abc123"
+        )
+        reverse = Translator(config, direction="en2vi")
+        self.assertEqual(base.model_reference["source"], "base-vi-en")
+        self.assertEqual(candidate.model_reference["source"], "candidate-vi-en")
+        self.assertEqual(candidate.model_reference["revision"], "abc123")
+        self.assertEqual(reverse.model_reference["source"], "base-en-vi")
+        with self.assertRaises(ValueError):
+            base.translate("xin chào", "en2vi")
+
     def test_gipformer_download_uses_pinned_current_artifact_names(self):
         self.assertEqual(GIPFORMER_REVISION, "29621ec87ffec8fde06be25ed2150d4a1f41dbc9")
         self.assertEqual(

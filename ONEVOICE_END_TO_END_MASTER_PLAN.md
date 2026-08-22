@@ -265,11 +265,11 @@ onevoice-bundle/
 **Thời lượng:** 1–2 ngày  
 **Dependency:** không có
 
-- [ ] M0-01: review dirty worktree và bảo toàn file người dùng.
+- [x] M0-01: review dirty worktree và bảo toàn file người dùng.
 - [ ] M0-02: archive hồ sơ Phase 2 theo quyết định.
-- [ ] M0-03: deprecate/remove Whisper notebook khỏi workflow.
-- [ ] M0-04: archive/remove legacy ASR notebook sai.
-- [ ] M0-05: reconcile denoiser notebook; validate notebook syntax.
+- [x] M0-03: deprecate/remove Whisper notebook khỏi workflow.
+- [x] M0-04: archive/remove legacy ASR notebook sai.
+- [x] M0-05: reconcile denoiser notebook; validate notebook syntax.
 - [ ] M0-06: tag phase2-submission-2026-08-21.
 - [ ] M0-07: tạo issue board theo task IDs.
 
@@ -294,8 +294,8 @@ onevoice-bundle/
 **Thời lượng:** 1 tuần  
 **Dependency:** M1
 
-- [ ] M2-01: MT notebook stream stderr/stdout và ghi job thất bại.
-- [ ] M2-02: benchmark CLI nhận explicit base/candidate source/revision.
+- [x] M2-01: MT notebook stream stderr/stdout và ghi job thất bại.
+- [x] M2-02: benchmark CLI nhận explicit base/candidate source/revision.
 - [ ] M2-03: VI-ASR breakdown domain/risk/clean/noisy.
 - [ ] M2-04: MT base raw/context trên test/minimal/safety, cả hai direction.
 - [ ] M2-05: candidate fine-tuned raw/context cho VI→EN.

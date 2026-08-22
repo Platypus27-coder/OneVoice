@@ -62,6 +62,14 @@ def main() -> None:
     parser.add_argument("--suite", choices=["test", "minimal", "safety"], default="test")
     parser.add_argument("--with-context", action="store_true")
     parser.add_argument("--max-samples", type=int)
+    parser.add_argument(
+        "--model-source",
+        help="Explicit local checkpoint directory or Hugging Face model ID for this run",
+    )
+    parser.add_argument(
+        "--model-revision",
+        help="Optional immutable Hugging Face revision paired with --model-source",
+    )
     parser.add_argument("--config", default="config/config.yaml")
     parser.add_argument("--report-dir", default="reports/mt_v2")
     args = parser.parse_args()
@@ -80,7 +88,12 @@ def main() -> None:
     if not pairs:
         raise ValueError(f"No translation pairs found in {data_file}")
 
-    translator = Translator(config)
+    translator = Translator(
+        config,
+        direction=args.direction,
+        model_source=args.model_source,
+        model_revision=args.model_revision,
+    )
     translator.load()
     context_engine = ConstructionContextEngine.from_data_dir(data_root)
     predictions = []
@@ -178,8 +191,8 @@ def main() -> None:
     create_run_manifest(
         output / "run_manifest.json",
         command="benchmark_mt_v2",
-        inputs=[data_file, args.config, config["translation"].get("model_dir", "models/envit5")],
-        metadata=vars(args),
+        inputs=[data_file, args.config, translator.model_dir],
+        metadata={**vars(args), "model_reference": translator.model_reference},
     )
     print(json.dumps(aggregate, ensure_ascii=False, indent=2))
 

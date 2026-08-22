@@ -40,11 +40,19 @@ sensevoice:
 # Trạm 2: Machine Translation (VietAI envit5)
 # ─────────────────────────────────────────────
 translation:
-  model: "VietAI/envit5-translation"     # 1 model duy nhất cho cả VI↔EN (~600MB)
-  model_dir: "models/envit5/"            # Local checkpoint (tùy chọn)
-  edge_model_dir: "models/envit5_ort_genai/"  # validated encoder/decoder GenAI bundle
   max_length: 512
   direction: "vi2en"                     # Default direction
+  directions:
+    vi2en:
+      development_model: "VietAI/envit5-translation"
+      # Candidate only: benchmark with --model-source; do not promote before held-out gate.
+      candidate_model: "platypus123/onevoice-envit5-vi-en"
+      local_model_dir: "models/mt/vi2en/"
+      edge_model_dir: "models/mt/vi2en_ort_genai/"
+    en2vi:
+      development_model: "VietAI/envit5-translation"
+      local_model_dir: "models/mt/en2vi/"
+      edge_model_dir: "models/mt/en2vi_ort_genai/"
 
 # ─────────────────────────────────────────────
 # Trạm 3: TTS (premium F5/OmniVoice or lightweight local system voice)
