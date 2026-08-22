@@ -23,25 +23,19 @@ import soundfile as sf
 import librosa
 from tqdm import tqdm
 
-# Check environment
-try:
-    from google.colab import drive
-    IN_COLAB = True
-except ImportError:
-    IN_COLAB = False
-
-if IN_COLAB:
-    drive.mount('/content/drive')
-    OUTPUT_ROOT = "/content/drive/MyDrive/onevoice_audio_v2_1"
-else:
-    OUTPUT_ROOT = "./onevoice_audio_v2_1"
+# This script is intentionally Colab-agnostic.  The calling notebook mounts
+# Drive in its own kernel, then passes durable paths through the environment.
+OUTPUT_ROOT = os.environ.get("ONEVOICE_OUTPUT_ROOT", "./onevoice_audio_v2_1")
+DATA_DIR_DEFAULT = os.path.abspath(
+    os.path.join(os.path.dirname(__file__), "..", "data", "onevoice_construction_v2")
+)
+DATA_DIR = os.environ.get("ONEVOICE_DATA_DIR", DATA_DIR_DEFAULT)
 
 print(f"Output Directory: {OUTPUT_ROOT}")
 
 # ─────────────────────────────────────────────
 # CELL 2 — Config
 # ─────────────────────────────────────────────
-DATA_DIR     = "/content/OneVoice/data/onevoice_construction_v2" if IN_COLAB else "../data/onevoice_construction_v2"
 NOISE_DIR    = os.path.join(OUTPUT_ROOT, "noise_bank")
 CLEAN_DIR    = os.path.join(OUTPUT_ROOT, "clean")
 NOISY_DIR    = os.path.join(OUTPUT_ROOT, "noisy")
