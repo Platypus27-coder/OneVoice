@@ -175,7 +175,9 @@ def audit_audio_manifest(
         "splits": dict(Counter(str(row.get("split", "unknown")) for row in rows)),
         "speakers": dict(Counter(str(row.get("speaker_id", "unknown")) for row in rows)),
         "noise_types": dict(Counter(str(row.get("noise_type", "unknown")) for row in rows)),
-        "snr_db": dict(Counter(str(row.get("snr_db", "unknown")) for row in rows)),
+        "snr_db": dict(
+            Counter(str(row.get("realized_snr_db", row.get("snr_db", "unknown"))) for row in rows)
+        ),
         "missing_noisy": missing_noisy,
         "missing_clean": missing_clean,
         "invalid_audio": invalid_audio,

@@ -25,6 +25,7 @@ from evaluation.metrics import cer, corpus_error_rate, wer
 from runtime.preflight import ArtifactPreflightError, verify_artifacts
 from scripts.recover_v1_manifest import UNRECOVERABLE, recover
 from scripts.build_benchmark_dashboard import build_dashboard
+from scripts.reconcile_manifest_splits import reconcile_rows
 from streaming.semantic_commit import (
     RollingHypothesisAssembler,
     SemanticCommitController,
@@ -268,6 +269,19 @@ class StreamingTests(unittest.TestCase):
 
 
 class RuntimeSafetyTests(unittest.TestCase):
+    def test_exact_text_split_reconciliation_preserves_test_holdout(self):
+        rows, report = reconcile_rows(
+            [
+                {"language": "en", "text": "Stop the machine", "split": "train"},
+                {"language": "en", "text": "stop   the machine", "split": "test"},
+                {"language": "vi", "text": "dừng máy", "split": "train"},
+            ],
+            "en",
+        )
+        self.assertEqual([row["split"] for row in rows[:2]], ["test", "test"])
+        self.assertEqual(rows[0]["source_split"], "train")
+        self.assertEqual(report["groups_reconciled"], 1)
+
     def test_benchmark_dashboard_keeps_missing_metrics_visible(self):
         report_root = ROOT / "tests" / "_tmp_dashboard"
         shutil.rmtree(report_root, ignore_errors=True)

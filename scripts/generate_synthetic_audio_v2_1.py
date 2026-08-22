@@ -23,6 +23,8 @@ import soundfile as sf
 import librosa
 from tqdm import tqdm
 
+from reconcile_manifest_splits import normalized_text, SPLIT_PRIORITY
+
 # This script is intentionally Colab-agnostic.  The calling notebook mounts
 # Drive in its own kernel, then passes durable paths through the environment.
 OUTPUT_ROOT = os.environ.get("ONEVOICE_OUTPUT_ROOT", "./onevoice_audio_v2_1")
@@ -328,6 +330,15 @@ def generate_dataset():
     df = pd.read_csv(csv_path)
     if MAX_UTTERANCES:
         df = df.head(MAX_UTTERANCES)
+    split_by_english_text = {}
+    if "en" in GENERATE_LANGUAGES:
+        groups = {}
+        for index, value in df["en"].items():
+            groups.setdefault(normalized_text(value), set()).add(str(df.at[index, "split"]))
+        split_by_english_text = {
+            text: max(splits, key=lambda split: SPLIT_PRIORITY.get(split, -1))
+            for text, splits in groups.items()
+        }
     print(f"Loaded {len(df)} utterances from {os.path.basename(csv_path)}.")
 
     # Cache noise files
@@ -427,7 +438,8 @@ def generate_dataset():
                         "domain": dom,
                         "intent": inte,
                         "risk_level": risk,
-                        "split": spl,
+                        "split": split_by_english_text.get(normalized_text(en), spl) if language == "en" else spl,
+                        "source_split": spl,
                         "speaker_id": voice,
                         "voice_id": voice,
                         "voice_engine": "edge-tts",
