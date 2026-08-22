@@ -1,27 +1,29 @@
 # OneVoice V2 notebooks
 
-Notebooks clone or fast-forward `main` from `https://github.com/Platypus27-coder/OneVoice.git` into
-`/content/OneVoice`. Existing datasets remain at `/content/drive/MyDrive/onevoice_audio_v1` and
-`/content/drive/MyDrive/onevoice_audio_v2_1`; model caches and reports live under `/content/drive/MyDrive/OneVoice`.
-They only orchestrate Colab/Drive and call checked-in logic from `scripts/` and `src/evaluation/`. A measured run
-must produce `run_manifest.json`, `predictions.csv` and `aggregate.json` (the physical audit produces `audit.json`
-instead of predictions).
+Các notebook chỉ làm nhiệm vụ điều phối Colab/Google Drive: chúng clone hoặc fast-forward `main` từ
+`https://github.com/Platypus27-coder/OneVoice.git` vào `/content/OneVoice`, rồi gọi logic đã được quản lý phiên bản
+trong `scripts/` và `src/`. Dataset giữ ở `/content/drive/MyDrive/onevoice_audio_v1` và
+`/content/drive/MyDrive/onevoice_audio_v2_1`; cache model và report giữ ở `/content/drive/MyDrive/OneVoice`.
 
-Run in this order:
+Mỗi benchmark hợp lệ phải sinh `run_manifest.json`, `predictions.csv` và `aggregate.json`. Physical audit sinh
+`audit.json` thay cho prediction. Notebook sẽ in toàn bộ log lỗi theo đúng job, không chỉ ném `CalledProcessError`.
 
-1. `colab_data_audit_v2.ipynb`: confirm all 8,064 clean and 16,128 noisy VI WAV files exist and decode.
-2. `colab_vi_asr_v2.ipynb`: measured GIPFormer clean/noisy passthrough baseline.
-3. `colab_denoiser_v2.ipynb`: passthrough vs RNNoise vs DeepFilterNet through the same ASR and fixed test split.
-4. `colab_en_asr_v2.ipynb`: English-only clean/noisy SenseVoice benchmark after the ≥6-speaker audit passes.
-5. `colab_mt_v2.ipynb`: raw and context-corrected runs on test, minimal-pair and safety suites in both directions.
-6. `colab_edge_profile_v2.ipynb`: frozen ONNX compile/profile/numerical check on a Qualcomm hosted device.
+## Danh sách chuẩn
 
-Fine-tuning uses only `train.csv`; model selection uses only `dev.csv`; `test.csv` remains final evaluation. The old
-acoustic-adapter notebook was removed because its adapted mel was never passed to GIPFormer and its post-WER was made
-by copying the baseline prediction and multiplying the score by a constant. The original source remains auditable at
-tag `v1-working-baseline`.
+1. `colab_data_audit_v2.ipynb` — khôi phục manifest nếu cần, logical audit nhanh; physical audit đầy đủ là opt-in
+   vì Google Drive phải mở 24.192 WAV nhỏ. Trước nghiệm thu cần xác nhận đủ 8.064 clean và 16.128 noisy VI WAV.
+2. `colab_vi_asr_v2.ipynb` — benchmark GIPFormer tiếng Việt với passthrough trên clean/noisy, split `test` cố định.
+3. `colab_denoiser_v2.ipynb` — baseline passthrough và DeepFilterNet khi dependency tương thích; kết quả denoiser
+   chỉ được giữ khi vượt quality gate. RNNoise sẽ được bổ sung khi backend runtime hoàn thiện.
+4. `colab_mt_v2.ipynb` — benchmark EnViT5 raw/context trên `test`, `minimal_pairs` và `safety` cho cả hai chiều.
+5. `colab_en_asr_v2.ipynb` — chỉ chạy sau khi có audio English V2.1 và audit tối thiểu 6 speaker/voice đạt.
+6. `colab_edge_profile_v2.ipynb` — export/compile/profile model ONNX đã freeze trên Qualcomm AI Hub hosted device.
 
-If V1 Drive audio has no `manifest.jsonl`, the data-audit notebook reconstructs pairing/transcript/split metadata from
-the original filenames and `utterances_all.csv`. Random speaker, noise, SNR and reverb choices cannot be recovered and
-remain a reported V1 limitation; the reconstructed manifest is sufficient for VI-ASR benchmarking, not for claiming
-speaker/noise-stratified dataset quality.
+`colab_vi_asr_finetune_submission.ipynb` đã bị loại: nó fine-tune Whisper Tiny, không phải kiến trúc GIPFormer của
+OneVoice. Fine-tune GIPFormer chỉ bắt đầu khi có checkpoint PyTorch/icefall tương thích và khi benchmark/context gate
+chứng minh cần thiết.
+
+Fine-tune MT chỉ dùng `train.csv`, chọn checkpoint bằng `dev.csv`; `test.csv` luôn được giữ cho đánh giá cuối. Nếu
+Drive V1 chưa có `manifest.jsonl`, notebook audit có thể phục hồi pairing/transcript/split từ filename và
+`utterances_all.csv`. Speaker, crop noise, SNR, RIR ngẫu nhiên của V1 không thể phục hồi nên vẫn là giới hạn phải
+báo cáo, không được dùng để tuyên bố chất lượng theo speaker/noise.
