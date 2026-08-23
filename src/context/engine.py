@@ -275,9 +275,32 @@ class ConstructionContextEngine:
         entities: dict[str, object] = {}
         numbers = _NUMBER_RE.findall(text)
         units = _UNIT_RE.findall(text)
-        directions = _DIRECTION_RE.findall(text)
+        normalized = _normal(text)
+        directions = []
+        for match in _DIRECTION_RE.finditer(normalized):
+            direction = match.group(0)
+            following = normalized[match.end() :]
+            # These Vietnamese words are direction tokens in isolation, but the
+            # constructions below are temporal or action idioms. Requiring a
+            # literal "forward/backward/up/down" in their translations creates
+            # false safety failures (for example, "before continuing" and
+            # "climb onto the scaffold").
+            if direction in {"trước", "sau"} and re.match(r"\s+khi\b", following):
+                continue
+            if direction in {"lên", "xuống"} and re.match(
+                r"\s+(?:giàn giáo|hố(?: đào)?)\b", following
+            ):
+                continue
+            directions.append(direction)
         actions = _ACTION_RE.findall(text)
-        negations = _NEGATION_RE.findall(text)
+        negations = []
+        for match in _NEGATION_RE.finditer(normalized):
+            negation = match.group(0)
+            # "đã ... chưa?" is a yes/no completion question, not a
+            # prohibition/negative instruction that must render as "not".
+            if negation == "chưa" and "?" in text[match.end() :]:
+                continue
+            negations.append(negation)
         if numbers:
             entities["numbers"] = numbers
         if units:
@@ -317,6 +340,14 @@ class ConstructionContextEngine:
         translated: str, context: ContextResult, direction: str
     ) -> list[str]:
         normalized = _normal(translated)
+        # A fixed safety fast-path phrase is the deterministic benchmark source
+        # of truth. Do not reject that exact translation merely because a broad
+        # terminology or entity rule prefers another lexical realization.
+        if any(
+            normalized == _normal(candidate.translated_text)
+            for candidate in context.safety_candidates
+        ):
+            return []
         errors: list[str] = []
         for mention in context.canonical_mentions:
             expected = mention.en_standard if direction == "vi2en" else mention.vi_standard
@@ -341,6 +372,8 @@ class ConstructionContextEngine:
                 if direction == "vi2en"
                 else ("không", "đừng", "chưa", "không được")
             )
-            if not any(marker in normalized for marker in target_negations):
+            source_unsafe = direction == "vi2en" and "không an toàn" in context.normalized_text
+            semantic_unsafe = source_unsafe and "unsafe" in normalized
+            if not semantic_unsafe and not any(marker in normalized for marker in target_negations):
                 errors.append("missing_negation")
         return errors

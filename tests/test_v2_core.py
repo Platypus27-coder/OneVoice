@@ -137,6 +137,48 @@ class ContextAndSafetyTests(unittest.TestCase):
         self.assertTrue(any(error.startswith("missing_direction:") for error in errors))
         self.assertIn("missing_negation", errors)
 
+    def test_validator_does_not_treat_temporal_markers_as_directions(self):
+        before = self.engine.analyze("Kiểm tra mũ bảo hộ trước khi tiếp tục.", "vi2en")
+        after = self.engine.analyze("Kiểm tra lại móc an toàn sau khi xử lý.", "vi2en")
+        self.assertFalse(
+            any(
+                error.startswith("missing_direction:")
+                for error in self.engine.validate_translation(
+                    "Check the safety helmet before continuing.", before, "vi2en"
+                )
+            )
+        )
+        self.assertFalse(
+            any(
+                error.startswith("missing_direction:")
+                for error in self.engine.validate_translation(
+                    "Recheck the snap hook after corrective action.", after, "vi2en"
+                )
+            )
+        )
+
+    def test_validator_handles_completion_question_and_unsafe_predicate(self):
+        question = self.engine.analyze("Khu vực cấm đã được kiểm tra chưa?", "vi2en")
+        unsafe = self.engine.analyze("Giàn giáo không an toàn!", "vi2en")
+        self.assertNotIn(
+            "missing_negation",
+            self.engine.validate_translation("Has the restricted area been checked?", question, "vi2en"),
+        )
+        self.assertNotIn(
+            "missing_negation",
+            self.engine.validate_translation("The scaffold is unsafe!", unsafe, "vi2en"),
+        )
+
+    def test_reviewed_safety_fast_path_is_validated_as_source_of_truth(self):
+        context = self.engine.analyze("Dừng lại ngay!", "vi2en")
+        self.assertTrue(context.safety_candidates)
+        self.assertEqual(
+            self.engine.validate_translation(
+                context.safety_candidates[0].translated_text, context, "vi2en"
+            ),
+            [],
+        )
+
 
 class StreamingTests(unittest.TestCase):
     def setUp(self):
