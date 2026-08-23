@@ -26,6 +26,7 @@ from evaluation.metrics import cer, corpus_error_rate, wer
 from runtime.preflight import ArtifactPreflightError, verify_artifacts
 from scripts.recover_v1_manifest import UNRECOVERABLE, recover
 from scripts.build_benchmark_dashboard import build_dashboard
+from scripts.analyze_mt_errors import analyze_report
 from scripts.reconcile_manifest_splits import reconcile_rows
 from streaming.semantic_commit import (
     RollingHypothesisAssembler,
@@ -270,6 +271,23 @@ class StreamingTests(unittest.TestCase):
 
 
 class RuntimeSafetyTests(unittest.TestCase):
+    def test_mt_error_analysis_counts_critical_validation_errors(self):
+        report = ROOT / "tests" / ".tmp" / "mt-predictions.csv"
+        try:
+            report.write_text(
+                "source,reference,prediction,route,critical_fields_valid,validation_errors\n"
+                "Dừng máy,Stop machine,Stop machine,raw,True,\n"
+                "Không nâng,Do not raise,Raise,raw,False,missing_negation\n",
+                encoding="utf-8",
+            )
+            summary = analyze_report(report, top=1)
+            self.assertEqual(summary["samples"], 2)
+            self.assertEqual(summary["critical_invalid"], 1)
+            self.assertEqual(summary["validation_error_counts"], {"missing_negation": 1})
+            self.assertEqual(summary["review_examples"][0]["prediction"], "Raise")
+        finally:
+            report.unlink(missing_ok=True)
+
     def test_sensevoice_adapter_passes_pcm_array_not_path_list(self):
         class FakeSenseVoice:
             def __call__(self, waveform, **kwargs):
