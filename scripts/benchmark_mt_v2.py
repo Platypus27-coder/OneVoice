@@ -63,6 +63,12 @@ def main() -> None:
     parser.add_argument("--with-context", action="store_true")
     parser.add_argument("--max-samples", type=int)
     parser.add_argument(
+        "--progress-every",
+        type=int,
+        default=25,
+        help="Print measured progress every N pairs (0 disables periodic progress).",
+    )
+    parser.add_argument(
         "--model-source",
         help="Explicit local checkpoint directory or Hugging Face model ID for this run",
     )
@@ -87,6 +93,8 @@ def main() -> None:
         pairs = pairs[: args.max_samples]
     if not pairs:
         raise ValueError(f"No translation pairs found in {data_file}")
+    if args.progress_every < 0:
+        parser.error("--progress-every must be zero or a positive integer")
 
     translator = Translator(
         config,
@@ -97,7 +105,13 @@ def main() -> None:
     translator.load()
     context_engine = ConstructionContextEngine.from_data_dir(data_root)
     predictions = []
-    for pair in pairs:
+    benchmark_started = time.perf_counter()
+    print(
+        f"[MT benchmark] {args.direction}/{args.suite}: {len(pairs)} pairs "
+        f"(progress every {args.progress_every or 'disabled'})",
+        flush=True,
+    )
+    for index, pair in enumerate(pairs, start=1):
         context = context_engine.analyze(pair["source"], args.direction)
         started = time.perf_counter()
         if args.with_context and context.safety_candidates:
@@ -149,6 +163,15 @@ def main() -> None:
                 == normalize_metric_text(pair["reference"]),
             }
         )
+        if args.progress_every and (index % args.progress_every == 0 or index == len(pairs)):
+            elapsed_s = time.perf_counter() - benchmark_started
+            rate = index / elapsed_s if elapsed_s else 0.0
+            remaining_s = (len(pairs) - index) / rate if rate else 0.0
+            print(
+                f"[MT benchmark] processed {index}/{len(pairs)} "
+                f"({rate:.2f} pairs/s; ETA {remaining_s / 60:.1f} min)",
+                flush=True,
+            )
     latencies = sorted(row["latency_ms"] for row in predictions)
     aggregate = {
         "samples": len(predictions),
