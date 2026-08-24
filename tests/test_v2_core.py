@@ -29,6 +29,7 @@ from scripts.build_benchmark_dashboard import build_dashboard
 from scripts.analyze_mt_errors import analyze_report
 from scripts.reconcile_manifest_splits import reconcile_rows
 from scripts.prepare_sensevoice_finetune_data import prepare
+from scripts.manage_training_checkpoint import check_checkpoint, quarantine_checkpoint
 from streaming.semantic_commit import (
     RollingHypothesisAssembler,
     SemanticCommitController,
@@ -706,6 +707,22 @@ class SenseVoicePreparationTests(unittest.TestCase):
             self.assertEqual(train_records[0]["text_language"], "<|en|>")
             self.assertTrue(train_records[0]["source"].replace("\\", "/").endswith("clean/clean/u1.wav"))
             self.assertNotIn("Never train", (root / "prepared/train.jsonl").read_text(encoding="utf-8"))
+        finally:
+            shutil.rmtree(root, ignore_errors=True)
+
+
+class TrainingCheckpointTests(unittest.TestCase):
+    def test_corrupt_resume_checkpoint_is_quarantined_without_deleting_it(self):
+        root = ROOT / "tests" / ".tmp" / "checkpoint-quarantine"
+        root.mkdir(parents=True, exist_ok=True)
+        checkpoint = root / "model.pt"
+        try:
+            checkpoint.write_bytes(b"partial checkpoint")
+            result = check_checkpoint(root, lambda _: (_ for _ in ()).throw(RuntimeError("bad zip")))
+            self.assertEqual(result["status"], "corrupt")
+            quarantined = quarantine_checkpoint(root, result)
+            self.assertFalse(checkpoint.exists())
+            self.assertTrue(Path(quarantined["quarantined_to"]).is_file())
         finally:
             shutil.rmtree(root, ignore_errors=True)
 
