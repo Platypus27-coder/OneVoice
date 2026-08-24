@@ -1,8 +1,8 @@
-"""Build leakage-safe FunASR/SenseVoice JSONL data from an English audio manifest.
+"""Build leakage-safe SenseVoice JSONL data from an English audio manifest.
 
 This is a *training-preparation* tool.  It never modifies the source audio
 manifest and it never reads the test split.  The resulting JSONL follows the
-ChatML schema required by FunASR's ``train_ds.py``.
+schema used by the official SenseVoice recipe and FunASR's ``train_ds.py``.
 """
 
 from __future__ import annotations
@@ -14,11 +14,6 @@ import re
 from collections import Counter
 from pathlib import Path
 from typing import Callable
-
-
-SYSTEM_PROMPT = "You are a helpful assistant."
-USER_PREFIX = "Speech transcription: <|startofspeech|>!"
-USER_SUFFIX = "<|endofspeech|>"
 
 
 def _read_jsonl(path: Path) -> list[dict]:
@@ -78,15 +73,18 @@ def _record(row: dict, audio_name: str, variant: str, root: Path, text_length: C
     audio_path = (root / audio_name).resolve()
     item_id = f"{Path(audio_name).stem}__{variant}"
     return {
-        "id": item_id,
-        "messages": [
-            {"role": "system", "content": SYSTEM_PROMPT},
-            {"role": "user", "content": f"{USER_PREFIX}{audio_path}{USER_SUFFIX}"},
-            {"role": "assistant", "content": transcript},
-        ],
-        # FunASR documents this as the number of 10 ms fbank frames.
-        "speech_length": max(1, round(duration_s * 100)),
-        "text_length": text_length(transcript),
+        # These field names are the SenseVoice-specific JSONL contract, not
+        # FunASR's generic ChatML ASR format.
+        "key": item_id,
+        "source": str(audio_path),
+        "target": transcript,
+        "text_language": "<|en|>",
+        "emo_target": "<|NEUTRAL|>",
+        "event_target": "<|Speech|>",
+        "with_or_wo_itn": "<|withitn|>",
+        # Number of 10 ms fbank frames and text-token count, respectively.
+        "source_len": max(1, round(duration_s * 100)),
+        "target_len": text_length(transcript),
         "onevoice": {
             "variant": variant,
             "utterance_id": row.get("utterance_id"),
@@ -158,7 +156,7 @@ def prepare(
             "train": {"records": len(train), "variants": dict(Counter(r["onevoice"]["variant"] for r in train))},
             "dev": {"records": len(dev), "variants": dict(Counter(r["onevoice"]["variant"] for r in dev))},
         },
-        "format": "FunASR ChatML / 10ms speech_length",
+        "format": "SenseVoice JSONL / 10ms source_len",
     }
     (output_dir / "dataset_manifest.json").write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
     return report

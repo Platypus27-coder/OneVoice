@@ -702,8 +702,9 @@ class SenseVoicePreparationTests(unittest.TestCase):
             self.assertEqual(report["splits"]["dev"]["records"], 2)
             self.assertFalse(report["test_split_included"])
             train_records = [json.loads(line) for line in (root / "prepared/train.jsonl").read_text(encoding="utf-8").splitlines()]
-            self.assertEqual(train_records[0]["speech_length"], 123)
-            self.assertTrue(train_records[0]["messages"][1]["content"].startswith("Speech transcription: <|startofspeech|>!"))
+            self.assertEqual(train_records[0]["source_len"], 123)
+            self.assertEqual(train_records[0]["text_language"], "<|en|>")
+            self.assertTrue(train_records[0]["source"].replace("\\", "/").endswith("clean/u1.wav"))
             self.assertNotIn("Never train", (root / "prepared/train.jsonl").read_text(encoding="utf-8"))
         finally:
             shutil.rmtree(root, ignore_errors=True)
