@@ -28,6 +28,7 @@ from scripts.recover_v1_manifest import UNRECOVERABLE, recover
 from scripts.build_benchmark_dashboard import build_dashboard
 from scripts.analyze_mt_errors import analyze_report
 from scripts.reconcile_manifest_splits import reconcile_rows
+from scripts.prepare_sensevoice_finetune_data import prepare
 from streaming.semantic_commit import (
     RollingHypothesisAssembler,
     SemanticCommitController,
@@ -682,6 +683,30 @@ class RuntimeSafetyTests(unittest.TestCase):
             self.assertTrue(report["passed"])
         finally:
             manifest.unlink(missing_ok=True)
+
+class SenseVoicePreparationTests(unittest.TestCase):
+    def test_preparation_uses_only_train_and_dev_and_deduplicates_clean(self):
+        root = ROOT / "tests" / ".tmp" / "sensevoice-preparation"
+        root.mkdir(parents=True, exist_ok=True)
+        manifest = root / "manifest.jsonl"
+        try:
+            rows = [
+                {"utterance_id": "u1", "language": "en", "split": "train", "text": "Wear a helmet.", "clean_audio": "clean/u1.wav", "noisy_audio": "noisy/u1_n01.wav", "duration_s": 1.23},
+                {"utterance_id": "u1", "language": "en", "split": "train", "text": "Wear a helmet.", "clean_audio": "clean/u1.wav", "noisy_audio": "noisy/u1_n02.wav", "duration_s": 1.23},
+                {"utterance_id": "u2", "language": "en", "split": "dev", "text": "Stop the crane.", "clean_audio": "clean/u2.wav", "noisy_audio": "noisy/u2_n01.wav", "duration_s": 2.0},
+                {"utterance_id": "u3", "language": "en", "split": "test", "text": "Never train on me.", "clean_audio": "clean/u3.wav", "noisy_audio": "noisy/u3_n01.wav", "duration_s": 1.0},
+            ]
+            manifest.write_text("\n".join(json.dumps(row) for row in rows) + "\n", encoding="utf-8")
+            report = prepare(manifest, root / "prepared", lambda text: len(text.split()))
+            self.assertEqual(report["splits"]["train"]["records"], 3)
+            self.assertEqual(report["splits"]["dev"]["records"], 2)
+            self.assertFalse(report["test_split_included"])
+            train_records = [json.loads(line) for line in (root / "prepared/train.jsonl").read_text(encoding="utf-8").splitlines()]
+            self.assertEqual(train_records[0]["speech_length"], 123)
+            self.assertTrue(train_records[0]["messages"][1]["content"].startswith("Speech transcription: <|startofspeech|>!"))
+            self.assertNotIn("Never train", (root / "prepared/train.jsonl").read_text(encoding="utf-8"))
+        finally:
+            shutil.rmtree(root, ignore_errors=True)
 
 
 if __name__ == "__main__":
