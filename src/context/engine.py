@@ -65,14 +65,30 @@ _DIRECTION_TRANSLATIONS = {
 # The canonical English term is intentionally strict, but these inflected
 # technical forms preserve the same construction concept in a sentence.
 _TERM_VALIDATION_ALIASES: dict[str, tuple[str, ...]] = {
+    "C0012": ("rào quanh",),
     "C0057": ("rebar",),
+    "C0103": ("khu quay máy",),
     "C0115": ("grounded", "earthing", "earthed"),
+    "C0122": ("máy phát",),
     "C0140": ("leaking oil", "oil leakage"),
+    "C0200": ("trục",),
 }
 
 
 def _normal(text: str) -> str:
     return normalize_match_text(unicodedata.normalize("NFC", text))
+
+
+def _is_electrical_current(text: str) -> bool:
+    """Disambiguate electrical current from the everyday adjective “current”."""
+    return bool(
+        re.search(
+            r"\b(?:electric(?:al)? current|current (?:draw|flow|reading)|"
+            r"current (?:of|and) (?:the )?voltage|\d+(?:[.,]\d+)?\s*a)\b",
+            text,
+            re.IGNORECASE,
+        )
+    )
 
 
 class ConstructionContextEngine:
@@ -205,6 +221,8 @@ class ConstructionContextEngine:
             raise ValueError("direction must be 'vi2en' or 'en2vi'")
         normalized = _normal(text)
         mentions = self._find_mentions(normalized, direction)
+        if direction == "en2vi" and not _is_electrical_current(normalized):
+            mentions = [item for item in mentions if item.canonical_id != "C0120"]
         domains = Counter(item.domain for item in mentions if item.domain)
         intent = self._detect_intent(normalized)
         safety = self.safety.match(text, direction)
@@ -282,13 +300,23 @@ class ConstructionContextEngine:
     def _extract_entities(text: str) -> dict[str, object]:
         entities: dict[str, object] = {}
         numbers = _NUMBER_RE.findall(text)
-        units = _UNIT_RE.findall(text)
+        units = []
+        for match in _UNIT_RE.finditer(text):
+            unit = match.group(0)
+            # In English, “a” is usually an article. It is an ampere only
+            # when attached to a numeric value (for example, “25 A”).
+            if unit.casefold() == "a" and not re.search(
+                r"\d+(?:[.,]\d+)?\s*$", text[: match.start()]
+            ):
+                continue
+            units.append(unit)
         normalized = _normal(text)
         directions = []
         for match in _DIRECTION_RE.finditer(normalized):
             direction = match.group(0)
             preceding = normalized[: match.start()]
             following = normalized[match.end() :]
+            previous_word = preceding.rstrip().split()[-1] if preceding.strip() else ""
             # These Vietnamese words are direction tokens in isolation, but the
             # constructions below are temporal or action idioms. Requiring a
             # literal "forward/backward/up/down" in their translations creates
@@ -306,6 +334,9 @@ class ConstructionContextEngine:
             if direction in {"lên", "xuống"} and re.match(
                 r"\s+(?:giàn giáo|hố(?: đào)?)\b", following
             ):
+                continue
+            # “tie-down” is a load-securing noun, not a command to move down.
+            if direction == "down" and previous_word in {"tie", "tied"}:
                 continue
             directions.append(direction)
         actions = _ACTION_RE.findall(text)

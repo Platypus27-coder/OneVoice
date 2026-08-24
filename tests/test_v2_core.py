@@ -200,6 +200,21 @@ class ContextAndSafetyTests(unittest.TestCase):
         errors = self.engine.validate_translation("Please stop the reverse alarm first.", context, "vi2en")
         self.assertFalse(any(error.startswith("missing_direction:") for error in errors))
 
+    def test_en_context_disambiguates_article_current_and_tie_down(self):
+        generic = self.engine.analyze("What is the current weight of a pallet?", "en2vi")
+        tie_down = self.engine.analyze("Use the cargo tie-down.", "en2vi")
+        moved_down = self.engine.analyze("Move the crawler excavator down.", "en2vi")
+        self.assertNotIn("a", generic.entities.get("units", []))
+        self.assertNotIn("C0120", [item.canonical_id for item in generic.canonical_mentions])
+        self.assertNotIn("down", tie_down.entities.get("directions", []))
+        self.assertIn("down", moved_down.entities.get("directions", []))
+
+    def test_en_validator_accepts_construction_term_aliases(self):
+        context = self.engine.analyze("Barricade the equipment swing area.", "en2vi")
+        errors = self.engine.validate_translation("Rào quanh khu quay máy.", context, "en2vi")
+        self.assertNotIn("missing_term:C0012:rào chắn", errors)
+        self.assertNotIn("missing_term:C0103:khu vực quay máy", errors)
+
     def test_validator_handles_completion_question_and_unsafe_predicate(self):
         question = self.engine.analyze("Khu vực cấm đã được kiểm tra chưa?", "vi2en")
         unsafe = self.engine.analyze("Giàn giáo không an toàn!", "vi2en")
