@@ -61,6 +61,7 @@ class ConstructionTranslationDataset(Dataset):
             max_length=self.max_length,
             padding="max_length",
             truncation=True,
+            return_tensors="pt",
         )
         labels = target_encoded["input_ids"].squeeze(0)
         labels[labels == self.tokenizer.pad_token_id] = -100
