@@ -157,6 +157,25 @@ class ContextAndSafetyTests(unittest.TestCase):
             )
         )
 
+    def test_validator_does_not_treat_trailing_temporal_marker_as_direction(self):
+        context = self.engine.analyze("Kiểm tra đồng hồ áp suất trước.", "vi2en")
+        errors = self.engine.validate_translation(
+            "Check the pressure gauge first.", context, "vi2en"
+        )
+        self.assertFalse(any(error.startswith("missing_direction:") for error in errors))
+
+    def test_validator_keeps_explicit_spatial_direction(self):
+        context = self.engine.analyze("Di chuyển tải về phía trước 2 m.", "vi2en")
+        errors = self.engine.validate_translation("Move the load forward 2 m.", context, "vi2en")
+        self.assertFalse(any(error.startswith("missing_direction:") for error in errors))
+
+    def test_validator_accepts_grounded_for_grounding(self):
+        context = self.engine.analyze("Dây pha chưa tiếp địa.", "vi2en")
+        self.assertNotIn(
+            "missing_term:C0115:grounding",
+            self.engine.validate_translation("The live conductor is not grounded.", context, "vi2en"),
+        )
+
     def test_validator_handles_completion_question_and_unsafe_predicate(self):
         question = self.engine.analyze("Khu vực cấm đã được kiểm tra chưa?", "vi2en")
         unsafe = self.engine.analyze("Giàn giáo không an toàn!", "vi2en")

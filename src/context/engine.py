@@ -62,6 +62,12 @@ _DIRECTION_TRANSLATIONS = {
     "forward": "trước", "backward": "sau",
 }
 
+# The canonical English term is intentionally strict, but these inflected
+# technical forms preserve the same construction concept in a sentence.
+_TERM_VALIDATION_ALIASES: dict[str, tuple[str, ...]] = {
+    "C0115": ("grounded", "earthing", "earthed"),
+}
+
 
 def _normal(text: str) -> str:
     return normalize_match_text(unicodedata.normalize("NFC", text))
@@ -279,14 +285,22 @@ class ConstructionContextEngine:
         directions = []
         for match in _DIRECTION_RE.finditer(normalized):
             direction = match.group(0)
+            preceding = normalized[: match.start()]
             following = normalized[match.end() :]
             # These Vietnamese words are direction tokens in isolation, but the
             # constructions below are temporal or action idioms. Requiring a
             # literal "forward/backward/up/down" in their translations creates
             # false safety failures (for example, "before continuing" and
             # "climb onto the scaffold").
-            if direction in {"trước", "sau"} and re.match(r"\s+khi\b", following):
-                continue
+            if direction in {"trước", "sau"}:
+                # A bare trailing “trước/sau” means “first/afterwards” in
+                # commands such as “kiểm tra ... trước”, not physical
+                # forward/backward movement. Treat it as spatial only when a
+                # dedicated spatial construction makes that meaning explicit.
+                spatial_prefix = re.search(r"(?:phía|về|ra|lùi|tiến)\s*$", preceding)
+                spatial_suffix = re.match(r"\s+(?:mặt|bên)\b", following)
+                if not (spatial_prefix or spatial_suffix):
+                    continue
             if direction in {"lên", "xuống"} and re.match(
                 r"\s+(?:giàn giáo|hố(?: đào)?)\b", following
             ):
@@ -351,7 +365,11 @@ class ConstructionContextEngine:
         errors: list[str] = []
         for mention in context.canonical_mentions:
             expected = mention.en_standard if direction == "vi2en" else mention.vi_standard
-            if expected and _normal(expected) not in normalized:
+            accepted_forms = (
+                _normal(expected),
+                *(_normal(item) for item in _TERM_VALIDATION_ALIASES.get(mention.canonical_id, ())),
+            )
+            if expected and not any(form in normalized for form in accepted_forms):
                 errors.append(f"missing_term:{mention.canonical_id}:{expected}")
         for value in context.entities.get("numbers", []):
             canonical = str(value).replace(",", ".")
