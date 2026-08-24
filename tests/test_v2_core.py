@@ -176,6 +176,30 @@ class ContextAndSafetyTests(unittest.TestCase):
             self.engine.validate_translation("The live conductor is not grounded.", context, "vi2en"),
         )
 
+    def test_validator_accepts_standard_technical_inflections(self):
+        oil = self.engine.analyze("Bu lông bị rò dầu.", "vi2en")
+        rebar = self.engine.analyze("Đầm cốt thép ngay.", "vi2en")
+        self.assertNotIn(
+            "missing_term:C0140:oil leak",
+            self.engine.validate_translation("The bolt is leaking oil.", oil, "vi2en"),
+        )
+        self.assertNotIn(
+            "missing_term:C0057:reinforcing steel",
+            self.engine.validate_translation("Vibrate the rebar now.", rebar, "vi2en"),
+        )
+
+    def test_validator_accepts_keep_clear_for_clearance_instruction(self):
+        context = self.engine.analyze("Giữ nguyên khoảng cách, chưa được di chuyển.", "vi2en")
+        self.assertNotIn(
+            "missing_term:C0209:distance",
+            self.engine.validate_translation("Keep clear of it; do not move it yet.", context, "vi2en"),
+        )
+
+    def test_validator_does_not_treat_order_after_reverse_alarm_as_direction(self):
+        context = self.engine.analyze("Nhờ dừng còi lùi trước.", "vi2en")
+        errors = self.engine.validate_translation("Please stop the reverse alarm first.", context, "vi2en")
+        self.assertFalse(any(error.startswith("missing_direction:") for error in errors))
+
     def test_validator_handles_completion_question_and_unsafe_predicate(self):
         question = self.engine.analyze("Khu vực cấm đã được kiểm tra chưa?", "vi2en")
         unsafe = self.engine.analyze("Giàn giáo không an toàn!", "vi2en")

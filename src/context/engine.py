@@ -65,7 +65,9 @@ _DIRECTION_TRANSLATIONS = {
 # The canonical English term is intentionally strict, but these inflected
 # technical forms preserve the same construction concept in a sentence.
 _TERM_VALIDATION_ALIASES: dict[str, tuple[str, ...]] = {
+    "C0057": ("rebar",),
     "C0115": ("grounded", "earthing", "earthed"),
+    "C0140": ("leaking oil", "oil leakage"),
 }
 
 
@@ -297,7 +299,7 @@ class ConstructionContextEngine:
                 # commands such as “kiểm tra ... trước”, not physical
                 # forward/backward movement. Treat it as spatial only when a
                 # dedicated spatial construction makes that meaning explicit.
-                spatial_prefix = re.search(r"(?:phía|về|ra|lùi|tiến)\s*$", preceding)
+                spatial_prefix = re.search(r"(?:phía|về phía)\s*$", preceding)
                 spatial_suffix = re.match(r"\s+(?:mặt|bên)\b", following)
                 if not (spatial_prefix or spatial_suffix):
                     continue
@@ -369,7 +371,20 @@ class ConstructionContextEngine:
                 _normal(expected),
                 *(_normal(item) for item in _TERM_VALIDATION_ALIASES.get(mention.canonical_id, ())),
             )
-            if expected and not any(form in normalized for form in accepted_forms):
+            # “Giữ (nguyên) khoảng cách” is a clearance instruction. In that
+            # limited construction, “keep clear (of …)” preserves the safety
+            # meaning even though the word “distance” is absent. Do not apply
+            # the synonym to measurements or distance questions.
+            keep_clear_equivalent = (
+                mention.canonical_id == "C0209"
+                and direction == "vi2en"
+                and "giữ" in context.normalized_text
+                and "khoảng cách" in context.normalized_text
+                and "keep clear" in normalized
+            )
+            if expected and not keep_clear_equivalent and not any(
+                form in normalized for form in accepted_forms
+            ):
                 errors.append(f"missing_term:{mention.canonical_id}:{expected}")
         for value in context.entities.get("numbers", []):
             canonical = str(value).replace(",", ".")
