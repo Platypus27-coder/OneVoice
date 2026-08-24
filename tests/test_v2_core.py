@@ -704,7 +704,7 @@ class SenseVoicePreparationTests(unittest.TestCase):
             train_records = [json.loads(line) for line in (root / "prepared/train.jsonl").read_text(encoding="utf-8").splitlines()]
             self.assertEqual(train_records[0]["source_len"], 123)
             self.assertEqual(train_records[0]["text_language"], "<|en|>")
-            self.assertTrue(train_records[0]["source"].replace("\\", "/").endswith("clean/u1.wav"))
+            self.assertTrue(train_records[0]["source"].replace("\\", "/").endswith("clean/clean/u1.wav"))
             self.assertNotIn("Never train", (root / "prepared/train.jsonl").read_text(encoding="utf-8"))
         finally:
             shutil.rmtree(root, ignore_errors=True)

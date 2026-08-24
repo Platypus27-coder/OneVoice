@@ -70,7 +70,9 @@ def _record(row: dict, audio_name: str, variant: str, root: Path, text_length: C
     if duration_s <= 0:
         raise ValueError(f"Non-positive duration_s for {audio_name}")
 
-    audio_path = (root / audio_name).resolve()
+    # OneVoice manifests intentionally store basenames while WAVs live below
+    # ``clean/`` and ``noisy/``.  Keep that storage layout explicit here.
+    audio_path = (root / variant / audio_name).resolve()
     item_id = f"{Path(audio_name).stem}__{variant}"
     return {
         # These field names are the SenseVoice-specific JSONL contract, not
@@ -146,6 +148,7 @@ def prepare(
     _write_jsonl(output_dir / "dev.jsonl", dev)
 
     report = {
+        "schema_version": 2,
         "source_manifest": str(manifest_path.resolve()),
         "source_manifest_sha256": _source_sha256(manifest_path),
         "language": "en",
