@@ -40,6 +40,14 @@ def copy_runtime_bundle(stage: Path, output: Path) -> list[dict]:
         # not the 1 GB base PyTorch model that was used solely for export.
         if source.suffix in {".pt", ".bin", ".safetensors", ".ckpt"}:
             continue
+        # A previous baseline run can leave model_quant.onnx in the ModelScope
+        # cache. This invocation exports FP32 only, so that stale INT8 file
+        # would silently point the runtime at base weights rather than the
+        # fine-tuned checkpoint.
+        if source.name == "model_quant.onnx" or source.name.startswith("model_quant.onnx."):
+            continue
+        if source.suffix == ".onnx" and source.name != "model.onnx":
+            continue
         destination = output / relative
         destination.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(source, destination)
@@ -147,6 +155,9 @@ def main() -> None:
         "base_model": args.base_model,
         "checkpoint": str(args.checkpoint.resolve()),
         "checkpoint_sha256": sha256(args.checkpoint),
+        "precision": "fp32",
+        "quantization": "not_performed",
+        "runtime_loader_requirement": "Load model.onnx with quantize=False until a separately validated INT8 export exists.",
         "opset": args.opset,
         "export_device": args.device,
         "artifacts": copied,

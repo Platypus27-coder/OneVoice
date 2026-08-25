@@ -385,9 +385,11 @@ class RuntimeSafetyTests(unittest.TestCase):
             for name in ("model.onnx", "config.yaml", "am.mvn", "chn_jpn_yue_eng_ko_spectok.bpe.model"):
                 (stage / name).write_bytes(b"artifact")
             (stage / "model.pt").write_bytes(b"base weights")
+            (stage / "model_quant.onnx").write_bytes(b"stale base quantization")
             copied = copy_runtime_bundle(stage, output)
             self.assertTrue((output / "model.onnx").is_file())
             self.assertFalse((output / "model.pt").exists())
+            self.assertFalse((output / "model_quant.onnx").exists())
             self.assertEqual(len(copied), 4)
         finally:
             shutil.rmtree(root, ignore_errors=True)
