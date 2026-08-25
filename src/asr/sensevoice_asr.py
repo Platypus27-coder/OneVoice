@@ -21,7 +21,13 @@ class SenseVoiceASR:
         try:
             from funasr_onnx import SenseVoiceSmall
         except ImportError as exc:
-            raise ImportError("Install funasr_onnx to use EN→VI ASR") from exc
+            # funasr_onnx renamed this public class in newer wheels while the
+            # stable releases still expose SenseVoiceSmall. Both constructors
+            # accept model_dir/batch_size/quantize.
+            try:
+                from funasr_onnx import SenseVoiceSmallONNX as SenseVoiceSmall
+            except ImportError:
+                raise ImportError("Install a funasr_onnx build with SenseVoice support to use EN→VI ASR") from exc
 
         model_dir = self.model_dir
         if not os.path.isdir(model_dir):
