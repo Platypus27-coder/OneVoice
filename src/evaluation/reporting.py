@@ -82,5 +82,11 @@ def create_run_manifest(
             }
         )
     destination.parent.mkdir(parents=True, exist_ok=True)
-    destination.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+    # argparse metadata legitimately contains Path objects (for example
+    # --report-dir and --checkpoint). Keep the manifest reproducible by
+    # serializing paths explicitly rather than failing after a benchmark has
+    # already completed its expensive inference pass.
+    destination.write_text(
+        json.dumps(payload, ensure_ascii=False, indent=2, default=str), encoding="utf-8"
+    )
     return payload

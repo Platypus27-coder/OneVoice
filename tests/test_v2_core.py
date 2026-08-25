@@ -23,6 +23,7 @@ from contracts import ASRHypothesis, AudioFrame, CommitKind
 from evaluation.dataset_audit import audit_audio_manifest
 from evaluation.real_site import audit_real_site_manifest, write_holdout_lock
 from evaluation.metrics import cer, corpus_error_rate, wer
+from evaluation.reporting import create_run_manifest
 from runtime.preflight import ArtifactPreflightError, verify_artifacts
 from scripts.recover_v1_manifest import UNRECOVERABLE, recover
 from scripts.build_benchmark_dashboard import build_dashboard
@@ -373,6 +374,25 @@ class StreamingTests(unittest.TestCase):
 
 
 class RuntimeSafetyTests(unittest.TestCase):
+    def test_run_manifest_serializes_path_metadata(self):
+        root = ROOT / "tests" / ".tmp" / "manifest-path-metadata"
+        try:
+            root.mkdir(parents=True, exist_ok=True)
+            source = root / "source.txt"
+            source.write_text("onevoice", encoding="utf-8")
+            output = root / "run_manifest.json"
+            create_run_manifest(
+                output,
+                "test",
+                inputs=[source],
+                metadata={"checkpoint": root / "checkpoint.pt", "report_dir": root},
+            )
+            recorded = json.loads(output.read_text(encoding="utf-8"))
+            self.assertEqual(recorded["metadata"]["checkpoint"], str(root / "checkpoint.pt"))
+            self.assertEqual(recorded["metadata"]["report_dir"], str(root))
+        finally:
+            shutil.rmtree(root, ignore_errors=True)
+
     def test_mt_error_analysis_counts_critical_validation_errors(self):
         report = ROOT / "tests" / ".tmp" / "mt-predictions.csv"
         try:
