@@ -13,6 +13,7 @@ class SenseVoiceASR:
         cfg = config.get("sensevoice", {})
         self.model_dir = cfg.get("model_path", "models/sensevoice")
         self.remote_model = cfg.get("remote_model", "iic/SenseVoiceSmall")
+        self.quantize = bool(cfg.get("quantize", True))
         self.offline = offline
         self.model = None
 
@@ -31,8 +32,9 @@ class SenseVoiceASR:
                 model_dir = snapshot_download(self.remote_model)
             except Exception as exc:
                 raise RuntimeError(f"Could not prepare SenseVoice model: {exc}") from exc
-        self.model = SenseVoiceSmall(model_dir, batch_size=1, quantize=True)
-        print(f"[ASR] ✅ SenseVoice ONNX loaded from {model_dir}")
+        self.model = SenseVoiceSmall(model_dir, batch_size=1, quantize=self.quantize)
+        precision = "INT8" if self.quantize else "FP32"
+        print(f"[ASR] ✅ SenseVoice ONNX ({precision}) loaded from {model_dir}")
 
     @staticmethod
     def _parse_output(raw_text: str) -> dict:

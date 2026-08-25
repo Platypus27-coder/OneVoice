@@ -57,6 +57,17 @@ def main() -> None:
         help="Print measured progress every N samples (0 disables periodic progress).",
     )
     parser.add_argument("--config", default="config/config.yaml")
+    parser.add_argument(
+        "--sensevoice-model-dir",
+        type=Path,
+        help="Local SenseVoice ONNX bundle for EN→VI benchmarking; disables model download.",
+    )
+    parser.add_argument(
+        "--sensevoice-quantize",
+        action=argparse.BooleanOptionalAction,
+        default=None,
+        help="Select model_quant.onnx when available. Use --no-sensevoice-quantize for an FP32 candidate.",
+    )
     parser.add_argument("--report-dir", default="reports/asr_v2")
     args = parser.parse_args()
 
@@ -67,6 +78,16 @@ def main() -> None:
 
     with open(args.config, "r", encoding="utf-8") as handle:
         config = yaml.safe_load(handle)
+    if args.sensevoice_model_dir:
+        if args.direction != "en2vi":
+            parser.error("--sensevoice-model-dir is only valid for --direction en2vi")
+        if not args.sensevoice_model_dir.is_dir():
+            raise FileNotFoundError(f"SenseVoice ONNX bundle not found: {args.sensevoice_model_dir}")
+        config.setdefault("sensevoice", {})["model_path"] = str(args.sensevoice_model_dir)
+    if args.sensevoice_quantize is not None:
+        if args.direction != "en2vi":
+            parser.error("--sensevoice-quantize is only valid for --direction en2vi")
+        config.setdefault("sensevoice", {})["quantize"] = args.sensevoice_quantize
     language = "vi" if args.direction == "vi2en" else "en"
     manifest = Path(args.manifest)
     rows = read_manifest(manifest, args.split, language)
@@ -75,7 +96,7 @@ def main() -> None:
     if args.progress_every < 0:
         parser.error("--progress-every must be zero or a positive integer")
 
-    asr = ASRManager(config, offline=False)
+    asr = ASRManager(config, offline=bool(args.sensevoice_model_dir))
     asr.load(args.direction)
     denoiser_config = dict(config.get("denoise", {}))
     denoiser_config["backend"] = args.denoiser
@@ -174,6 +195,8 @@ def main() -> None:
         "direction": args.direction,
         "audio": args.audio,
         "denoiser": args.denoiser,
+        "asr_model_dir": str(args.sensevoice_model_dir) if args.sensevoice_model_dir else None,
+        "asr_quantized": config.get("sensevoice", {}).get("quantize", True) if args.direction == "en2vi" else None,
         "breakdowns": {},
     }
     for field in ("domain", "risk_level", "noise_type", "snr_db"):
@@ -204,7 +227,7 @@ def main() -> None:
             args.config,
             config["asr"].get("gipformer_model_dir", "models/gipformer")
             if args.direction == "vi2en"
-            else config["sensevoice"].get("model_path", "models/sensevoice"),
+            else (args.sensevoice_model_dir or config["sensevoice"].get("model_path", "models/sensevoice")),
         ],
         metadata=vars(args),
     )

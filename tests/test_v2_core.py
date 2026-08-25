@@ -463,6 +463,12 @@ class RuntimeSafetyTests(unittest.TestCase):
         self.assertEqual(fake_model.kwargs, {"language": "en", "textnorm": "withitn"})
         self.assertEqual(result["text"], "secure the load")
 
+    def test_sensevoice_quantization_is_explicitly_configurable(self):
+        fp32 = SenseVoiceASR({"sensevoice": {"model_path": "candidate", "quantize": False}})
+        default = SenseVoiceASR({"sensevoice": {"model_path": "baseline"}})
+        self.assertFalse(fp32.quantize)
+        self.assertTrue(default.quantize)
+
     def test_split_reconciliation_preserves_test_holdout_and_pattern_groups(self):
         rows, report = reconcile_rows(
             [
