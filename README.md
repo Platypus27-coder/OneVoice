@@ -280,7 +280,7 @@ python src/pipeline.py --direction en2vi
 
 ---
 
-## Giấy Phép & Tri Ạn Tác Giả
+## Giấy Phép & Tri Ân Tác Giả
 
 Dự án tuân thủ Giấy phép **CC BY-NC 4.0**.
 Chúng tôi trân trọng tri ân các công trình mã nguồn mở được tích hợp:
