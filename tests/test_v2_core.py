@@ -32,6 +32,7 @@ from scripts.reconcile_manifest_splits import reconcile_rows
 from scripts.prepare_sensevoice_finetune_data import prepare
 from scripts.manage_training_checkpoint import check_checkpoint, quarantine_checkpoint
 from scripts.benchmark_sensevoice_checkpoint import _load_partial_predictions, _write_partial_predictions
+from scripts.export_sensevoice_checkpoint_onnx import copy_runtime_bundle
 from streaming.semantic_commit import (
     RollingHypothesisAssembler,
     SemanticCommitController,
@@ -375,6 +376,22 @@ class StreamingTests(unittest.TestCase):
 
 
 class RuntimeSafetyTests(unittest.TestCase):
+    def test_sensevoice_onnx_export_bundle_excludes_pytorch_weights(self):
+        root = ROOT / "tests" / ".tmp" / "sensevoice-onnx-bundle"
+        try:
+            stage = root / "stage"
+            output = root / "output"
+            stage.mkdir(parents=True)
+            for name in ("model.onnx", "config.yaml", "am.mvn", "chn_jpn_yue_eng_ko_spectok.bpe.model"):
+                (stage / name).write_bytes(b"artifact")
+            (stage / "model.pt").write_bytes(b"base weights")
+            copied = copy_runtime_bundle(stage, output)
+            self.assertTrue((output / "model.onnx").is_file())
+            self.assertFalse((output / "model.pt").exists())
+            self.assertEqual(len(copied), 4)
+        finally:
+            shutil.rmtree(root, ignore_errors=True)
+
     def test_sensevoice_partial_predictions_are_resumable(self):
         root = ROOT / "tests" / ".tmp" / "sensevoice-resume"
         try:

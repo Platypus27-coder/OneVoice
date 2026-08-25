@@ -21,6 +21,8 @@ Mỗi benchmark hợp lệ phải sinh `run_manifest.json`, `predictions.csv` v�
 7. `colab_mt_v2.ipynb` — benchmark EnViT5 raw/context trên `test`, `minimal_pairs` và `safety`; tự nhận candidate Drive theo từng chiều.
 8. `colab_en_asr_v2.ipynb` — chỉ chạy sau khi có audio English V2.1 và audit tối thiểu 6 speaker/voice đạt.
 9. `colab_edge_profile_v2.ipynb` — export/compile/profile model ONNX đã freeze trên Qualcomm AI Hub hosted device.
+10. `colab_sensevoice_evaluate_en_v1.ipynb` — đánh giá checkpoint SenseVoice EN đã fine-tune trên held-out clean/noisy, có resume prediction trên Drive.
+11. `colab_sensevoice_export_onnx_v1.ipynb` — export candidate SenseVoice EN đã qua quality gate sang bundle ONNX FP32 riêng; chưa thay runtime tới khi benchmark ONNX đạt.
 
 `colab_vi_asr_finetune_submission.ipynb` đã bị loại: nó fine-tune Whisper Tiny, không phải kiến trúc GIPFormer của
 OneVoice. Fine-tune GIPFormer chỉ bắt đầu khi có checkpoint PyTorch/icefall tương thích và khi benchmark/context gate
