@@ -31,6 +31,7 @@ from scripts.analyze_mt_errors import analyze_report
 from scripts.reconcile_manifest_splits import reconcile_rows
 from scripts.prepare_sensevoice_finetune_data import prepare
 from scripts.manage_training_checkpoint import check_checkpoint, quarantine_checkpoint
+from scripts.benchmark_sensevoice_checkpoint import _load_partial_predictions, _write_partial_predictions
 from streaming.semantic_commit import (
     RollingHypothesisAssembler,
     SemanticCommitController,
@@ -374,6 +375,21 @@ class StreamingTests(unittest.TestCase):
 
 
 class RuntimeSafetyTests(unittest.TestCase):
+    def test_sensevoice_partial_predictions_are_resumable(self):
+        root = ROOT / "tests" / ".tmp" / "sensevoice-resume"
+        try:
+            root.mkdir(parents=True, exist_ok=True)
+            partial = root / "predictions.partial.jsonl"
+            expected = [
+                {"audio": "example_clean.wav", "prediction": "secure the load"},
+                {"audio": "example_noisy.wav", "prediction": "stop the machine"},
+            ]
+            _write_partial_predictions(partial, expected)
+            self.assertEqual(_load_partial_predictions(partial), expected)
+            self.assertFalse(partial.with_suffix(".jsonl.tmp").exists())
+        finally:
+            shutil.rmtree(root, ignore_errors=True)
+
     def test_run_manifest_serializes_path_metadata(self):
         root = ROOT / "tests" / ".tmp" / "manifest-path-metadata"
         try:

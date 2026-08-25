@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 import argparse
+import contextlib
 import csv
+import io
 import json
 import os
 import re
@@ -32,6 +34,33 @@ def read_rows(path: Path, split: str) -> list[dict]:
 
 def clean_text(value: str) -> str:
     return re.sub(r"<\|.*?\|>", "", value).strip()
+
+
+def _load_partial_predictions(path: Path) -> list[dict]:
+    if not path.is_file():
+        return []
+    rows: list[dict] = []
+    for line_number, line in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
+        if not line.strip():
+            continue
+        try:
+            row = json.loads(line)
+        except json.JSONDecodeError as error:
+            raise ValueError(f"Invalid resume checkpoint {path}:{line_number}") from error
+        if not isinstance(row, dict) or not row.get("audio"):
+            raise ValueError(f"Invalid prediction in resume checkpoint {path}:{line_number}")
+        rows.append(row)
+    return rows
+
+
+def _write_partial_predictions(path: Path, predictions: list[dict]) -> None:
+    """Atomically checkpoint completed inference so a Colab disconnect loses at most one batch."""
+    temporary = path.with_suffix(path.suffix + ".tmp")
+    temporary.write_text(
+        "".join(json.dumps(row, ensure_ascii=False) + "\n" for row in predictions),
+        encoding="utf-8",
+    )
+    temporary.replace(path)
 
 
 def load_model(checkpoint: Path, device: str):
@@ -92,6 +121,8 @@ def main() -> None:
     parser.add_argument("--device", default="cuda:0")
     parser.add_argument("--max-samples", type=int)
     parser.add_argument("--progress-every", type=int, default=25)
+    parser.add_argument("--save-every", type=int, default=25)
+    parser.add_argument("--resume", action="store_true", help="Resume from predictions.partial.jsonl in --report-dir")
     parser.add_argument("--report-dir", type=Path, required=True)
     parser.add_argument("--construction-data-dir", type=Path, default=Path("data/onevoice_construction_v2"))
     args = parser.parse_args()
@@ -104,17 +135,42 @@ def main() -> None:
     model = load_model(args.checkpoint, args.device)
     context = ConstructionContextEngine.from_data_dir(args.construction_data_dir)
     root = args.manifest.parent
+    args.report_dir.mkdir(parents=True, exist_ok=True)
+    partial_path = args.report_dir / "predictions.partial.jsonl"
+    predictions = _load_partial_predictions(partial_path) if args.resume else []
+    resumed_count = len(predictions)
+    expected_audio = {
+        str(row["clean_audio"] if args.audio == "clean" else row["noisy_audio"])
+        for row in rows
+    }
+    completed = {str(prediction["audio"]) for prediction in predictions}
+    unknown = completed - expected_audio
+    if unknown:
+        raise ValueError(f"Resume checkpoint has {len(unknown)} audio names outside this benchmark run")
+    if len(completed) != len(predictions):
+        raise ValueError(f"Resume checkpoint contains duplicate audio names: {partial_path}")
+    if predictions:
+        print(f"[SenseVoice checkpoint] resuming {len(predictions)}/{len(rows)} saved predictions from {partial_path}", flush=True)
     started_all = time.perf_counter()
-    predictions: list[dict] = []
     print(f"[SenseVoice checkpoint] {len(rows)} {args.split}/{args.audio} samples", flush=True)
 
-    for index, row in enumerate(rows, 1):
+    for row in rows:
         name = str(row["clean_audio"] if args.audio == "clean" else row["noisy_audio"])
+        if name in completed:
+            continue
         audio_path = root / args.audio / name
         if not audio_path.is_file():
             raise FileNotFoundError(f"Audio file not found: {audio_path}")
         started = time.perf_counter()
-        result = model.generate(input=str(audio_path), cache={}, language="en", use_itn=True, batch_size=1)
+        # FunASR emits a tqdm block for every individual WAV.  Capturing it keeps
+        # Colab output responsive over thousands of samples while retaining the
+        # output when an individual decode genuinely fails.
+        model_output = io.StringIO()
+        try:
+            with contextlib.redirect_stdout(model_output), contextlib.redirect_stderr(model_output):
+                result = model.generate(input=str(audio_path), cache={}, language="en", use_itn=True, batch_size=1)
+        except Exception as error:
+            raise RuntimeError(f"SenseVoice inference failed for {audio_path}:\n{model_output.getvalue()}") from error
         elapsed_ms = (time.perf_counter() - started) * 1000
         prediction = clean_text(str(result[0].get("text", ""))) if result else ""
         reference = str(row["text"])
@@ -133,9 +189,13 @@ def main() -> None:
             "critical_hits": len(critical_ref & hyp_terms), "critical_total": len(critical_ref),
             "safety_hits": int(bool(safety_ref and safety_hyp and safety_ref.safety_id == safety_hyp.safety_id)), "safety_total": int(safety_ref is not None),
         })
+        completed.add(name)
+        index = len(predictions)
+        if args.resume and args.save_every and (index % args.save_every == 0 or index == len(rows)):
+            _write_partial_predictions(partial_path, predictions)
         if args.progress_every and (index % args.progress_every == 0 or index == len(rows)):
             elapsed = time.perf_counter() - started_all
-            rate = index / elapsed if elapsed else 0
+            rate = (index - resumed_count) / elapsed if elapsed else 0
             print(f"[SenseVoice checkpoint] {index}/{len(rows)} ({rate:.2f} samples/s)", flush=True)
 
     aggregate = {**summarize(predictions), "audio": args.audio, "split": args.split, "checkpoint": str(args.checkpoint.resolve()), "route": "pytorch_checkpoint"}
@@ -145,7 +205,6 @@ def main() -> None:
         for prediction in predictions:
             groups[str(prediction[field])].append(prediction)
         aggregate["breakdowns"][field] = {key: summarize(group) for key, group in sorted(groups.items())}
-    args.report_dir.mkdir(parents=True, exist_ok=True)
     with (args.report_dir / "predictions.csv").open("w", encoding="utf-8", newline="") as handle:
         writer = csv.DictWriter(handle, fieldnames=predictions[0].keys())
         writer.writeheader()
