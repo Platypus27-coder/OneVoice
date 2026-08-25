@@ -41,7 +41,15 @@ def load_model(checkpoint: Path, device: str):
     state = torch.load(checkpoint, map_location="cpu", weights_only=False)
     if "state_dict" not in state:
         raise ValueError(f"{checkpoint} is not a trainer checkpoint with state_dict")
-    wrapper = AutoModel(model="iic/SenseVoiceSmall", trust_remote_code=True, device=device, disable_update=True)
+    # SenseVoiceSmall is included in FunASR's registered model set.  Prefer the
+    # local implementation: ModelScope's remote-code probe emits a misleading
+    # `No module named model` warning even when inference subsequently works.
+    # Keep a compatibility fallback for older FunASR releases.
+    try:
+        wrapper = AutoModel(model="iic/SenseVoiceSmall", trust_remote_code=False, device=device, disable_update=True)
+    except Exception as local_error:
+        print(f"[SenseVoice checkpoint] local registry load failed; trying compatible remote-code fallback: {local_error}", flush=True)
+        wrapper = AutoModel(model="iic/SenseVoiceSmall", trust_remote_code=True, device=device, disable_update=True)
     trained = {key.removeprefix("module."): value for key, value in state["state_dict"].items()}
     missing, unexpected = wrapper.model.load_state_dict(trained, strict=False)
     if missing or unexpected:
