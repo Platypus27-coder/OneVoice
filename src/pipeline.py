@@ -82,10 +82,15 @@ class OneVoicePipeline:
         data_dir = self.cfg["pipeline"].get(
             "construction_data_dir", "data/onevoice_construction_v2"
         )
+        safety_source_csv = Path(
+            self.cfg["pipeline"].get("safety_source_csv")
+            or Path(data_dir) / "safety_fast_path.csv"
+        )
         self.context = ConstructionContextEngine.from_data_dir(
             data_dir,
             site_pack=site_pack,
             required_safety_review_status="approved" if self.profile == "edge" else None,
+            safety_path=safety_source_csv,
         )
         self.committer = SemanticCommitController(safety_confirmations=2)
         self.aligner = StablePrefixAligner()
@@ -101,7 +106,7 @@ class OneVoicePipeline:
         self.safety_audio = (
             SafetyAudioStore(
                 safety_audio_manifest,
-                source_csv=Path(data_dir) / "safety_fast_path.csv",
+                source_csv=safety_source_csv,
             )
             if safety_audio_manifest.is_file()
             else None

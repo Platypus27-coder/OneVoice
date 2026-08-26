@@ -124,12 +124,13 @@ class ConstructionContextEngine:
         data_dir: str | Path,
         site_pack: SitePack | None = None,
         required_safety_review_status: str | None = None,
+        safety_path: str | Path | None = None,
     ) -> "ConstructionContextEngine":
         root = Path(data_dir)
         return cls(
             root / "terminology_master.csv",
             root / "term_aliases.csv",
-            root / "safety_fast_path.csv",
+            Path(safety_path) if safety_path else root / "safety_fast_path.csv",
             site_pack=site_pack,
             required_safety_review_status=required_safety_review_status,
         )

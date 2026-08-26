@@ -87,6 +87,9 @@ pipeline:
   offline: false
   artifact_manifest: "artifacts/manifest.json"
   construction_data_dir: "data/onevoice_construction_v2"
+  # Set to an audited site/review CSV when using pre-generated safety audio.
+  # Empty uses construction_data_dir/safety_fast_path.csv.
+  safety_source_csv: ""
   safety_audio_manifest: "artifacts/safety_audio/manifest.json"
   frame_ms: 32
   vad_endpoint_ms: 500
