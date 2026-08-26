@@ -95,6 +95,16 @@ def main() -> None:
             f"Refusing to generate {len(unreviewed)} unapproved safety phrases; "
             f"required review_status={args.required_review_status}"
         )
+    missing_review_metadata = [
+        row["safety_id"]
+        for row in candidates
+        if not str(row.get("reviewer", "")).strip() or not str(row.get("reviewed_at", "")).strip()
+    ]
+    if missing_review_metadata:
+        raise RuntimeError(
+            f"Refusing to generate {len(missing_review_metadata)} approved phrases without "
+            "reviewer/reviewed_at metadata. Use scripts/prepare_safety_review.py first."
+        )
     rows = candidates
     def manifest_payload() -> dict:
         return {
