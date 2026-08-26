@@ -360,7 +360,19 @@ class OneVoicePipeline:
             f"commit→audio={commit_to_audio_ms:.0f}ms | compute={total_ms:.0f}ms"
         )
 
-    def load_models(self) -> None:
+    def load_models(
+        self,
+        *,
+        load_translation: bool = True,
+        load_tts: bool = True,
+    ) -> None:
+        """Load only the stages needed by the caller.
+
+        File-mode safety smoke tests must be able to exercise local ASR and the
+        pre-generated safety-audio store even if a normal TTS backend is not
+        bundled. Translation and TTS remain mandatory for normal routes and
+        for the microphone runtime.
+        """
         if self.offline:
             manifest = self.cfg["pipeline"].get("artifact_manifest", "artifacts/manifest.json")
             result = verify_artifacts(
@@ -374,8 +386,10 @@ class OneVoicePipeline:
         started = time.perf_counter()
         self.denoiser.load()
         self.asr.load(direction=self.direction)
-        self.translator.load()
-        self.tts.load(direction=self.direction)
+        if load_translation:
+            self.translator.load()
+        if load_tts:
+            self.tts.load(direction=self.direction)
         print(f"\n✅ Models loaded in {time.perf_counter() - started:.1f}s\n")
 
     def start(self) -> None:
@@ -430,7 +444,10 @@ class OneVoicePipeline:
     def process_file(self, input_path: str, output_path: str | None = None) -> str:
         import soundfile as sf
 
-        self.load_models()
+        # Safety audio has already been reviewed and generated locally. Delay
+        # normal MT/TTS startup until ASR confirms that this input is not a
+        # safety phrase; this makes the safety fast path testable offline.
+        self.load_models(load_translation=False, load_tts=False)
         audio, source_rate = sf.read(input_path, dtype="float32", always_2d=False)
         if audio.ndim > 1:
             audio = audio.mean(axis=1)
@@ -459,6 +476,7 @@ class OneVoicePipeline:
                 else None
             )
         else:
+            self.translator.load()
             canonical_source = self.context.canonicalize_source(
                 text, context, self.direction
             )
@@ -471,17 +489,25 @@ class OneVoicePipeline:
             raise RuntimeError("Unsafe translation: " + ", ".join(errors))
         if pre_generated:
             output_audio, sample_rate = pre_generated
+            route = "safety_audio"
         elif safety and self.profile == "edge":
             raise RuntimeError(f"Missing pre-generated edge safety audio: {safety.safety_id}")
         else:
+            self.tts.load(direction=self.direction)
             output_audio, sample_rate = self.tts.synthesize(
                 translated, self.direction, result.get("emotion", "neutral")
             )
+            route = "safety_tts" if safety else "normal_tts"
         if self.tts.is_silence(output_audio):
             raise RuntimeError("TTS returned silence")
         destination = Path(output_path or (self.report_dir or Path(".")) / "output.wav")
         destination.parent.mkdir(parents=True, exist_ok=True)
         sf.write(destination, output_audio, sample_rate)
+        safety_id = safety.safety_id if safety else "-"
+        print(
+            f"[File pipeline] route={route} safety_id={safety_id} "
+            f"source={text!r} target={translated!r}"
+        )
         return str(destination.resolve())
 
     def _save_reports(self) -> None:
