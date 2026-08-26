@@ -77,7 +77,14 @@ class SenseVoiceASR:
         if self._numeric_tag_api:
             # New funasr_onnx API consumes already-encoded prompt IDs. These
             # are the SenseVoice runtime's fixed English and with-ITN values.
-            result = self.model(audio_f32, language=4, textnorm=14)
+            # Its FP32 export accepts scalar tags, but ONNX Runtime's dynamic
+            # INT8 quantizer preserves the prompt inputs as rank-1 tensors.
+            # The public wrapper converts these values with ``np.array``, so
+            # provide one-element lists only for that quantized artifact.
+            if self.quantize:
+                result = self.model(audio_f32, language=[4], textnorm=[14])
+            else:
+                result = self.model(audio_f32, language=4, textnorm=14)
         else:
             result = self.model(audio_f32, language="en", textnorm="withitn")
         if not result:
