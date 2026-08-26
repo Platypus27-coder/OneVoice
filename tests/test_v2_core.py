@@ -484,7 +484,7 @@ class RuntimeSafetyTests(unittest.TestCase):
         self.assertFalse(fp32.quantize)
         self.assertTrue(default.quantize)
 
-    def test_sensevoice_new_onnx_api_uses_numeric_prompt_tags(self):
+    def test_sensevoice_new_onnx_api_defaults_to_rank_one_prompt_tags(self):
         class FakeSenseVoice:
             def __call__(self, waveform, **kwargs):
                 self.kwargs = kwargs
@@ -495,7 +495,7 @@ class RuntimeSafetyTests(unittest.TestCase):
         fake_model = FakeSenseVoice()
         adapter.model = fake_model
         adapter.transcribe(np.array([0.1], dtype=np.float32), 16000)
-        self.assertEqual(fake_model.kwargs, {"language": 4, "textnorm": 14})
+        self.assertEqual(fake_model.kwargs, {"language": [4], "textnorm": [14]})
 
     def test_sensevoice_new_onnx_int8_api_uses_rank_one_prompt_tags(self):
         class FakeSenseVoice:
@@ -509,6 +509,32 @@ class RuntimeSafetyTests(unittest.TestCase):
         adapter.model = fake_model
         adapter.transcribe(np.array([0.1], dtype=np.float32), 16000)
         self.assertEqual(fake_model.kwargs, {"language": [4], "textnorm": [14]})
+
+    def test_sensevoice_new_onnx_api_honors_scalar_prompt_metadata(self):
+        class Metadata:
+            def __init__(self, name):
+                self.name = name
+                self.shape = []
+
+        class Session:
+            @staticmethod
+            def get_inputs():
+                return [Metadata("language"), Metadata("textnorm")]
+
+        class FakeSenseVoice:
+            infer = type("Infer", (), {"session": Session()})()
+
+            def __call__(self, waveform, **kwargs):
+                self.kwargs = kwargs
+                return ["<|en|><|NEUTRAL|><|Speech|>secure the load"]
+
+        adapter = SenseVoiceASR({"sensevoice": {"quantize": False}})
+        adapter._numeric_tag_api = True
+        fake_model = FakeSenseVoice()
+        adapter.model = fake_model
+        adapter._detect_prompt_input_ranks()
+        adapter.transcribe(np.array([0.1], dtype=np.float32), 16000)
+        self.assertEqual(fake_model.kwargs, {"language": 4, "textnorm": 14})
 
     def test_development_gtts_fallback_is_used_for_both_output_languages(self):
         config = {

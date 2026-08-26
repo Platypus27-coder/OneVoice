@@ -17,6 +17,7 @@ class SenseVoiceASR:
         self.offline = offline
         self.model = None
         self._numeric_tag_api = False
+        self._prompt_input_ranks = {"language": 1, "textnorm": 1}
 
     def load(self) -> None:
         try:
@@ -41,8 +42,30 @@ class SenseVoiceASR:
             except Exception as exc:
                 raise RuntimeError(f"Could not prepare SenseVoice model: {exc}") from exc
         self.model = SenseVoiceSmall(model_dir, batch_size=1, quantize=self.quantize)
+        if self._numeric_tag_api:
+            self._detect_prompt_input_ranks()
         precision = "INT8" if self.quantize else "FP32"
         print(f"[ASR] ✅ SenseVoice ONNX ({precision}) loaded from {model_dir}")
+
+    def _detect_prompt_input_ranks(self) -> None:
+        """Read ONNX prompt metadata when the FunASR wrapper exposes it."""
+        infer = getattr(self.model, "infer", None)
+        session = getattr(infer, "session", None)
+        get_inputs = getattr(session, "get_inputs", None)
+        if not callable(get_inputs):
+            return
+        try:
+            for metadata in get_inputs():
+                name = str(getattr(metadata, "name", "")).casefold()
+                shape = getattr(metadata, "shape", None)
+                if name in self._prompt_input_ranks and isinstance(shape, (list, tuple)):
+                    self._prompt_input_ranks[name] = len(shape)
+        except Exception:
+            # Rank-1 is the safe default for the staged ONNX bundles.
+            return
+
+    def _prompt_tag(self, name: str, value: int) -> int | list[int]:
+        return value if self._prompt_input_ranks.get(name, 1) == 0 else [value]
 
     @staticmethod
     def _parse_output(raw_text: str) -> dict:
@@ -77,14 +100,13 @@ class SenseVoiceASR:
         if self._numeric_tag_api:
             # New funasr_onnx API consumes already-encoded prompt IDs. These
             # are the SenseVoice runtime's fixed English and with-ITN values.
-            # Its FP32 export accepts scalar tags, but ONNX Runtime's dynamic
-            # INT8 quantizer preserves the prompt inputs as rank-1 tensors.
-            # The public wrapper converts these values with ``np.array``, so
-            # provide one-element lists only for that quantized artifact.
-            if self.quantize:
-                result = self.model(audio_f32, language=[4], textnorm=[14])
-            else:
-                result = self.model(audio_f32, language=4, textnorm=14)
+            # The public wrapper converts them with ``np.array``. Honor each
+            # bundle's declared ONNX rank instead of guessing from precision.
+            result = self.model(
+                audio_f32,
+                language=self._prompt_tag("language", 4),
+                textnorm=self._prompt_tag("textnorm", 14),
+            )
         else:
             result = self.model(audio_f32, language="en", textnorm="withitn")
         if not result:
