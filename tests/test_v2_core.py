@@ -32,6 +32,8 @@ from scripts.reconcile_manifest_splits import reconcile_rows
 from scripts.prepare_sensevoice_finetune_data import prepare
 from scripts.manage_training_checkpoint import check_checkpoint, quarantine_checkpoint
 from scripts.benchmark_sensevoice_checkpoint import _load_partial_predictions, _write_partial_predictions
+from scripts.benchmark_asr_v2 import load_partial_predictions as load_asr_partial_predictions
+from scripts.benchmark_asr_v2 import write_partial_predictions as write_asr_partial_predictions
 from scripts.export_sensevoice_checkpoint_onnx import copy_runtime_bundle
 from streaming.semantic_commit import (
     RollingHypothesisAssembler,
@@ -405,6 +407,18 @@ class RuntimeSafetyTests(unittest.TestCase):
             ]
             _write_partial_predictions(partial, expected)
             self.assertEqual(_load_partial_predictions(partial), expected)
+            self.assertFalse(partial.with_suffix(".jsonl.tmp").exists())
+        finally:
+            shutil.rmtree(root, ignore_errors=True)
+
+    def test_asr_benchmark_partial_predictions_are_resumable(self):
+        root = ROOT / "tests" / ".tmp" / "asr-resume"
+        try:
+            root.mkdir(parents=True, exist_ok=True)
+            partial = root / "predictions.partial.jsonl"
+            expected = [{"audio": "example.wav", "prediction": "secure the load"}]
+            write_asr_partial_predictions(partial, expected)
+            self.assertEqual(load_asr_partial_predictions(partial), expected)
             self.assertFalse(partial.with_suffix(".jsonl.tmp").exists())
         finally:
             shutil.rmtree(root, ignore_errors=True)

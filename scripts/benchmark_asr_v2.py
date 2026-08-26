@@ -40,6 +40,32 @@ def read_manifest(path: Path, split: str, language: str) -> list[dict]:
     return rows
 
 
+def load_partial_predictions(path: Path) -> list[dict]:
+    if not path.is_file():
+        return []
+    rows: list[dict] = []
+    for line_number, line in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
+        if not line.strip():
+            continue
+        try:
+            row = json.loads(line)
+        except json.JSONDecodeError as error:
+            raise ValueError(f"Invalid resume checkpoint {path}:{line_number}") from error
+        if not isinstance(row, dict) or not row.get("audio"):
+            raise ValueError(f"Invalid prediction in resume checkpoint {path}:{line_number}")
+        rows.append(row)
+    return rows
+
+
+def write_partial_predictions(path: Path, predictions: list[dict]) -> None:
+    temporary = path.with_suffix(path.suffix + ".tmp")
+    temporary.write_text(
+        "".join(json.dumps(row, ensure_ascii=False) + "\n" for row in predictions),
+        encoding="utf-8",
+    )
+    temporary.replace(path)
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("manifest")
@@ -56,6 +82,8 @@ def main() -> None:
         default=25,
         help="Print measured progress every N samples (0 disables periodic progress).",
     )
+    parser.add_argument("--resume", action="store_true", help="Resume predictions.partial.jsonl in --report-dir")
+    parser.add_argument("--save-every", type=int, default=25, help="Checkpoint every N predictions when --resume is set")
     parser.add_argument("--config", default="config/config.yaml")
     parser.add_argument(
         "--sensevoice-model-dir",
@@ -95,6 +123,24 @@ def main() -> None:
         rows = rows[: args.max_samples]
     if args.progress_every < 0:
         parser.error("--progress-every must be zero or a positive integer")
+    if args.save_every < 0:
+        parser.error("--save-every must be zero or a positive integer")
+
+    output = Path(args.report_dir)
+    output.mkdir(parents=True, exist_ok=True)
+    partial_path = output / "predictions.partial.jsonl"
+    predictions: list[dict] = load_partial_predictions(partial_path) if args.resume else []
+    resumed_count = len(predictions)
+    expected_audio = {
+        str(row["clean_audio"] if args.audio == "clean" else row["audio"])
+        for row in rows
+    }
+    completed = {str(prediction["audio"]) for prediction in predictions}
+    unknown = completed - expected_audio
+    if unknown:
+        raise ValueError(f"Resume checkpoint has {len(unknown)} audio names outside this benchmark run")
+    if len(completed) != len(predictions):
+        raise ValueError(f"Resume checkpoint contains duplicate audio names: {partial_path}")
 
     asr = ASRManager(config, offline=bool(args.sensevoice_model_dir))
     asr.load(args.direction)
@@ -105,17 +151,20 @@ def main() -> None:
     context = ConstructionContextEngine.from_data_dir(
         config["pipeline"]["construction_data_dir"]
     )
-    predictions: list[dict] = []
     root = manifest.parent
     benchmark_started = time.perf_counter()
+    if predictions:
+        print(f"[ASR benchmark] resuming {resumed_count}/{len(rows)} saved predictions from {partial_path}", flush=True)
     print(
         f"[ASR benchmark] {args.direction}/{args.audio}: {len(rows)} {args.split} samples "
         f"(progress every {args.progress_every or 'disabled'})",
         flush=True,
     )
 
-    for index, row in enumerate(rows, start=1):
+    for row in rows:
         name = row["clean_audio"] if args.audio == "clean" else row["audio"]
+        if name in completed:
+            continue
         audio_path = root / args.audio / name
         audio, _ = librosa.load(audio_path, sr=16000, mono=True)
         started = time.perf_counter()
@@ -155,9 +204,13 @@ def main() -> None:
                 "safety_total": int(safety_ref is not None),
             }
         )
+        completed.add(name)
+        index = len(predictions)
+        if args.resume and args.save_every and (index % args.save_every == 0 or index == len(rows)):
+            write_partial_predictions(partial_path, predictions)
         if args.progress_every and (index % args.progress_every == 0 or index == len(rows)):
             elapsed_s = time.perf_counter() - benchmark_started
-            rate = index / elapsed_s if elapsed_s else 0.0
+            rate = (index - resumed_count) / elapsed_s if elapsed_s else 0.0
             remaining_s = (len(rows) - index) / rate if rate else 0.0
             print(
                 f"[ASR benchmark] processed {index}/{len(rows)} "
@@ -207,8 +260,6 @@ def main() -> None:
             key: summarize(items) for key, items in sorted(groups.items())
         }
 
-    output = Path(args.report_dir)
-    output.mkdir(parents=True, exist_ok=True)
     with (output / "predictions.csv").open("w", encoding="utf-8", newline="") as handle:
         writer = csv.DictWriter(handle, fieldnames=predictions[0].keys())
         writer.writeheader()
