@@ -17,7 +17,6 @@ class SenseVoiceASR:
         self.offline = offline
         self.model = None
         self._numeric_tag_api = False
-        self._prompt_input_ranks = {"language": 1, "textnorm": 1}
 
     def load(self) -> None:
         try:
@@ -42,30 +41,19 @@ class SenseVoiceASR:
             except Exception as exc:
                 raise RuntimeError(f"Could not prepare SenseVoice model: {exc}") from exc
         self.model = SenseVoiceSmall(model_dir, batch_size=1, quantize=self.quantize)
-        if self._numeric_tag_api:
-            self._detect_prompt_input_ranks()
         precision = "INT8" if self.quantize else "FP32"
         print(f"[ASR] ✅ SenseVoice ONNX ({precision}) loaded from {model_dir}")
 
-    def _detect_prompt_input_ranks(self) -> None:
-        """Read ONNX prompt metadata when the FunASR wrapper exposes it."""
-        infer = getattr(self.model, "infer", None)
-        session = getattr(infer, "session", None)
-        get_inputs = getattr(session, "get_inputs", None)
-        if not callable(get_inputs):
-            return
-        try:
-            for metadata in get_inputs():
-                name = str(getattr(metadata, "name", "")).casefold()
-                shape = getattr(metadata, "shape", None)
-                if name in self._prompt_input_ranks and isinstance(shape, (list, tuple)):
-                    self._prompt_input_ranks[name] = len(shape)
-        except Exception:
-            # Rank-1 is the safe default for the staged ONNX bundles.
-            return
+    @staticmethod
+    def _prompt_tag(value: int) -> list[int]:
+        """Build a rank-1 SenseVoice prompt tensor for newer FunASR wheels.
 
-    def _prompt_tag(self, name: str, value: int) -> int | list[int]:
-        return value if self._prompt_input_ranks.get(name, 1) == 0 else [value]
+        The public wrapper's metadata may report a scalar while the underlying
+        ONNX session requires rank one (both staged FP32 and INT8 bundles do).
+        Legacy ``SenseVoiceSmall`` uses string options and does not enter this
+        numeric branch.
+        """
+        return [value]
 
     @staticmethod
     def _parse_output(raw_text: str) -> dict:
@@ -100,12 +88,12 @@ class SenseVoiceASR:
         if self._numeric_tag_api:
             # New funasr_onnx API consumes already-encoded prompt IDs. These
             # are the SenseVoice runtime's fixed English and with-ITN values.
-            # The public wrapper converts them with ``np.array``. Honor each
-            # bundle's declared ONNX rank instead of guessing from precision.
+            # The public wrapper converts these one-element lists with
+            # ``np.array`` into the rank-1 tensors required by the ONNX graph.
             result = self.model(
                 audio_f32,
-                language=self._prompt_tag("language", 4),
-                textnorm=self._prompt_tag("textnorm", 14),
+                language=self._prompt_tag(4),
+                textnorm=self._prompt_tag(14),
             )
         else:
             result = self.model(audio_f32, language="en", textnorm="withitn")
