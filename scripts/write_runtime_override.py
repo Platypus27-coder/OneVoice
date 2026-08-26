@@ -28,6 +28,11 @@ def main() -> None:
     parser.add_argument("--mt-en2vi-dir", required=True, type=Path)
     parser.add_argument("--safety-csv", required=True, type=Path)
     parser.add_argument("--safety-manifest", required=True, type=Path)
+    parser.add_argument(
+        "--artifact-manifest",
+        type=Path,
+        help="Optional concrete SHA-256 manifest required before offline startup.",
+    )
     parser.add_argument("--profile", choices=["development", "premium"], default="development")
     args = parser.parse_args()
 
@@ -38,6 +43,8 @@ def main() -> None:
     require_dir(args.mt_en2vi_dir, "EN→VI MT", "config.json")
     require_file(args.safety_csv, "reviewed safety CSV")
     require_file(args.safety_manifest, "safety audio manifest")
+    if args.artifact_manifest is not None:
+        require_file(args.artifact_manifest, "runtime artifact manifest")
 
     config = yaml.safe_load(args.base_config.read_text(encoding="utf-8"))
     config["asr"]["gipformer_model_dir"] = str(args.gipformer_dir.resolve())
@@ -49,6 +56,8 @@ def main() -> None:
     config["pipeline"]["offline"] = True
     config["pipeline"]["safety_source_csv"] = str(args.safety_csv.resolve())
     config["pipeline"]["safety_audio_manifest"] = str(args.safety_manifest.resolve())
+    if args.artifact_manifest is not None:
+        config["pipeline"]["artifact_manifest"] = str(args.artifact_manifest.resolve())
 
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(
