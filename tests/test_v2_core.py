@@ -469,6 +469,19 @@ class RuntimeSafetyTests(unittest.TestCase):
         self.assertFalse(fp32.quantize)
         self.assertTrue(default.quantize)
 
+    def test_sensevoice_new_onnx_api_uses_numeric_prompt_tags(self):
+        class FakeSenseVoice:
+            def __call__(self, waveform, **kwargs):
+                self.kwargs = kwargs
+                return ["<|en|><|NEUTRAL|><|Speech|>secure the load"]
+
+        adapter = SenseVoiceASR({})
+        adapter._numeric_tag_api = True
+        fake_model = FakeSenseVoice()
+        adapter.model = fake_model
+        adapter.transcribe(np.array([0.1], dtype=np.float32), 16000)
+        self.assertEqual(fake_model.kwargs, {"language": 4, "textnorm": 14})
+
     def test_split_reconciliation_preserves_test_holdout_and_pattern_groups(self):
         rows, report = reconcile_rows(
             [

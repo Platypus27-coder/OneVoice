@@ -16,6 +16,7 @@ class SenseVoiceASR:
         self.quantize = bool(cfg.get("quantize", True))
         self.offline = offline
         self.model = None
+        self._numeric_tag_api = False
 
     def load(self) -> None:
         try:
@@ -26,6 +27,7 @@ class SenseVoiceASR:
             # accept model_dir/batch_size/quantize.
             try:
                 from funasr_onnx import SenseVoiceSmallONNX as SenseVoiceSmall
+                self._numeric_tag_api = True
             except ImportError:
                 raise ImportError("Install a funasr_onnx build with SenseVoice support to use EN→VI ASR") from exc
 
@@ -72,7 +74,12 @@ class SenseVoiceASR:
         # ``funasr_onnx`` interprets a list as a list of audio *paths*.
         # Pass the mono waveform directly so its ndarray branch is selected.
         # Its public option is ``textnorm`` (not ``use_itn``).
-        result = self.model(audio_f32, language="en", textnorm="withitn")
+        if self._numeric_tag_api:
+            # New funasr_onnx API consumes already-encoded prompt IDs. These
+            # are the SenseVoice runtime's fixed English and with-ITN values.
+            result = self.model(audio_f32, language=4, textnorm=14)
+        else:
+            result = self.model(audio_f32, language="en", textnorm="withitn")
         if not result:
             return {"text": "", "emotion": "neutral", "event": "speech"}
         return self._parse_output(str(result[0]))
