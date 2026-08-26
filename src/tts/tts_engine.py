@@ -51,6 +51,7 @@ class TTSEngine:
         self._en_tts = None        # English TTS engine
         self._vallex = None        # VALL-E X (Premium Mode)
         self._vi_tts_engine = None
+        self._vi_tts_engine_name = None
 
     def load(self, direction: str | None = None):
         """Initialize all TTS backends."""
@@ -307,6 +308,27 @@ class TTSEngine:
         except Exception as exc:
             raise RuntimeError(f"No local Vietnamese edge TTS available: {exc}") from exc
 
+    def _synthesize_gtts(self, text: str, language: str) -> tuple[np.ndarray, int]:
+        """Development-only online synthesis for pre-generated, reviewed WAVs."""
+        if self.offline:
+            raise RuntimeError("gTTS is unavailable in offline runtime")
+        from gtts import gTTS
+        from pydub import AudioSegment
+        import tempfile
+
+        mp3_path = None
+        try:
+            with tempfile.NamedTemporaryFile(suffix=".mp3", delete=False) as handle:
+                mp3_path = handle.name
+            gTTS(text=text, lang=language, slow=False).save(mp3_path)
+            segment = AudioSegment.from_mp3(mp3_path).set_channels(1)
+            samples = np.asarray(segment.get_array_of_samples(), dtype=np.float32)
+            scale = float(1 << (8 * segment.sample_width - 1))
+            return samples / scale, int(segment.frame_rate)
+        finally:
+            if mp3_path and os.path.exists(mp3_path):
+                os.unlink(mp3_path)
+
     def synthesize_vi(self, text: str, emotion: str = "neutral") -> np.ndarray:
         """
         Synthesize Vietnamese speech using OmniVoice (BetterBox-TTS).
@@ -382,6 +404,15 @@ class TTSEngine:
             except Exception as exc:
                 print(f"[TTS VI] ⚠ Local edge TTS failed: {exc}")
 
+        if not self.offline:
+            try:
+                audio, sample_rate = self._synthesize_gtts(text, "vi")
+                self._vi_tts_engine_name = "gtts-development"
+                print("[TTS VI] Using gTTS development fallback; not valid for runtime edge.")
+                return audio, sample_rate
+            except Exception as exc:
+                print(f"[TTS VI] gTTS fallback failed: {exc}")
+
         # Stub: silence
         return np.zeros(int(self.sample_rate * 0.5), dtype=np.float32), self.sample_rate
 
@@ -435,6 +466,15 @@ class TTSEngine:
         """
         t0 = time.perf_counter()
         engine = getattr(self, "_en_tts_engine", None)
+
+        if engine == "gtts":
+            try:
+                audio, sample_rate = self._synthesize_gtts(text, "en")
+                elapsed_ms = (time.perf_counter() - t0) * 1000
+                print(f"[TTS EN] {elapsed_ms:.0f}ms | gTTS development fallback")
+                return audio, sample_rate
+            except Exception as exc:
+                print(f"[TTS EN] gTTS fallback failed: {exc}")
 
         # ── [1] F5-TTS (Primary — Colab/Linux) ──────────────────────────────
         if engine == "f5tts":
@@ -530,6 +570,8 @@ class TTSEngine:
             return "omnivoice"
         if self._vi_tts_engine is not None:
             return "pyttsx3"
+        if self._vi_tts_engine_name:
+            return self._vi_tts_engine_name
         return "unavailable"
 
     def run(self, text_queue: queue.Queue):

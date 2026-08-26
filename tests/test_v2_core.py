@@ -42,6 +42,7 @@ from streaming.semantic_commit import (
 )
 from streaming.session import RollingUtteranceSession
 from translation.mt_engine import Translator
+from tts.tts_engine import TTSEngine
 
 
 DATA = ROOT / "data" / "onevoice_construction_v2"
@@ -508,6 +509,25 @@ class RuntimeSafetyTests(unittest.TestCase):
         adapter.model = fake_model
         adapter.transcribe(np.array([0.1], dtype=np.float32), 16000)
         self.assertEqual(fake_model.kwargs, {"language": [4], "textnorm": [14]})
+
+    def test_development_gtts_fallback_is_used_for_both_output_languages(self):
+        config = {
+            "audio": {"sample_rate": 16000},
+            "tts": {"en_speed": 1.0},
+            "profiles": {"development": {"tts_tier": "premium"}},
+        }
+        engine = TTSEngine(config, profile="development", offline=False)
+        engine._en_tts_engine = "gtts"
+        calls = []
+        engine._synthesize_gtts = lambda text, language: (  # type: ignore[method-assign]
+            calls.append((text, language)) or (np.array([0.25], dtype=np.float32), 22050)
+        )
+        english, english_sr = engine.synthesize("Stop now", "vi2en")
+        vietnamese, vietnamese_sr = engine.synthesize("Dừng lại", "en2vi")
+        self.assertEqual(calls, [("Stop now", "en"), ("Dừng lại", "vi")])
+        self.assertEqual((english_sr, vietnamese_sr), (22050, 22050))
+        self.assertFalse(engine.is_silence(english))
+        self.assertFalse(engine.is_silence(vietnamese))
 
     def test_split_reconciliation_preserves_test_holdout_and_pattern_groups(self):
         rows, report = reconcile_rows(
