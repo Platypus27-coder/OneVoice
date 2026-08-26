@@ -8,6 +8,7 @@ import hashlib
 import json
 import os
 import sys
+import tempfile
 from pathlib import Path
 
 import soundfile as sf
@@ -22,6 +23,33 @@ def hash_file(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
+def write_manifest(path: Path, payload: dict) -> None:
+    """Atomically write either a resumable partial or deployable final manifest."""
+    with tempfile.NamedTemporaryFile("w", encoding="utf-8", delete=False, dir=path.parent, suffix=".json") as handle:
+        json.dump(payload, handle, ensure_ascii=False, indent=2)
+        temporary_manifest = Path(handle.name)
+    temporary_manifest.replace(path)
+
+
+def load_resume_entries(manifest: Path, source_sha256: str, approval_id: str) -> dict[tuple[str, str], dict]:
+    """Return checksum-verified completed entries from an equivalent prior run."""
+    if not manifest.is_file():
+        return {}
+    payload = json.loads(manifest.read_text(encoding="utf-8"))
+    if payload.get("source_sha256") != source_sha256 or payload.get("approval_id") != approval_id:
+        raise RuntimeError(
+            "Existing safety-audio manifest belongs to another source CSV or approval ID; "
+            "choose a new output directory rather than mixing reviewed assets."
+        )
+    entries = {}
+    for entry in payload.get("entries", []):
+        key = (str(entry.get("safety_id", "")), str(entry.get("direction", "")))
+        path = manifest.parent / str(entry.get("path", ""))
+        if key[0] and key[1] and path.is_file() and hash_file(path) == entry.get("sha256"):
+            entries[key] = entry
+    return entries
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--config", default="config/config.yaml")
@@ -32,14 +60,26 @@ def main() -> None:
     parser.add_argument("--profile", choices=["development", "premium"], default="development")
     parser.add_argument("--approval-id", required=True, help="Safety/voice approval record ID")
     parser.add_argument("--required-review-status", default="approved")
+    parser.add_argument("--resume", action="store_true", help="Reuse checksum-verified WAVs from an interrupted equivalent run")
     args = parser.parse_args()
     with open(args.config, "r", encoding="utf-8") as handle:
         config = yaml.safe_load(handle)
     output = Path(args.output)
     output.mkdir(parents=True, exist_ok=True)
+    source_csv = Path(args.safety_csv)
+    source_sha256 = hash_file(source_csv)
+    manifest_path = output / "manifest.json"
+    partial_path = output / "manifest.partial.json"
+    resume_path = manifest_path if manifest_path.is_file() else partial_path
+    resumed = load_resume_entries(resume_path, source_sha256, args.approval_id) if args.resume else {}
+    if (manifest_path.is_file() or partial_path.is_file()) and not args.resume:
+        raise FileExistsError(
+            f"{manifest_path} or {partial_path} already exists. Pass --resume to reuse verified WAVs, "
+            "or choose a new output directory."
+        )
     engines = {}
     entries = []
-    with open(args.safety_csv, "r", encoding="utf-8-sig", newline="") as handle:
+    with source_csv.open("r", encoding="utf-8-sig", newline="") as handle:
         candidates = [
             row
             for row in csv.DictReader(handle)
@@ -56,11 +96,25 @@ def main() -> None:
             f"required review_status={args.required_review_status}"
         )
     rows = candidates
+    def manifest_payload() -> dict:
+        return {
+            "schema_version": 2,
+            "source_csv": str(source_csv.resolve()),
+            "source_sha256": source_sha256,
+            "approval_id": args.approval_id,
+            "entries": entries,
+        }
+
     for direction in ("vi2en", "en2vi"):
         tts = TTSEngine(config, profile=args.profile, offline=False)
         tts.load(direction)
         engines[direction] = tts
         for row in rows:
+            key = (row["safety_id"], direction)
+            if key in resumed:
+                entries.append(resumed[key])
+                print(f"[Safety audio] resumed {key[0]}/{key[1]}")
+                continue
             text = row["en"] if direction == "vi2en" else row["vi"]
             audio, sample_rate = tts.synthesize(text, direction)
             if tts.is_silence(audio):
@@ -80,21 +134,12 @@ def main() -> None:
                     "approval_id": args.approval_id,
                 }
             )
-    (output / "manifest.json").write_text(
-        json.dumps(
-            {
-                "schema_version": 2,
-                "source_csv": str(Path(args.safety_csv).resolve()),
-                "source_sha256": hash_file(Path(args.safety_csv)),
-                "approval_id": args.approval_id,
-                "entries": entries,
-            },
-            ensure_ascii=False,
-            indent=2,
-        ),
-        encoding="utf-8",
-    )
-    print(f"Generated {len(entries)} verified safety audio files in {output}")
+            # Do not publish partial audio to the runtime. The sibling partial
+            # manifest is only for safe resume after Colab interruption.
+            write_manifest(partial_path, manifest_payload())
+    write_manifest(manifest_path, manifest_payload())
+    partial_path.unlink(missing_ok=True)
+    print(f"Generated or resumed {len(entries)} verified safety audio files in {output}")
 
 
 if __name__ == "__main__":
