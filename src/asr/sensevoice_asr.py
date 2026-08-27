@@ -2,10 +2,29 @@
 
 from __future__ import annotations
 
+import json
 import os
 import re
 
 import numpy as np
+
+
+class _NumericTokenDecoder:
+    """Adapter expected by newer ``SenseVoiceSmallONNX.__call__``.
+
+    That API calls ``tokenizer.tokens2text(token_ids)``. Its SentencePiece
+    helper accepts token strings rather than token IDs, so bridge it with the
+    bundle's ``tokens.json`` ID vocabulary first.
+    """
+
+    def __init__(self, converter, text_tokenizer):
+        self._converter = converter
+        self._text_tokenizer = text_tokenizer
+
+    def tokens2text(self, token_ids) -> str:
+        return self._text_tokenizer.tokens2text(
+            self._converter.ids2tokens(token_ids)
+        )
 
 
 class SenseVoiceASR:
@@ -55,23 +74,37 @@ class SenseVoiceASR:
         treating their Python-list representation as ASR text prevents context
         and safety matching.
         """
-        existing = getattr(self.model, "tokenizer", None)
-        if existing is not None:
-            return existing
         try:
             from funasr_onnx.utils.sentencepiece_tokenizer import SentencepiecesTokenizer
+            from funasr_onnx.utils.utils import TokenIDConverter
         except ImportError as exc:
             raise ImportError(
                 "The installed funasr_onnx package lacks its SentencePiece tokenizer"
             ) from exc
         root = os.path.abspath(model_dir)
+        token_path = os.path.join(root, "tokens.json")
+        if not os.path.isfile(token_path):
+            raise FileNotFoundError(f"SenseVoice ONNX bundle is missing tokens.json: {root}")
+        token_payload = json.loads(open(token_path, encoding="utf-8").read())
+        if isinstance(token_payload, dict):
+            token_list = [
+                token
+                for token, _ in sorted(token_payload.items(), key=lambda item: int(item[1]))
+            ]
+        elif isinstance(token_payload, list):
+            token_list = token_payload
+        else:
+            raise ValueError(f"Invalid SenseVoice tokens.json format: {token_path}")
         for filename in (
             "chn_jpn_yue_eng_ko_spectok.bpe.model",
             "spiece.model",
         ):
             candidate = os.path.join(root, filename)
             if os.path.isfile(candidate):
-                return SentencepiecesTokenizer(bpemodel=candidate)
+                return _NumericTokenDecoder(
+                    TokenIDConverter(token_list),
+                    SentencepiecesTokenizer(bpemodel=candidate),
+                )
         raise FileNotFoundError(
             "SenseVoice ONNX bundle is missing its SentencePiece model "
             "(expected chn_jpn_yue_eng_ko_spectok.bpe.model or spiece.model)"
