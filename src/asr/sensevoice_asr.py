@@ -17,6 +17,7 @@ class SenseVoiceASR:
         self.offline = offline
         self.model = None
         self._numeric_tag_api = False
+        self._tokenizer = None
 
     def load(self) -> None:
         try:
@@ -41,8 +42,40 @@ class SenseVoiceASR:
             except Exception as exc:
                 raise RuntimeError(f"Could not prepare SenseVoice model: {exc}") from exc
         self.model = SenseVoiceSmall(model_dir, batch_size=1, quantize=self.quantize)
+        if self._numeric_tag_api:
+            self._tokenizer = self._load_numeric_api_tokenizer(model_dir)
         precision = "INT8" if self.quantize else "FP32"
         print(f"[ASR] ✅ SenseVoice ONNX ({precision}) loaded from {model_dir}")
+
+    def _load_numeric_api_tokenizer(self, model_dir: str):
+        """Load the local SentencePiece decoder required by newer FunASR ONNX.
+
+        ``SenseVoiceSmallONNX`` returns raw token IDs when its optional
+        ``tokenizer`` argument is omitted. Decoding those IDs is mandatory:
+        treating their Python-list representation as ASR text prevents context
+        and safety matching.
+        """
+        existing = getattr(self.model, "tokenizer", None)
+        if existing is not None:
+            return existing
+        try:
+            from funasr_onnx.utils.sentencepiece_tokenizer import SentencepiecesTokenizer
+        except ImportError as exc:
+            raise ImportError(
+                "The installed funasr_onnx package lacks its SentencePiece tokenizer"
+            ) from exc
+        root = os.path.abspath(model_dir)
+        for filename in (
+            "chn_jpn_yue_eng_ko_spectok.bpe.model",
+            "spiece.model",
+        ):
+            candidate = os.path.join(root, filename)
+            if os.path.isfile(candidate):
+                return SentencepiecesTokenizer(bpemodel=candidate)
+        raise FileNotFoundError(
+            "SenseVoice ONNX bundle is missing its SentencePiece model "
+            "(expected chn_jpn_yue_eng_ko_spectok.bpe.model or spiece.model)"
+        )
 
     @staticmethod
     def _prompt_tag(value: int) -> list[int]:
@@ -90,11 +123,17 @@ class SenseVoiceASR:
             # are the SenseVoice runtime's fixed English and with-ITN values.
             # The public wrapper converts these one-element lists with
             # ``np.array`` into the rank-1 tensors required by the ONNX graph.
-            result = self.model(
-                audio_f32,
-                language=self._prompt_tag(4),
-                textnorm=self._prompt_tag(14),
+            kwargs = {
+                "language": self._prompt_tag(4),
+                "textnorm": self._prompt_tag(14),
+            }
+            if self._tokenizer is not None:
+                kwargs["tokenizer"] = self._tokenizer
+            print(
+                "[ASR] SenseVoice numeric prompt "
+                f"language={kwargs['language']} textnorm={kwargs['textnorm']}"
             )
+            result = self.model(audio_f32, **kwargs)
         else:
             result = self.model(audio_f32, language="en", textnorm="withitn")
         if not result:
