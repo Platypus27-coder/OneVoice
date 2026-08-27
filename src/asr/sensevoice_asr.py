@@ -17,14 +17,13 @@ class _NumericTokenDecoder:
     bundle's ``tokens.json`` ID vocabulary first.
     """
 
-    def __init__(self, converter, text_tokenizer):
-        self._converter = converter
-        self._text_tokenizer = text_tokenizer
+    def __init__(self, token_list, sentencepiece_processor):
+        self._token_list = token_list
+        self._sentencepiece = sentencepiece_processor
 
     def tokens2text(self, token_ids) -> str:
-        return self._text_tokenizer.tokens2text(
-            self._converter.ids2tokens(token_ids)
-        )
+        pieces = [self._token_list[int(token_id)] for token_id in token_ids]
+        return self._sentencepiece.DecodePieces(pieces)
 
 
 class SenseVoiceASR:
@@ -75,11 +74,10 @@ class SenseVoiceASR:
         and safety matching.
         """
         try:
-            from funasr_onnx.utils.sentencepiece_tokenizer import SentencepiecesTokenizer
-            from funasr_onnx.utils.utils import TokenIDConverter
+            import sentencepiece as spm
         except ImportError as exc:
             raise ImportError(
-                "The installed funasr_onnx package lacks its SentencePiece tokenizer"
+                "sentencepiece is required to decode the local SenseVoice ONNX bundle"
             ) from exc
         root = os.path.abspath(model_dir)
         token_path = os.path.join(root, "tokens.json")
@@ -102,8 +100,8 @@ class SenseVoiceASR:
             candidate = os.path.join(root, filename)
             if os.path.isfile(candidate):
                 return _NumericTokenDecoder(
-                    TokenIDConverter(token_list),
-                    SentencepiecesTokenizer(bpemodel=candidate),
+                    token_list,
+                    spm.SentencePieceProcessor(model_file=candidate),
                 )
         raise FileNotFoundError(
             "SenseVoice ONNX bundle is missing its SentencePiece model "
