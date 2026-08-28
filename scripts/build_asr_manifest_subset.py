@@ -29,6 +29,7 @@ def main() -> None:
 
     selected: list[dict] = []
     seen_audio: set[str] = set()
+    audio_root = args.manifest.parent / args.audio
     for line_number, line in enumerate(args.manifest.read_text(encoding="utf-8").splitlines(), 1):
         if not line.strip():
             continue
@@ -48,7 +49,20 @@ def main() -> None:
         if args.dedupe_audio and audio_name in seen_audio:
             continue
         seen_audio.add(audio_name)
-        selected.append(row)
+        # benchmark_asr_v2 resolves a relative audio name against the parent
+        # of the manifest it receives.  This subset intentionally lives in a
+        # separate work directory, so make the selected path absolute.
+        wav_path = Path(audio_name)
+        if not wav_path.is_absolute():
+            wav_path = audio_root / wav_path
+        if not wav_path.is_file():
+            raise FileNotFoundError(
+                f"Selected {args.audio} WAV does not exist: {wav_path} "
+                f"(source manifest line {line_number})"
+            )
+        selected_row = dict(row)
+        selected_row["clean_audio" if args.audio == "clean" else "audio"] = str(wav_path)
+        selected.append(selected_row)
 
     if not selected:
         raise ValueError("No rows match the requested subset")
