@@ -34,6 +34,7 @@ TIME_LINE = re.compile(r"^\s*Time:\s*([0-9.]+)s\b")
 
 def read_rows(manifest: Path, split: str, audio: str, max_samples: int | None) -> list[dict]:
     rows: list[dict] = []
+    selected_names: set[str] = set()
     for line_number, line in enumerate(manifest.read_text(encoding="utf-8").splitlines(), 1):
         if not line.strip():
             continue
@@ -51,6 +52,12 @@ def read_rows(manifest: Path, split: str, audio: str, max_samples: int | None) -
             raise ValueError(f"Missing {audio} audio filename in {manifest}:{line_number}")
         if not str(row.get("text", "")).strip():
             raise ValueError(f"Missing transcript in {manifest}:{line_number}")
+        if name in selected_names:
+            raise ValueError(
+                f"Duplicate {audio} WAV selected: {name}. "
+                "Create a canonical deduplicated manifest before benchmarking."
+            )
+        selected_names.add(name)
         rows.append({**row, "_audio_name": name})
     if max_samples:
         rows = rows[:max_samples]

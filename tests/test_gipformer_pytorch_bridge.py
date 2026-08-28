@@ -1,7 +1,9 @@
+import json
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
-from scripts.benchmark_gipformer_pytorch import parse_upstream_output
+from scripts.benchmark_gipformer_pytorch import parse_upstream_output, read_rows
 
 
 class GIPFormerPyTorchBridgeTests(unittest.TestCase):
@@ -22,6 +24,17 @@ class GIPFormerPyTorchBridgeTests(unittest.TestCase):
     def test_parser_rejects_file_without_text(self):
         with self.assertRaises(ValueError):
             parse_upstream_output("File: /tmp/missing.wav\n")
+
+    def test_reader_rejects_duplicate_physical_wav(self):
+        row = {
+            "split": "dev", "language": "vi", "clean_audio": "same.wav",
+            "audio": "different.wav", "text": "dung lai",
+        }
+        manifest = Path("duplicate_manifest.jsonl")
+        payload = "\n".join(json.dumps(row) for _ in range(2))
+        with patch.object(Path, "read_text", return_value=payload):
+            with self.assertRaisesRegex(ValueError, "Duplicate clean WAV"):
+                read_rows(manifest, "dev", "clean", None)
 
 
 if __name__ == "__main__":
