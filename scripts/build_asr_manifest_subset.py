@@ -36,7 +36,11 @@ def main() -> None:
             row = json.loads(line)
         except json.JSONDecodeError as exc:
             raise ValueError(f"Invalid JSON in {args.manifest}:{line_number}") from exc
-        if row.get("split") != args.split or row.get("language") != args.language:
+        # V1 manifests predate the explicit language field.  A blank language
+        # is accepted here, matching the existing ASR benchmark's legacy
+        # compatibility rule; an explicitly different language is rejected.
+        row_language = str(row.get("language", "")).strip()
+        if row.get("split") != args.split or (row_language and row_language != args.language):
             continue
         audio_name = str(row.get("clean_audio") if args.audio == "clean" else row.get("audio", "")).strip()
         if not audio_name:
