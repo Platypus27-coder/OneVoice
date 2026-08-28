@@ -71,7 +71,8 @@ def import_upstream(icefall_dir: Path) -> dict[str, Any]:
     except ImportError as exc:
         raise ImportError(
             "Run this script with the official GIPFormer uv PyTorch environment "
-            "and pass its Icefall checkout via --icefall-dir."
+            "and pass its Icefall checkout via --icefall-dir. "
+            f"Original import error: {exc}"
         ) from exc
     return locals()
 
