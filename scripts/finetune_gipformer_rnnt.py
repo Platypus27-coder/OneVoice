@@ -67,7 +67,7 @@ def import_upstream(icefall_dir: Path) -> dict[str, Any]:
         import torch
         import torchaudio
         from torch.nn.utils.rnn import pad_sequence
-        from train import add_model_arguments, get_model, get_params
+        from train import get_model, get_params, get_parser
     except ImportError as exc:
         raise ImportError(
             "Run this script with the official GIPFormer uv PyTorch environment "
@@ -82,7 +82,7 @@ def load_model(stack: dict[str, Any], model_dir: Path, device: Any):
     k2 = stack["k2"]
     get_model = stack["get_model"]
     get_params = stack["get_params"]
-    add_model_arguments = stack["add_model_arguments"]
+    get_parser = stack["get_parser"]
     tokens = model_dir / "tokens.txt"
     checkpoint_path = model_dir / "model.pt"
     if not tokens.is_file() or not checkpoint_path.is_file() or not (model_dir / "bpe.model").is_file():
@@ -90,12 +90,10 @@ def load_model(stack: dict[str, Any], model_dir: Path, device: Any):
 
     token_table = k2.SymbolTable.from_file(tokens)
     params = get_params()
-    # GIPFormer's official inference script obtains these architecture defaults
-    # through train.add_model_arguments(parser) before calling get_model().
-    # This trainer must construct the identical parameter set, not rely on the
-    # smaller training-state dictionary returned by get_params().
-    defaults_parser = argparse.ArgumentParser(add_help=False)
-    add_model_arguments(defaults_parser)
+    # The upstream model factory depends on defaults spread across both its
+    # model and trainer parser (e.g. context_size, use_transducer).  Start
+    # from that complete parser so the model shape exactly matches inference.
+    defaults_parser = get_parser()
     params.update(vars(defaults_parser.parse_args([])))
     params.blank_id = token_table["<blk>"]
     count = sum(1 for symbol in token_table.symbols if not symbol.startswith("#"))
