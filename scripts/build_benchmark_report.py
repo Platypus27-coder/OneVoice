@@ -59,12 +59,22 @@ def gate(row: dict) -> str:
     return "EVIDENCE"
 
 
+def metric_value(row: dict, metric: str) -> object:
+    if metric == "critical_term_recall":
+        return row.get("critical_term_recall", row.get("critical_field_preservation"))
+    if metric == "reference_wer":
+        return row.get("reference_wer", row.get("wer"))
+    if metric == "wer":
+        return row.get("wer", row.get("reference_wer"))
+    return row.get(metric)
+
+
 def esc(value: object) -> str:
     return html.escape(str(value))
 
 
 def svg_chart(rows: list[dict], metric: str, title: str, lower_is_better: bool = False) -> str:
-    values = [(row, row.get(metric)) for row in rows if isinstance(row.get(metric), (int, float))]
+    values = [(row, metric_value(row, metric)) for row in rows if isinstance(metric_value(row, metric), (int, float))]
     if not values:
         return f"<p class='muted'>No {esc(metric)} artifacts found.</p>"
     values = values[:24]
