@@ -60,8 +60,13 @@ def read_records(path: Path) -> list[Record]:
             try:
                 with wave.open(str(audio_path), "rb") as handle:
                     duration = handle.getnframes() / max(handle.getframerate(), 1)
-            except (OSError, EOFError) as exc:
-                raise ValueError(f"Cannot read WAV header at {path}:{number}") from exc
+            except (OSError, EOFError, wave.Error):
+                # Some valid files accepted by torchaudio use a WAV container
+                # variant that Python's stdlib wave reader rejects (for
+                # example non-RIFF/extensible headers). Keep the record and
+                # use a neutral bucket duration; torchaudio remains the
+                # authoritative decoder and validates the audio in make_batch.
+                duration = 1.0
         duration = float(duration)
         if duration <= 0:
             raise ValueError(f"Invalid duration at {path}:{number}")
