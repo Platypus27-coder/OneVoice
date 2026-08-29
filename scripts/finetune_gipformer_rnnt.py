@@ -1,11 +1,11 @@
 """Production-oriented GIPFormer RNN-T construction-domain adaptation.
 
 The model factory and RNN-T loss come from the same pinned Icefall Zipformer
-source used to prove GIPFormer PyTorch/ONNX compatibility. The default is
-parameter-efficient *head fine-tuning*: only the RNN-T decoder and joiner are
-trainable while the acoustic encoder remains frozen. This preserves the proven
-ONNX architecture, reduces GPU/Drive pressure, and limits catastrophic
-forgetting on a synthetic domain dataset.
+source used to prove GIPFormer PyTorch/ONNX compatibility. Fine-tuning keeps
+the original model architecture intact so a later ONNX export remains valid.
+The default notebook recipe updates encoder, decoder and joiner with Icefall's
+ScaledAdam/Eden schedule; a decoder/joiner-only experiment is retained as a
+separate opt-in diagnostic and must not be promoted without the dev gate.
 
 Only prepared train/dev JSONL inputs are accepted; test is never loaded. The
 single ``last.pt`` checkpoint includes model, optimizer, scaler and exact batch
@@ -85,6 +85,7 @@ def import_upstream(icefall_dir: Path) -> dict[str, Any]:
         import torchaudio
         from torch.nn.utils.rnn import pad_sequence
         from train import get_model, get_params, get_parser
+        from icefall.optim import Eden, ScaledAdam, get_parameter_groups_with_lrs
     except ImportError as exc:
         raise ImportError(
             "Run this script with the official GIPFormer uv PyTorch environment "
@@ -92,6 +93,19 @@ def import_upstream(icefall_dir: Path) -> dict[str, Any]:
             f"Original import error: {exc}"
         ) from exc
     return locals()
+
+
+def make_optimizer(stack: dict[str, Any], model: Any, params: Any, learning_rate: float):
+    """Use Icefall's production optimizer/schedule for Zipformer adaptation."""
+    ScaledAdam = stack["ScaledAdam"]
+    Eden = stack["Eden"]
+    get_parameter_groups_with_lrs = stack["get_parameter_groups_with_lrs"]
+    groups = get_parameter_groups_with_lrs(
+        model, lr=learning_rate, include_names=True
+    )
+    optimizer = ScaledAdam(groups, lr=learning_rate, clipping_scale=2.0)
+    scheduler = Eden(optimizer, params.lr_batches, params.lr_epochs)
+    return optimizer, scheduler
 
 
 def load_model(stack: dict[str, Any], model_dir: Path, device: Any):
@@ -282,6 +296,7 @@ def make_resume_payload(
     model: Any,
     optimizer: Any,
     scaler: Any,
+    scheduler: Any,
     *,
     epoch: int,
     next_batch_index: int,
@@ -296,10 +311,11 @@ def make_resume_payload(
 ) -> dict[str, Any]:
     """A complete, atomic Colab-resume state; no model-only step snapshots."""
     return {
-        "recipe": "gipformer_head_ft_v1",
+        "recipe": "gipformer_icefall_ft_v2",
         "model": model.state_dict(),
         "optimizer": optimizer.state_dict(),
         "scaler": scaler.state_dict(),
+        "scheduler": scheduler.state_dict() if scheduler is not None else None,
         "epoch": epoch,
         "next_batch_index": next_batch_index,
         "global_step": global_step,
@@ -353,6 +369,9 @@ def main() -> None:
     parser.add_argument("--resume", choices=("auto", "never"), default="auto")
     parser.add_argument("--device", default="cuda")
     parser.add_argument("--no-fp16", action="store_true")
+    parser.add_argument("--optimizer", choices=("icefall", "adamw"), default="icefall")
+    parser.add_argument("--lr-batches", type=float, default=5000.0)
+    parser.add_argument("--lr-epochs", type=float, default=3.0)
     args = parser.parse_args()
     if args.epochs < 1 or args.batch_size < 1 or args.learning_rate <= 0:
         parser.error("epochs, batch-size, and learning-rate must be positive")
@@ -370,7 +389,7 @@ def main() -> None:
     device = torch.device("cuda")
     torch.manual_seed(args.seed)
     random.seed(args.seed)
-    trainable_prefixes = args.trainable_prefix or ["decoder", "joiner"]
+    trainable_prefixes = args.trainable_prefix or ["encoder", "decoder", "joiner"]
 
     train = read_records(args.train)
     dev = read_records(args.dev)
@@ -394,8 +413,14 @@ def main() -> None:
     params.am_scale = 0.0
     params.lm_scale = 0.25
     params.simple_loss_scale = 0.5
+    params.lr_batches = args.lr_batches
+    params.lr_epochs = args.lr_epochs
     sp = spm.SentencePieceProcessor(model_file=str(args.model_dir / "bpe.model"))
-    optimizer = torch.optim.AdamW(trainable_parameters, lr=args.learning_rate, weight_decay=0.01)
+    if args.optimizer == "icefall":
+        optimizer, scheduler = make_optimizer(stack, model, params, args.learning_rate)
+    else:
+        optimizer = torch.optim.AdamW(trainable_parameters, lr=args.learning_rate, weight_decay=0.01)
+        scheduler = None
     scaler = torch.amp.GradScaler("cuda", enabled=not args.no_fp16)
     fbank = make_fbank(stack, device)
 
@@ -410,7 +435,7 @@ def main() -> None:
         state = torch.load(last_path, map_location="cpu", weights_only=False)
         if state.get("train_sha256") != sha256(args.train) or state.get("dev_sha256") != sha256(args.dev):
             raise RuntimeError("Refusing resume: prepared train/dev manifests changed")
-        if state.get("recipe") not in (None, "gipformer_head_ft_v1"):
+        if state.get("recipe") not in (None, "gipformer_head_ft_v1", "gipformer_icefall_ft_v2"):
             raise RuntimeError(f"Refusing resume from a different recipe: {state.get('recipe')}")
         saved_prefixes = state.get("trainable_prefixes")
         if saved_prefixes is not None and list(saved_prefixes) != list(trainable_prefixes):
@@ -418,6 +443,8 @@ def main() -> None:
         model.load_state_dict(state["model"], strict=True)
         optimizer.load_state_dict(state["optimizer"])
         scaler.load_state_dict(state["scaler"])
+        if scheduler is not None and state.get("scheduler"):
+            scheduler.load_state_dict(state["scheduler"])
         if "next_batch_index" in state:
             start_epoch = int(state["epoch"])
             start_batch_index = int(state["next_batch_index"])
@@ -442,7 +469,8 @@ def main() -> None:
         "train_records": len(train),
         "dev_records": len(dev),
         "test_split_included": False,
-        "recipe": "gipformer_head_ft_v1",
+        "recipe": "gipformer_icefall_ft_v2",
+        "optimizer": args.optimizer,
         "trainable_prefixes": trainable_prefixes,
         "parameter_counts": parameter_counts,
         "args": vars(args),
@@ -474,6 +502,8 @@ def main() -> None:
             torch.nn.utils.clip_grad_norm_(trainable_parameters, 5.0)
             scaler.step(optimizer)
             scaler.update()
+            if scheduler is not None:
+                scheduler.step_batch(global_step)
             global_step += 1
             train_loss += float(loss.detach().cpu())
             train_frames += int(lengths.sum().detach().cpu())
@@ -491,6 +521,7 @@ def main() -> None:
                         model,
                         optimizer,
                         scaler,
+                        scheduler,
                         epoch=epoch,
                         next_batch_index=batch_index + 1,
                         global_step=global_step,
@@ -517,6 +548,8 @@ def main() -> None:
                     loss = rnnt_loss(stack, model, params, features, lengths, texts, sp)
                 dev_loss += float(loss.detach().cpu())
                 dev_frames += int(lengths.sum().detach().cpu())
+        if scheduler is not None:
+            scheduler.step_epoch(epoch - 1)
         normalized_dev = dev_loss / max(dev_frames, 1)
         normalized_train = train_loss / max(train_frames, 1)
         epoch_record = {"epoch": epoch, "global_step": global_step, "train_loss_per_frame": normalized_train, "dev_loss_per_frame": normalized_dev}
@@ -525,6 +558,7 @@ def main() -> None:
             model,
             optimizer,
             scaler,
+            scheduler,
             epoch=epoch + 1,
             next_batch_index=0,
             global_step=global_step,
