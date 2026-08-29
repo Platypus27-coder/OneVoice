@@ -13,6 +13,11 @@ import json
 from datetime import datetime, timezone
 from pathlib import Path
 
+try:  # Works both as ``python -m scripts...`` and ``python scripts/...py``.
+    from scripts.benchmark_selection import release_scope_note, select_release_rows
+except ModuleNotFoundError:  # pragma: no cover - direct script execution path
+    from benchmark_selection import release_scope_note, select_release_rows
+
 
 def load_aggregates(report_root: Path) -> list[dict]:
     rows: list[dict] = []
@@ -103,17 +108,21 @@ def svg_chart(rows: list[dict], metric: str, title: str, lower_is_better: bool =
     return f"<svg viewBox='0 0 {width} {height}' role='img' aria-label='{esc(title)}'>{''.join(bars)}</svg>"
 
 
-def markdown_report(rows: list[dict], generated: str) -> str:
+def markdown_report(rows: list[dict], generated: str, profile: str = "all") -> str:
     lines = [
-        "# OneVoice benchmark report",
+        f"# OneVoice benchmark report ({profile})",
         "",
         f"Generated: `{generated}`",
         "",
         "> Evidence is from checked benchmark artifacts. Synthetic audio and hosted/CPU measurements are not field-device or real-site validation.",
         "",
+        "## Scope",
+        "",
+        release_scope_note() if profile == "release" else "All discovered aggregate artifacts, including historical experiments.",
+        "",
         "## Summary",
         "",
-        f"- Aggregate artifacts: **{len(rows)}**",
+        f"- Aggregate artifacts in this report: **{len(rows)}**",
         f"- MT artifacts: **{sum(row['family'] == 'MT' for row in rows)}**",
         f"- ASR artifacts: **{sum(row['family'] == 'ASR' for row in rows)}**",
         "",
@@ -132,12 +141,12 @@ def markdown_report(rows: list[dict], generated: str) -> str:
     return "\n".join(lines) + "\n"
 
 
-def html_report(rows: list[dict], generated: str) -> str:
+def html_report(rows: list[dict], generated: str, profile: str = "all") -> str:
     asr = [row for row in rows if row["family"] == "ASR"]
     mt = [row for row in rows if row["family"] == "MT"]
     cards = f"""
       <div class='cards'>
-        <div class='card'><span>Artifacts</span><strong>{len(rows)}</strong></div>
+        <div class='card'><span>{esc(profile.title())} artifacts</span><strong>{len(rows)}</strong></div>
         <div class='card'><span>MT runs</span><strong>{len(mt)}</strong></div>
         <div class='card'><span>ASR runs</span><strong>{len(asr)}</strong></div>
         <div class='card'><span>Real-site data</span><strong>Not yet</strong></div>
@@ -172,13 +181,14 @@ def html_report(rows: list[dict], generated: str) -> str:
       @media(max-width:700px){ main{padding:26px 14px} h1{font-size:27px} }
     """
     return f"""<!doctype html><html lang='vi'><head><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'><title>OneVoice benchmark report</title><style>{styles}</style></head><body><main>
-      <h1>OneVoice benchmark report</h1><div class='subtitle'>Generated {esc(generated)}</div>
+      <h1>OneVoice benchmark report · {esc(profile)}</h1><div class='subtitle'>Generated {esc(generated)}</div>
+      <p class='notice'>Scope: {esc(release_scope_note() if profile == 'release' else 'All discovered aggregate artifacts, including historical experiments.')}</p>
       <p class='notice'>Các số liệu dưới đây lấy từ benchmark artifacts đã kiểm tra. Audio synthetic và hosted/CPU không phải validation công trường thực tế; chưa có real-site holdout.</p>
       {cards}
       <h2>ASR — error rate</h2><div class='chart'>{svg_chart(asr, 'wer', 'ASR WER', lower_is_better=True)}</div>
       <h2>ASR/MT — critical preservation</h2><div class='chart'>{svg_chart(asr + mt, 'critical_term_recall', 'Critical recall')}</div>
       <h2>MT — error rate</h2><div class='chart'>{svg_chart(mt, 'reference_wer', 'MT error rate', lower_is_better=True)}</div>
-      <h2>All aggregate artifacts</h2><div class='chart'><table><thead><tr><th>Family</th><th>Report</th><th>Direction/suite</th><th>Samples</th><th>WER/error</th><th>Critical</th><th>p95 ms</th><th>Gate</th></tr></thead><tbody>{''.join(table_rows)}</tbody></table></div>
+      <h2>{esc(profile.title())} aggregate artifacts</h2><div class='chart'><table><thead><tr><th>Family</th><th>Report</th><th>Direction/suite</th><th>Samples</th><th>WER/error</th><th>Critical</th><th>p95 ms</th><th>Gate</th></tr></thead><tbody>{''.join(table_rows)}</tbody></table></div>
       <p class='subtitle'>OneVoice V2 evidence report. Model promotion vẫn cần quality gate, offline preflight, edge profile và real-site holdout.</p>
     </main></body></html>"""
 
@@ -187,14 +197,23 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--report-root", type=Path, required=True)
     parser.add_argument("--output-dir", type=Path, required=True)
+    parser.add_argument("--profile", choices=["all", "release"], default="all")
     args = parser.parse_args()
-    rows = load_aggregates(args.report_root)
+    all_rows = load_aggregates(args.report_root)
+    rows = select_release_rows(all_rows, args.profile)
     generated = datetime.now(timezone.utc).isoformat(timespec="seconds")
     args.output_dir.mkdir(parents=True, exist_ok=True)
-    summary = {"generated_at": generated, "report_root": str(args.report_root.resolve()), "artifacts": rows}
+    summary = {
+        "generated_at": generated,
+        "profile": args.profile,
+        "report_root": str(args.report_root.resolve()),
+        "artifacts": rows,
+        "discovered_artifacts": len(all_rows),
+        "excluded_artifacts": len(all_rows) - len(rows),
+    }
     (args.output_dir / "summary.json").write_text(json.dumps(summary, ensure_ascii=False, indent=2), encoding="utf-8")
-    (args.output_dir / "report.md").write_text(markdown_report(rows, generated), encoding="utf-8")
-    (args.output_dir / "report.html").write_text(html_report(rows, generated), encoding="utf-8")
+    (args.output_dir / "report.md").write_text(markdown_report(rows, generated, args.profile), encoding="utf-8")
+    (args.output_dir / "report.html").write_text(html_report(rows, generated, args.profile), encoding="utf-8")
     print(json.dumps({"artifacts": len(rows), "html": str(args.output_dir / "report.html"), "markdown": str(args.output_dir / "report.md")}, ensure_ascii=False, indent=2))
 
 

@@ -6,6 +6,11 @@ import argparse
 import json
 from pathlib import Path
 
+try:  # Works both as ``python -m scripts...`` and ``python scripts/...py``.
+    from scripts.benchmark_selection import select_release_rows
+except ModuleNotFoundError:  # pragma: no cover - direct script execution path
+    from benchmark_selection import select_release_rows
+
 
 def _read_json(path: Path) -> dict:
     try:
@@ -22,7 +27,7 @@ def _metric(value: object) -> str:
     return str(value)
 
 
-def build_dashboard(report_root: str | Path, output: str | Path) -> list[dict]:
+def build_dashboard(report_root: str | Path, output: str | Path, profile: str = "all") -> list[dict]:
     root = Path(report_root)
     rows: list[dict] = []
     for aggregate_path in sorted(root.rglob("aggregate.json")):
@@ -47,8 +52,11 @@ def build_dashboard(report_root: str | Path, output: str | Path) -> list[dict]:
                 "samples": aggregate.get("samples", "—"),
             }
         )
+    rows = select_release_rows(rows, profile)
     lines = [
-        "# OneVoice benchmark dashboard",
+        f"# OneVoice benchmark dashboard ({profile})",
+        "",
+        ("Current runtime scope only; historical and rejected fine-tune runs are excluded." if profile == "release" else "All discovered artifacts, including historical experiments."),
         "",
         "Generated from checked benchmark artifacts. A missing value is shown as `—`; it is not a pass.",
         "",
@@ -73,8 +81,9 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--report-root", required=True)
     parser.add_argument("--output", required=True)
+    parser.add_argument("--profile", choices=["all", "release"], default="all")
     args = parser.parse_args()
-    rows = build_dashboard(args.report_root, args.output)
+    rows = build_dashboard(args.report_root, args.output, args.profile)
     print(f"Wrote {args.output} with {len(rows)} benchmark rows")
 
 

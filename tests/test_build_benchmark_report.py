@@ -1,6 +1,7 @@
 import unittest
 from pathlib import Path
 
+from scripts.benchmark_selection import select_release_rows
 from scripts.build_benchmark_report import classify, html_report, load_aggregates, markdown_report, metric_value
 
 
@@ -19,6 +20,20 @@ class BenchmarkReportTests(unittest.TestCase):
         self.assertEqual(len(rows), 1)
         self.assertIn("svg", html_report(rows, "now"))
         self.assertIn("candidate", markdown_report(rows, "now"))
+
+    def test_release_profile_excludes_historical_runs(self):
+        rows = [
+            {"report": "denoiser/passthrough/clean", "family": "ASR"},
+            {"report": "gipformer_vi_adaptation_v1/pytorch_finetuned_dev_noisy", "family": "ASR"},
+        ]
+        selected = select_release_rows(rows, "release")
+        self.assertEqual([row["report"] for row in selected], ["denoiser/passthrough/clean"])
+        self.assertIn("release_label", selected[0])
+
+    def test_report_profile_is_explicit(self):
+        rows = [{"family": "ASR", "report": "denoiser/passthrough/clean", "samples": 1}]
+        self.assertIn("report (release)", markdown_report(rows, "now", "release"))
+        self.assertIn("Current runtime", html_report(rows, "now", "release"))
 
 
 if __name__ == "__main__":

@@ -44,3 +44,16 @@ Production VI ASR is pinned to the verified pretrained GIPFormer ONNX bundle at
 experiments (`head_ft_v1`, `icefall_ft_v1` through `icefall_ft_v4`) failed the
 development quality gate and must not replace the baseline. The fine-tune
 notebook remains experimental only; it is not part of the runtime path.
+
+## Release benchmark (current runtime only)
+
+`colab_benchmark_report_v2.ipynb` now uses `PROFILE = 'release'` and writes
+`MyDrive/OneVoice/reports/onevoice_release_benchmark_v1/`. It includes only the
+reviewed runtime artifacts: the official GIPFormer VI->EN baseline, fine-tuned
+SenseVoice FP32 EN->VI, and the promoted EnViT5 validators. Historical,
+diagnostic, INT8, and rejected GIPFormer fine-tune reports remain available in
+the original `onevoice_benchmark_report_v1/` output and are never presented as
+the current release.
+
+To intentionally rebuild the complete historical report, change `PROFILE` to
+`'all'`; this is an audit view, not the release result.
