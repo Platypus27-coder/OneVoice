@@ -30,6 +30,8 @@ asr:
   num_threads: 2
   streaming: true
   chunk_length_s: 3        # Process 3-second audio chunks for low latency
+  # Release decision 2026-08-29: use the verified pretrained ONNX baseline.
+  # All construction-domain GIPFormer fine-tune candidates failed the dev gate.
   gipformer_model_dir: "models/gipformer"
   
 sensevoice:

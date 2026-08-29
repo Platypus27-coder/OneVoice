@@ -37,3 +37,10 @@ Nếu
 Drive V1 chưa có `manifest.jsonl`, notebook audit có thể phục hồi pairing/transcript/split từ filename và
 `utterances_all.csv`. Speaker, crop noise, SNR, RIR ngẫu nhiên của V1 không thể phục hồi nên vẫn là giới hạn phải
 báo cáo, không được dùng để tuyên bố chất lượng theo speaker/noise.
+## Release decision — 2026-08-29
+
+Production VI ASR is pinned to the verified pretrained GIPFormer ONNX bundle at
+`MyDrive/OneVoice/models/gipformer`. Construction-domain GIPFormer fine-tune
+experiments (`head_ft_v1`, `icefall_ft_v1` through `icefall_ft_v4`) failed the
+development quality gate and must not replace the baseline. The fine-tune
+notebook remains experimental only; it is not part of the runtime path.
