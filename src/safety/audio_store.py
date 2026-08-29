@@ -92,3 +92,8 @@ class SafetyAudioStore:
                 f"Safety audio sample-rate mismatch for {path}: {sample_rate} != {expected_rate}"
             )
         return audio.astype(np.float32), sample_rate
+
+    def path_for(self, safety_id: str, direction: str) -> Path | None:
+        """Return the already checksum-verified source WAV for byte-exact routing."""
+        entry = self._entries.get((safety_id, direction))
+        return entry[0] if entry else None

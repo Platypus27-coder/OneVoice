@@ -9,9 +9,11 @@ behind the shared V2 contracts and can be enabled without changing later stages.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import os
 import queue
+import shutil
 import sys
 import threading
 import time
@@ -129,6 +131,12 @@ class OneVoicePipeline:
         self.tts = TTSEngine(self.cfg, profile=self.profile, offline=self.offline)
         self.srt = SRTGenerator(bilingual=True)
         self._latency_log: list[dict] = []
+        self.last_file_result: dict | None = None
+        self._preflight_complete = False
+        self._denoiser_loaded = False
+        self._asr_loaded = False
+        self._translation_loaded = False
+        self._tts_loaded = False
 
     def _put(self, target: queue.Queue, item: object) -> bool:
         while not self.stop_event.is_set():
@@ -378,7 +386,7 @@ class OneVoicePipeline:
         bundled. Translation and TTS remain mandatory for normal routes and
         for the microphone runtime.
         """
-        if self.offline:
+        if self.offline and not self._preflight_complete:
             manifest = self.cfg["pipeline"].get("artifact_manifest", "artifacts/manifest.json")
             result = verify_artifacts(
                 manifest,
@@ -387,14 +395,29 @@ class OneVoicePipeline:
                 sample_rate=int(self.cfg["audio"]["sample_rate"]),
             )
             print(f"[Preflight] ✅ Local artifacts verified: {len(result['checked'])}")
+            self._preflight_complete = True
+        requested = (
+            not self._denoiser_loaded
+            or not self._asr_loaded
+            or (load_translation and not self._translation_loaded)
+            or (load_tts and not self._tts_loaded)
+        )
+        if not requested:
+            return
         print(f"\n🔄 Loading models (profile={self.profile}, offline={self.offline})...")
         started = time.perf_counter()
-        self.denoiser.load()
-        self.asr.load(direction=self.direction)
-        if load_translation:
+        if not self._denoiser_loaded:
+            self.denoiser.load()
+            self._denoiser_loaded = True
+        if not self._asr_loaded:
+            self.asr.load(direction=self.direction)
+            self._asr_loaded = True
+        if load_translation and not self._translation_loaded:
             self.translator.load()
-        if load_tts:
+            self._translation_loaded = True
+        if load_tts and not self._tts_loaded:
             self.tts.load(direction=self.direction)
+            self._tts_loaded = True
         print(f"\n✅ Models loaded in {time.perf_counter() - started:.1f}s\n")
 
     def start(self) -> None:
@@ -452,7 +475,9 @@ class OneVoicePipeline:
         # Safety audio has already been reviewed and generated locally. Delay
         # normal MT/TTS startup until ASR confirms that this input is not a
         # safety phrase; this makes the safety fast path testable offline.
+        file_started = time.perf_counter()
         self.load_models(load_translation=False, load_tts=False)
+        load_complete = time.perf_counter()
         audio, source_rate = sf.read(input_path, dtype="float32", always_2d=False)
         if audio.ndim > 1:
             audio = audio.mean(axis=1)
@@ -466,13 +491,19 @@ class OneVoicePipeline:
                 np.arange(len(audio)),
                 audio,
             ).astype(np.float32)
+        denoise_started = time.perf_counter()
         clean = self.denoiser.process(audio, self.cfg["audio"]["sample_rate"])
+        denoise_ms = (time.perf_counter() - denoise_started) * 1000
+        asr_started = time.perf_counter()
         result = self.asr.transcribe(clean, self.direction)
+        asr_ms = (time.perf_counter() - asr_started) * 1000
         if not result.get("text"):
             raise RuntimeError("ASR returned an empty transcript")
         text = normalize(result["text"], result["lang"])
         context = self.context.analyze(text, self.direction)
         safety = context.safety_candidates[0] if context.safety_candidates else None
+        canonical_source = text
+        mt_started = time.perf_counter()
         if safety:
             translated = safety.translated_text
             pre_generated = (
@@ -480,15 +511,25 @@ class OneVoicePipeline:
                 if self.safety_audio
                 else None
             )
+            pre_generated_path = (
+                self.safety_audio.path_for(safety.safety_id, self.direction)
+                if self.safety_audio
+                else None
+            )
         else:
-            self.translator.load()
             canonical_source = self.context.canonicalize_source(
                 text, context, self.direction
             )
-            translated = context.translation_memory or self.translator.translate(
-                canonical_source, self.direction
-            )
+            if context.translation_memory:
+                translated = context.translation_memory
+                translation_route = "translation_memory"
+            else:
+                self.load_models(load_translation=True, load_tts=False)
+                translated = self.translator.translate(canonical_source, self.direction)
+                translation_route = "mt"
             pre_generated = None
+            pre_generated_path = None
+        mt_ms = (time.perf_counter() - mt_started) * 1000
         errors = self.context.validate_translation(translated, context, self.direction)
         if errors and context.risk_level in {"high", "critical"}:
             raise RuntimeError("Unsafe translation: " + ", ".join(errors))
@@ -498,17 +539,78 @@ class OneVoicePipeline:
         elif safety and self.profile == "edge":
             raise RuntimeError(f"Missing pre-generated edge safety audio: {safety.safety_id}")
         else:
-            self.tts.load(direction=self.direction)
+            tts_started = time.perf_counter()
+            self.load_models(load_translation=False, load_tts=True)
             output_audio, sample_rate = self.tts.synthesize(
                 translated, self.direction, result.get("emotion", "neutral")
             )
-            route = "safety_tts" if safety else "normal_tts"
+            route = "safety_tts" if safety else f"normal_{translation_route}_tts"
+        tts_ms = 0.0 if pre_generated else (time.perf_counter() - tts_started) * 1000
         if self.tts.is_silence(output_audio):
             raise RuntimeError("TTS returned silence")
         destination = Path(output_path or (self.report_dir or Path(".")) / "output.wav")
         destination.parent.mkdir(parents=True, exist_ok=True)
-        sf.write(destination, output_audio, sample_rate)
+        if pre_generated_path is not None:
+            shutil.copyfile(pre_generated_path, destination)
+        else:
+            sf.write(destination, output_audio, sample_rate)
         safety_id = safety.safety_id if safety else "-"
+        output_sha256 = hashlib.sha256(destination.read_bytes()).hexdigest()
+        commit_id = hashlib.sha256(
+            f"{self.direction}\0{Path(input_path).resolve()}\0{output_sha256}".encode("utf-8")
+        ).hexdigest()[:16]
+        self.last_file_result = {
+            "schema_version": 1,
+            "commit_id": commit_id,
+            "direction": self.direction,
+            "profile": self.profile,
+            "offline": self.offline,
+            "input_path": str(Path(input_path).resolve()),
+            "output_path": str(destination.resolve()),
+            "output_sha256": output_sha256,
+            "output_sample_rate": int(sample_rate),
+            "output_samples": int(len(output_audio)),
+            "asr_text": text,
+            "canonical_source": canonical_source,
+            "translation": translated,
+            "route": route,
+            "safety_id": None if safety is None else safety.safety_id,
+            "domain": context.domain,
+            "intent": context.intent,
+            "risk_level": context.risk_level,
+            "entities": context.entities,
+            "validation_errors": errors,
+            "model_reference": self.translator.model_reference,
+            "artifacts": {
+                "release_lock": self.cfg["pipeline"].get("release_lock")
+                or self.cfg["pipeline"].get("artifact_manifest"),
+                "asr_model_dir": (
+                    self.cfg["asr"].get("gipformer_model_dir")
+                    if self.direction == "vi2en"
+                    else self.cfg["sensevoice"].get("model_path")
+                ),
+                "tts_engine": "safety_audio"
+                if pre_generated_path is not None
+                else self.tts.engine_name(self.direction),
+            },
+            "timings_ms": {
+                "startup": (load_complete - file_started) * 1000,
+                "denoise": denoise_ms,
+                "asr": asr_ms,
+                "mt_or_memory": mt_ms,
+                "tts": tts_ms,
+                "complete_turn": (time.perf_counter() - file_started) * 1000,
+            },
+        }
+        if self.report_dir:
+            self.report_dir.mkdir(parents=True, exist_ok=True)
+            report_path = self.report_dir / "file_result.json"
+            temporary = report_path.with_suffix(".json.tmp")
+            temporary.write_text(
+                json.dumps(self.last_file_result, ensure_ascii=False, indent=2),
+                encoding="utf-8",
+            )
+            temporary.replace(report_path)
         print(
             f"[File pipeline] route={route} safety_id={safety_id} "
             f"source={text!r} target={translated!r}"

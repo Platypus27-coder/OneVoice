@@ -122,15 +122,17 @@ GIPFormer adaptation + real-site holdout + physical device + AEC
 **GPU:** Colab T4 hữu ích cho smoke; acceptance phải báo đúng hardware/backend  
 **Thời lượng dự kiến:** 2–3 ngày
 
-- [ ] P1-01: tạo `scripts/run_release_e2e.py` dùng public CLI/runtime thật, không gọi model riêng lẻ.
-- [ ] P1-02: fixed suite tối thiểu 20 normal + 20 safety cases/direction.
-- [ ] P1-03: input VI→EN lấy từ VI corpus; input EN→VI lấy từ EN V2.1; không dùng output WAV làm reference sai direction.
-- [ ] P1-04: xác minh route `normal_mt_tts` và `safety_audio` tách biệt.
-- [ ] P1-05: output WAV decode được, non-silent, sample rate đúng và commit ID khớp report.
-- [ ] P1-06: validator giữ negation, number, unit, direction và equipment ID.
-- [ ] P1-07: safety output phải khớp checksum WAV trong manifest.
-- [ ] P1-08: lỗi worker/model/TTS phải làm process exit khác 0; không có silent success.
-- [ ] P1-09: report gồm ASR text, canonical/context text, route, translation, engine/artifact, timestamps và failure reason.
+- [x] P1-01: tạo `scripts/run_release_e2e.py` dùng public CLI/runtime thật, không gọi model riêng lẻ.
+- [x] P1-02: fixed suite tối thiểu 20 normal + 20 safety cases/direction.
+- [x] P1-03: input VI→EN lấy từ VI corpus; input EN→VI lấy từ EN V2.1; không dùng output WAV làm reference sai direction.
+- [x] P1-04: xác minh route `normal_mt_tts` và `safety_audio` tách biệt.
+- [x] P1-05: output WAV decode được, non-silent, sample rate đúng và commit ID khớp report.
+- [x] P1-06: validator giữ negation, number, unit, direction và equipment ID.
+- [x] P1-07: safety output phải khớp checksum WAV trong manifest.
+- [x] P1-08: lỗi worker/model/TTS phải làm process exit khác 0; không có silent success.
+- [x] P1-09: report gồm ASR text, canonical/context text, route, translation, engine/artifact, timestamps và failure reason.
+
+**Trạng thái P1:** runner và acceptance checks đã triển khai; exit gate vẫn chờ chạy suite thật trên Drive. Normal route có thể fail cho tới khi P3 khóa được TTS offline.
 
 **Checkpoint/resume:** mỗi case có result JSON riêng trên Drive; rerun bỏ qua case đã có đủ WAV + checksum + report.  
 **Exit gate:** cả hai direction chạy normal/safety end-to-end bằng artifact release hiện tại.
