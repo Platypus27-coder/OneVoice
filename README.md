@@ -288,3 +288,34 @@ Chúng tôi trân trọng tri ân các công trình mã nguồn mở được t�
 - **GIPFormer**: G-Group AI Lab (MIT)
 - **SenseVoice**: FunAudioLLM / Alibaba (MIT)
 - **VietAI/envit5**: VietAI (MIT)
+
+---
+
+## Benchmark release hiện tại
+
+README chỉ hiển thị các artifact của runtime đang dùng; các lần thử nghiệm
+historical được giữ riêng trong báo cáo đầy đủ. Kết quả này dùng audio
+synthetic/hosted, chưa phải validation công trường thật.
+
+[Báo cáo Markdown](report.md) · [Báo cáo HTML](report.html) · [Dữ liệu JSON](summary.json)
+
+### Critical preservation (%)
+
+```mermaid
+xychart-beta
+    title "OneVoice release - critical preservation"
+    x-axis ["VI-EN ASR C", "VI-EN ASR N", "EN-VI ASR C", "EN-VI ASR N", "VI-EN MT T", "VI-EN MT S", "EN-VI MT T", "EN-VI MT S"]
+    y-axis "percent" 0 --> 100
+    bar [85.76, 76.29, 99.52, 99.17, 99.28, 100.00, 98.98, 100.00]
+```
+
+| Nhánh | Artifact đang dùng | Critical | Ghi chú |
+|---|---|---:|---|
+| VI -> EN ASR | GIPFormer official ONNX baseline | 85.76% clean / 76.29% noisy | Chưa đạt gate 95%; không dùng bản fine-tune lỗi |
+| EN -> VI ASR | SenseVoice fine-tuned ONNX FP32 | 99.52% clean / 99.17% noisy | INT8 không được promote |
+| VI -> EN MT | EnViT5 fine-tuned + validator v4 | 99.28% test / 100% safety | Context route |
+| EN -> VI MT | EnViT5 fine-tuned + validator v2 | 98.98% test / 100% safety | Context route |
+
+Biểu đồ được ghi trực tiếp trong Markdown bằng Mermaid để GitHub render được;
+chi tiết WER, terminology, entity, latency và toàn bộ 10 benchmark nằm trong
+`report.html` và `report.md`.
