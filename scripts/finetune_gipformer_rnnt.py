@@ -104,10 +104,14 @@ def load_model(stack: dict[str, Any], model_dir: Path, device: Any):
     checkpoint = torch.load(checkpoint_path, map_location="cpu", weights_only=False)
     state = checkpoint["model"] if isinstance(checkpoint, dict) and "model" in checkpoint else checkpoint
     incompatible = model.load_state_dict(state, strict=False)
-    if incompatible.missing_keys or incompatible.unexpected_keys:
+    # The published checkpoint also carries an auxiliary CTC head.  This
+    # recipe intentionally adapts the RNN-T path only, so those two extra
+    # tensors are expected and safely ignored.  Any other mismatch is fatal.
+    unexpected = [key for key in incompatible.unexpected_keys if not key.startswith("ctc_output.")]
+    if incompatible.missing_keys or unexpected:
         raise RuntimeError(
             "Official checkpoint is not architecture-compatible: "
-            f"missing={incompatible.missing_keys[:8]}, unexpected={incompatible.unexpected_keys[:8]}"
+            f"missing={incompatible.missing_keys[:8]}, unexpected={unexpected[:8]}"
         )
     model.to(device)
     return model, params
