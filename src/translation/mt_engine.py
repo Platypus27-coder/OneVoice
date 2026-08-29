@@ -37,11 +37,15 @@ class Translator:
         self.offline = bool(offline or profile == "edge")
         self.model_name = str(
             model_source
+            or direction_cfg.get("release_model")
             or direction_cfg.get("development_model")
             or cfg.get("model", "VietAI/envit5-translation")
         )
-        self.model_revision = model_revision or direction_cfg.get("model_revision") or cfg.get(
-            "model_revision"
+        self.model_revision = (
+            model_revision
+            or direction_cfg.get("release_revision")
+            or direction_cfg.get("model_revision")
+            or cfg.get("model_revision")
         )
         self.model_dir = Path(
             direction_cfg.get("local_model_dir") or cfg.get("model_dir", "models/envit5")

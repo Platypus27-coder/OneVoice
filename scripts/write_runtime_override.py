@@ -33,6 +33,11 @@ def main() -> None:
         type=Path,
         help="Optional concrete SHA-256 manifest required before offline startup.",
     )
+    parser.add_argument(
+        "--release-lock",
+        type=Path,
+        help="Concrete release_lock_v2.json; preferred over --artifact-manifest.",
+    )
     parser.add_argument("--profile", choices=["development", "premium"], default="development")
     args = parser.parse_args()
 
@@ -45,11 +50,15 @@ def main() -> None:
     require_file(args.safety_manifest, "safety audio manifest")
     if args.artifact_manifest is not None:
         require_file(args.artifact_manifest, "runtime artifact manifest")
+    if args.release_lock is not None:
+        require_file(args.release_lock, "runtime release lock")
 
     config = yaml.safe_load(args.base_config.read_text(encoding="utf-8"))
     config["asr"]["gipformer_model_dir"] = str(args.gipformer_dir.resolve())
     config["sensevoice"]["model_path"] = str(args.sensevoice_dir.resolve())
     config["sensevoice"]["quantize"] = False  # INT8 candidate failed its quality gate.
+    config["sensevoice"]["allow_remote_fallback"] = False
+    config["sensevoice"].pop("remote_model", None)
     config["translation"]["directions"]["vi2en"]["local_model_dir"] = str(args.mt_vi2en_dir.resolve())
     config["translation"]["directions"]["en2vi"]["local_model_dir"] = str(args.mt_en2vi_dir.resolve())
     config["pipeline"]["profile"] = args.profile
@@ -58,6 +67,10 @@ def main() -> None:
     config["pipeline"]["safety_audio_manifest"] = str(args.safety_manifest.resolve())
     if args.artifact_manifest is not None:
         config["pipeline"]["artifact_manifest"] = str(args.artifact_manifest.resolve())
+    if args.release_lock is not None:
+        locked = str(args.release_lock.resolve())
+        config["pipeline"]["artifact_manifest"] = locked
+        config["pipeline"]["release_lock"] = locked
 
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(

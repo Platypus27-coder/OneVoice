@@ -1,6 +1,6 @@
 # OneVoice — Kế hoạch chặng tiếp theo: Release Integration & Edge Hardening
 
-> **Trạng thái:** DRAFT FOR REVIEW — chỉ lập kế hoạch, chưa bắt đầu triển khai chặng mới  
+> **Trạng thái:** APPROVED / IN PROGRESS — P0 đã triển khai trong source; chờ materialize release lock trên Drive
 > **Ngày lập:** 29/08/2026  
 > **Mục tiêu:** biến các model/artifact đã được chọn thành một bản OneVoice V2 demo/release-candidate chạy end-to-end, offline và tái lập được trên Colab/Google Drive; không fine-tune lại GIPFormer trong chặng này.  
 > **Nguồn sự thật:** source code, release benchmark, manifest SHA-256 và report chạy thật. README/demo không thay thế acceptance gate.
@@ -103,14 +103,14 @@ GIPFormer adaptation + real-site holdout + physical device + AEC
 **GPU:** không cần  
 **Thời lượng dự kiến:** 1–2 ngày
 
-- [ ] P0-01: đổi registry từ tên `candidate` sang `release` cho hai EnViT5 đã pass.
-- [ ] P0-02: config mặc định theo direction trỏ đúng local/HF artifact đã fine-tune; không còn vô tình dùng `VietAI/envit5-translation` khi release artifact tồn tại.
-- [ ] P0-03: GIPFormer runtime chỉ trỏ `models/gipformer`; từ chối đường dẫn chứa candidate fine-tune bị reject.
-- [ ] P0-04: SenseVoice runtime chỉ trỏ ONNX FP32 release bundle; INT8 không được auto-select.
-- [ ] P0-05: sinh `artifacts/release_lock_v2.json` gồm source, revision, SHA-256, license, sample rate, direction và profile.
-- [ ] P0-06: manifest ghi rõ safety source CSV/review revision và checksum.
-- [ ] P0-07: test startup fail rõ khi thiếu/corrupt/sai hash model.
-- [ ] P0-08: test production/offline config không chứa runtime download hoặc remote fallback.
+- [x] P0-01: đổi registry từ tên `candidate` sang `release` cho hai EnViT5 đã pass.
+- [x] P0-02: config mặc định theo direction trỏ đúng local/HF artifact đã fine-tune; không còn vô tình dùng `VietAI/envit5-translation` khi release artifact tồn tại.
+- [x] P0-03: GIPFormer runtime chỉ trỏ `models/gipformer`; từ chối đường dẫn chứa candidate fine-tune bị reject.
+- [x] P0-04: SenseVoice runtime chỉ trỏ ONNX FP32 release bundle; INT8 không được auto-select.
+- [ ] P0-05: sinh `artifacts/release_lock_v2.json` gồm source, revision, SHA-256, license, sample rate, direction và profile. **Code/notebook DONE; chờ chạy notebook trên Drive để materialize file thật.**
+- [ ] P0-06: manifest ghi rõ safety source CSV/review revision và checksum. **Code/notebook DONE; chờ materialize cùng P0-05.**
+- [x] P0-07: test startup fail rõ khi thiếu/corrupt/sai hash model.
+- [x] P0-08: test production/offline config không chứa runtime download hoặc remote fallback.
 
 **Exit gate:** một config release duy nhất, artifact provenance đầy đủ và startup không thể chọn nhầm model cũ.
 

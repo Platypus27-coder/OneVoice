@@ -31,7 +31,8 @@ class SenseVoiceASR:
         cfg = config.get("sensevoice", {})
         self.model_dir = cfg.get("model_path", "models/sensevoice")
         self.remote_model = cfg.get("remote_model", "iic/SenseVoiceSmall")
-        self.quantize = bool(cfg.get("quantize", True))
+        self.quantize = bool(cfg.get("quantize", False))
+        self.allow_remote_fallback = bool(cfg.get("allow_remote_fallback", False))
         self.offline = offline
         self.model = None
         self._numeric_tag_api = False
@@ -54,6 +55,11 @@ class SenseVoiceASR:
         if not os.path.isdir(model_dir):
             if self.offline:
                 raise FileNotFoundError(f"Missing offline SenseVoice model: {model_dir}")
+            if not self.allow_remote_fallback:
+                raise FileNotFoundError(
+                    "Verified local SenseVoice FP32 bundle not found and remote fallback "
+                    f"is disabled: {model_dir}"
+                )
             try:
                 from modelscope import snapshot_download
                 model_dir = snapshot_download(self.remote_model)

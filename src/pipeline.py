@@ -114,7 +114,12 @@ class OneVoicePipeline:
 
         self.capture = AudioCapture(self.q_audio_raw, self.cfg)
         self.denoiser = Denoiser(self.cfg.get("denoise", {}))
-        self.asr = ASRManager(self.cfg, offline=self.offline)
+        self.asr = ASRManager(
+            self.cfg,
+            offline=self.offline,
+            enforce_release=True,
+            direction=self.direction,
+        )
         self.translator = Translator(
             self.cfg,
             offline=self.offline,

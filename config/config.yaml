@@ -35,8 +35,10 @@ asr:
   gipformer_model_dir: "models/gipformer"
   
 sensevoice:
-  model_path: "models/sensevoice"    # Production path must be local
-  remote_model: "iic/SenseVoiceSmall"
+  # Fine-tuned release exported to the verified FP32 ONNX runtime bundle.
+  model_path: "models/sensevoice_en_construction_v1_onnx_fp32"
+  quantize: false
+  allow_remote_fallback: false
 
 # ─────────────────────────────────────────────
 # Trạm 2: Machine Translation (VietAI envit5)
@@ -46,14 +48,12 @@ translation:
   direction: "vi2en"                     # Default direction
   directions:
     vi2en:
-      development_model: "VietAI/envit5-translation"
-      # Candidate only: benchmark with --model-source; do not promote before held-out gate.
-      candidate_model: "platypus123/onevoice-envit5-vi-en"
-      local_model_dir: "models/mt/vi2en/"
+      release_model: "platypus123/onevoice-envit5-vi-en"
+      local_model_dir: "models/envit5_finetuned_vi2en_v1/"
       edge_model_dir: "models/mt/vi2en_ort_genai/"
     en2vi:
-      development_model: "VietAI/envit5-translation"
-      local_model_dir: "models/mt/en2vi/"
+      release_model: "platypus123/onevoice-envit5-en-vi"
+      local_model_dir: "models/envit5_finetuned_en2vi_v1/best/"
       edge_model_dir: "models/mt/en2vi_ort_genai/"
 
 # ─────────────────────────────────────────────

@@ -129,7 +129,19 @@ class ASRManager:
       direction="en2vi" → SenseVoice (English input with emotion detection)
     """
 
-    def __init__(self, config: dict, offline: bool = False):
+    def __init__(
+        self,
+        config: dict,
+        offline: bool = False,
+        enforce_release: bool = False,
+        direction: str | None = None,
+    ):
+        if enforce_release:
+            if direction is None:
+                raise ValueError("direction is required when enforce_release=True")
+            from runtime.release_policy import validate_release_config
+
+            validate_release_config(config, direction)
         self.cfg = config
         self.offline = offline
         self._vi_asr = GIPFormerASR(

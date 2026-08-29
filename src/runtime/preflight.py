@@ -45,6 +45,50 @@ def verify_artifacts(
     checked: list[str] = []
     errors: list[str] = []
     if schema_version >= 2:
+        if payload.get("manifest_kind") == "onevoice.release_lock":
+            models = payload.get("models")
+            if not isinstance(models, list) or not models:
+                errors.append("release lock requires a non-empty 'models' list")
+            else:
+                applicable = [model for model in models if model.get("direction") == direction]
+                if not applicable:
+                    errors.append(f"release lock has no model for direction={direction}")
+                for model in applicable:
+                    revision = str(model.get("revision", "")).strip().casefold()
+                    if not revision or revision in {"main", "master", "unknown"}:
+                        errors.append(
+                            f"{model.get('key', 'model')}: immutable revision is required"
+                        )
+                    if not str(model.get("license", "")).strip():
+                        errors.append(f"{model.get('key', 'model')}: license is required")
+            safety = payload.get("safety_provenance")
+            if not isinstance(safety, dict):
+                errors.append("release lock requires safety_provenance")
+            else:
+                for key in (
+                    "source_csv",
+                    "source_sha256",
+                    "audio_manifest",
+                    "audio_manifest_sha256",
+                    "review_revision",
+                ):
+                    if not str(safety.get(key, "")).strip():
+                        errors.append(f"safety_provenance.{key} is required")
+                for path_key, hash_key in (
+                    ("source_csv", "source_sha256"),
+                    ("audio_manifest", "audio_manifest_sha256"),
+                ):
+                    raw_safety_path = str(safety.get(path_key, "")).strip()
+                    expected_safety_hash = str(safety.get(hash_key, "")).strip().casefold()
+                    if not raw_safety_path or len(expected_safety_hash) != 64:
+                        continue
+                    safety_path = Path(raw_safety_path)
+                    if not safety_path.is_absolute():
+                        safety_path = root / safety_path
+                    if not safety_path.is_file():
+                        errors.append(f"safety_provenance.{path_key}: file not found")
+                    elif _sha256(safety_path) != expected_safety_hash:
+                        errors.append(f"safety_provenance.{path_key}: SHA-256 mismatch")
         supported_rates = payload.get("sample_rates")
         if not isinstance(supported_rates, list) or not supported_rates:
             errors.append("schema v2 requires a non-empty 'sample_rates' list")

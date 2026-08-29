@@ -3,6 +3,7 @@ from __future__ import annotations
 import hashlib
 import json
 import shutil
+import subprocess
 import sys
 import time
 import unittest
@@ -25,6 +26,7 @@ from evaluation.real_site import audit_real_site_manifest, write_holdout_lock
 from evaluation.metrics import cer, corpus_error_rate, wer
 from evaluation.reporting import create_run_manifest
 from runtime.preflight import ArtifactPreflightError, verify_artifacts
+from runtime.release_policy import ReleasePolicyError, validate_release_config
 from scripts.recover_v1_manifest import UNRECOVERABLE, recover
 from scripts.build_benchmark_dashboard import build_dashboard
 from scripts.analyze_mt_errors import analyze_report
@@ -484,7 +486,7 @@ class RuntimeSafetyTests(unittest.TestCase):
         fp32 = SenseVoiceASR({"sensevoice": {"model_path": "candidate", "quantize": False}})
         default = SenseVoiceASR({"sensevoice": {"model_path": "baseline"}})
         self.assertFalse(fp32.quantize)
-        self.assertTrue(default.quantize)
+        self.assertFalse(default.quantize)
 
     def test_sensevoice_new_onnx_api_defaults_to_rank_one_prompt_tags(self):
         class FakeSenseVoice:
@@ -566,36 +568,78 @@ class RuntimeSafetyTests(unittest.TestCase):
         self.assertIn("—", content)
         shutil.rmtree(report_root)
 
-    def test_mt_registry_is_direction_specific_and_candidate_is_explicit(self):
+    def test_mt_registry_is_direction_specific_and_release_is_default(self):
         config = {
             "translation": {
                 "max_length": 128,
                 "directions": {
                     "vi2en": {
-                        "development_model": "base-vi-en",
-                        "candidate_model": "candidate-vi-en",
+                        "release_model": "release-vi-en",
                         "local_model_dir": "models/mt/vi2en",
                         "edge_model_dir": "models/mt/vi2en_ort",
                     },
                     "en2vi": {
-                        "development_model": "base-en-vi",
+                        "release_model": "release-en-vi",
                         "local_model_dir": "models/mt/en2vi",
                         "edge_model_dir": "models/mt/en2vi_ort",
                     },
                 },
             }
         }
-        base = Translator(config, direction="vi2en")
-        candidate = Translator(
-            config, direction="vi2en", model_source="candidate-vi-en", model_revision="abc123"
+        release = Translator(config, direction="vi2en")
+        explicit = Translator(
+            config, direction="vi2en", model_source="diagnostic-vi-en", model_revision="abc123"
         )
         reverse = Translator(config, direction="en2vi")
-        self.assertEqual(base.model_reference["source"], "base-vi-en")
-        self.assertEqual(candidate.model_reference["source"], "candidate-vi-en")
-        self.assertEqual(candidate.model_reference["revision"], "abc123")
-        self.assertEqual(reverse.model_reference["source"], "base-en-vi")
+        self.assertEqual(release.model_reference["source"], "release-vi-en")
+        self.assertEqual(explicit.model_reference["source"], "diagnostic-vi-en")
+        self.assertEqual(explicit.model_reference["revision"], "abc123")
+        self.assertEqual(reverse.model_reference["source"], "release-en-vi")
         with self.assertRaises(ValueError):
-            base.translate("xin chào", "en2vi")
+            release.translate("xin chào", "en2vi")
+
+    def test_release_policy_rejects_failed_asr_candidates_and_int8(self):
+        valid = {
+            "asr": {"gipformer_model_dir": "models/gipformer"},
+            "sensevoice": {
+                "model_path": "models/sensevoice_en_construction_v1_onnx_fp32",
+                "quantize": False,
+            },
+        }
+        validate_release_config(valid, "vi2en")
+        validate_release_config(valid, "en2vi")
+
+        rejected_gipformer = json.loads(json.dumps(valid))
+        rejected_gipformer["asr"]["gipformer_model_dir"] = (
+            "models/gipformer_vi_construction_icefall_ft_v4/best"
+        )
+        with self.assertRaisesRegex(ReleasePolicyError, "Rejected GIPFormer"):
+            validate_release_config(rejected_gipformer, "vi2en")
+
+        rejected_sensevoice = json.loads(json.dumps(valid))
+        rejected_sensevoice["sensevoice"]["quantize"] = True
+        with self.assertRaisesRegex(ReleasePolicyError, "INT8"):
+            validate_release_config(rejected_sensevoice, "en2vi")
+
+    def test_checked_in_config_selects_released_models_without_remote_fallback(self):
+        import yaml
+
+        config = yaml.safe_load((ROOT / "config" / "config.yaml").read_text(encoding="utf-8"))
+        directions = config["translation"]["directions"]
+        self.assertEqual(
+            directions["vi2en"]["release_model"],
+            "platypus123/onevoice-envit5-vi-en",
+        )
+        self.assertEqual(
+            directions["en2vi"]["release_model"],
+            "platypus123/onevoice-envit5-en-vi",
+        )
+        self.assertNotIn("candidate_model", directions["vi2en"])
+        self.assertFalse(config["sensevoice"]["quantize"])
+        self.assertFalse(config["sensevoice"]["allow_remote_fallback"])
+        self.assertNotIn("remote_model", config["sensevoice"])
+        validate_release_config(config, "vi2en")
+        validate_release_config(config, "en2vi")
 
     def test_gipformer_download_uses_pinned_current_artifact_names(self):
         self.assertEqual(GIPFORMER_REVISION, "29621ec87ffec8fde06be25ed2150d4a1f41dbc9")
@@ -747,6 +791,105 @@ class RuntimeSafetyTests(unittest.TestCase):
         finally:
             artifact.unlink(missing_ok=True)
             manifest.unlink(missing_ok=True)
+
+    def test_release_lock_materializes_model_and_safety_provenance(self):
+        root = ROOT / "tests" / ".tmp" / "release-lock"
+        shutil.rmtree(root, ignore_errors=True)
+        try:
+            root.mkdir(parents=True)
+            vi_model = root / "vi.bin"
+            en_model = root / "en.bin"
+            safety_csv = root / "safety.csv"
+            safety_manifest = root / "safety-manifest.json"
+            artifact_manifest = root / "artifact-manifest.json"
+            release_lock = root / "release_lock_v2.json"
+            vi_model.write_bytes(b"vi")
+            en_model.write_bytes(b"en")
+            safety_csv.write_text("safety_id,review_status\nS1,approved\n", encoding="utf-8")
+            source_hash = hashlib.sha256(safety_csv.read_bytes()).hexdigest()
+            safety_manifest.write_text(
+                json.dumps(
+                    {
+                        "schema_version": 2,
+                        "approval_id": "review-v1",
+                        "source_sha256": source_hash,
+                        "entries": [],
+                    }
+                ),
+                encoding="utf-8",
+            )
+            artifact_manifest.write_text(
+                json.dumps(
+                    {
+                        "schema_version": 2,
+                        "sample_rates": [16000],
+                        "required_backends": [],
+                        "artifacts": [
+                            {
+                                "name": "vi/model.bin",
+                                "path": vi_model.name,
+                                "sha256": hashlib.sha256(vi_model.read_bytes()).hexdigest(),
+                                "license": "MIT",
+                                "directions": ["vi2en"],
+                                "profiles": ["development"],
+                            },
+                            {
+                                "name": "en/model.bin",
+                                "path": en_model.name,
+                                "sha256": hashlib.sha256(en_model.read_bytes()).hexdigest(),
+                                "license": "Apache-2.0",
+                                "directions": ["en2vi"],
+                                "profiles": ["development"],
+                            },
+                        ],
+                    }
+                ),
+                encoding="utf-8",
+            )
+            subprocess.run(
+                [
+                    sys.executable,
+                    str(ROOT / "scripts" / "build_release_lock.py"),
+                    "--artifact-manifest",
+                    str(artifact_manifest),
+                    "--output",
+                    str(release_lock),
+                    "--model",
+                    "vi",
+                    "org/vi",
+                    "a" * 40,
+                    "MIT",
+                    "vi2en",
+                    "vi",
+                    "--model",
+                    "en",
+                    "org/en",
+                    "b" * 40,
+                    "Apache-2.0",
+                    "en2vi",
+                    "en",
+                    "--safety-source",
+                    str(safety_csv),
+                    "--safety-manifest",
+                    str(safety_manifest),
+                    "--safety-review-revision",
+                    "review-v1",
+                ],
+                check=True,
+            )
+            payload = json.loads(release_lock.read_text(encoding="utf-8"))
+            self.assertEqual(payload["manifest_kind"], "onevoice.release_lock")
+            self.assertEqual(payload["safety_provenance"]["source_sha256"], source_hash)
+            self.assertEqual(len(payload["models"]), 2)
+            self.assertEqual(
+                verify_artifacts(release_lock, "vi2en", "development", 16000)["checked"],
+                ["vi/model.bin"],
+            )
+            safety_csv.write_text("changed", encoding="utf-8")
+            with self.assertRaisesRegex(ArtifactPreflightError, "safety_provenance"):
+                verify_artifacts(release_lock, "vi2en", "development", 16000)
+        finally:
+            shutil.rmtree(root, ignore_errors=True)
 
     def test_real_site_group_isolation_and_holdout_lock(self):
         root = ROOT / "tests" / ".tmp"
