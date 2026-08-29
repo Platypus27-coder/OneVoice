@@ -85,7 +85,11 @@ def import_upstream(icefall_dir: Path) -> dict[str, Any]:
         import torchaudio
         from torch.nn.utils.rnn import pad_sequence
         from train import get_model, get_params, get_parser
-        from icefall.optim import Eden, ScaledAdam, get_parameter_groups_with_lrs
+        # GIPFormer's pinned Icefall checkout keeps the optimizer in the
+        # recipe directory (``optim.py``), while parameter grouping lives in
+        # ``icefall.utils``.  Do not assume a newer ``icefall.optim`` module.
+        from optim import Eden, ScaledAdam
+        from icefall.utils import get_parameter_groups_with_lrs
     except ImportError as exc:
         raise ImportError(
             "Run this script with the official GIPFormer uv PyTorch environment "
