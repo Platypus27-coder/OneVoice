@@ -84,7 +84,7 @@ def import_upstream(icefall_dir: Path) -> dict[str, Any]:
         import torch
         import torchaudio
         from torch.nn.utils.rnn import pad_sequence
-        from train import get_model, get_params, get_parser
+        from train import get_model, get_params, get_parser, set_batch_count
         # GIPFormer's pinned Icefall checkout keeps the optimizer in the
         # recipe directory (``optim.py``), while parameter grouping lives in
         # ``icefall.utils``.  Do not assume a newer ``icefall.optim`` module.
@@ -212,7 +212,16 @@ def make_batch(
     return features, lengths, texts
 
 
-def rnnt_loss(stack: dict[str, Any], model: Any, params: Any, features: Any, lengths: Any, texts: list[str], sp: Any):
+def rnnt_loss(
+    stack: dict[str, Any],
+    model: Any,
+    params: Any,
+    features: Any,
+    lengths: Any,
+    texts: list[str],
+    sp: Any,
+    batch_count: int,
+):
     k2 = stack["k2"]
     targets = k2.RaggedTensor(sp.encode(texts, out_type=int))
     simple_loss, pruned_loss, _ = model(
@@ -223,7 +232,14 @@ def rnnt_loss(stack: dict[str, Any], model: Any, params: Any, features: Any, len
         am_scale=params.am_scale,
         lm_scale=params.lm_scale,
     )[:3]
-    return params.simple_loss_scale * simple_loss + pruned_loss
+    warm_step = max(int(params.warm_step), 1)
+    simple_scale = (
+        params.simple_loss_scale
+        if batch_count >= warm_step
+        else 1.0 - (batch_count / warm_step) * (1.0 - params.simple_loss_scale)
+    )
+    pruned_scale = 1.0 if batch_count >= warm_step else 0.1 + 0.9 * (batch_count / warm_step)
+    return simple_scale * simple_loss + pruned_scale * pruned_loss
 
 
 def configure_trainable_parameters(model: Any, prefixes: list[str]) -> tuple[list[Any], dict[str, int]]:
@@ -315,7 +331,7 @@ def make_resume_payload(
 ) -> dict[str, Any]:
     """A complete, atomic Colab-resume state; no model-only step snapshots."""
     return {
-        "recipe": "gipformer_icefall_ft_v2",
+        "recipe": "gipformer_icefall_ft_v3",
         "model": model.state_dict(),
         "optimizer": optimizer.state_dict(),
         "scaler": scaler.state_dict(),
@@ -376,6 +392,7 @@ def main() -> None:
     parser.add_argument("--optimizer", choices=("icefall", "adamw"), default="icefall")
     parser.add_argument("--lr-batches", type=float, default=5000.0)
     parser.add_argument("--lr-epochs", type=float, default=3.0)
+    parser.add_argument("--warm-step", type=int, default=2000)
     args = parser.parse_args()
     if args.epochs < 1 or args.batch_size < 1 or args.learning_rate <= 0:
         parser.error("epochs, batch-size, and learning-rate must be positive")
@@ -417,6 +434,7 @@ def main() -> None:
     params.am_scale = 0.0
     params.lm_scale = 0.25
     params.simple_loss_scale = 0.5
+    params.warm_step = args.warm_step
     params.lr_batches = args.lr_batches
     params.lr_epochs = args.lr_epochs
     sp = spm.SentencePieceProcessor(model_file=str(args.model_dir / "bpe.model"))
@@ -439,7 +457,7 @@ def main() -> None:
         state = torch.load(last_path, map_location="cpu", weights_only=False)
         if state.get("train_sha256") != sha256(args.train) or state.get("dev_sha256") != sha256(args.dev):
             raise RuntimeError("Refusing resume: prepared train/dev manifests changed")
-        if state.get("recipe") not in (None, "gipformer_head_ft_v1", "gipformer_icefall_ft_v2"):
+        if state.get("recipe") not in (None, "gipformer_head_ft_v1", "gipformer_icefall_ft_v2", "gipformer_icefall_ft_v3"):
             raise RuntimeError(f"Refusing resume from a different recipe: {state.get('recipe')}")
         saved_prefixes = state.get("trainable_prefixes")
         if saved_prefixes is not None and list(saved_prefixes) != list(trainable_prefixes):
@@ -473,7 +491,7 @@ def main() -> None:
         "train_records": len(train),
         "dev_records": len(dev),
         "test_split_included": False,
-        "recipe": "gipformer_icefall_ft_v2",
+        "recipe": "gipformer_icefall_ft_v3",
         "optimizer": args.optimizer,
         "trainable_prefixes": trainable_prefixes,
         "parameter_counts": parameter_counts,
@@ -498,9 +516,10 @@ def main() -> None:
             features, lengths, texts = make_batch(
                 stack, batch, fbank, device, args.max_duration, args.load_workers, args.cache_audio_dir
             )
+            stack["set_batch_count"](model, global_step)
             optimizer.zero_grad(set_to_none=True)
             with torch.autocast(device_type="cuda", dtype=torch.float16, enabled=not args.no_fp16):
-                loss = rnnt_loss(stack, model, params, features, lengths, texts, sp)
+                loss = rnnt_loss(stack, model, params, features, lengths, texts, sp, global_step)
             scaler.scale(loss).backward()
             scaler.unscale_(optimizer)
             torch.nn.utils.clip_grad_norm_(trainable_parameters, 5.0)
@@ -548,8 +567,9 @@ def main() -> None:
                 features, lengths, texts = make_batch(
                     stack, batch, fbank, device, args.max_duration, args.load_workers, args.cache_audio_dir
                 )
+                stack["set_batch_count"](model, global_step)
                 with torch.autocast(device_type="cuda", dtype=torch.float16, enabled=not args.no_fp16):
-                    loss = rnnt_loss(stack, model, params, features, lengths, texts, sp)
+                    loss = rnnt_loss(stack, model, params, features, lengths, texts, sp, global_step)
                 dev_loss += float(loss.detach().cpu())
                 dev_frames += int(lengths.sum().detach().cpu())
         if scheduler is not None:
