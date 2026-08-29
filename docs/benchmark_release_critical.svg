@@ -21,6 +21,9 @@
     <text x="600" y="80" text-anchor="middle" fill="#8b949e" font-size="15">
       Current runtime artifacts only · synthetic/hosted evidence
     </text>
+    <text x="600" y="105" text-anchor="middle" fill="#8b949e" font-size="14">
+      C = clean audio · N = noisy audio · T = test suite · S = safety suite
+    </text>
 
     <g stroke="#c9d1d9" stroke-opacity="0.16" stroke-width="1">
       <path d="M150 90 L1080 90"/>

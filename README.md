@@ -303,6 +303,11 @@ synthetic/hosted, chưa phải validation công trường thật.
 
 <img src="docs/benchmark_release_critical.svg" alt="OneVoice release critical preservation chart" width="100%" />
 
+Ký hiệu trên biểu đồ: `C` = clean audio (âm thanh sạch), `N` = noisy audio
+(có nhiễu), `T` = test suite và `S` = safety suite. Bộ `minimal` vẫn được
+đánh giá nhưng chỉ hiển thị trong [report.md](report.md) và [report.html](report.html)
+để biểu đồ không bị quá chật.
+
 | Nhánh | Artifact đang dùng | Critical | Ghi chú |
 |---|---|---:|---|
 | VI -> EN ASR | GIPFormer official ONNX baseline | 85.76% clean / 76.29% noisy | Chưa đạt gate 95%; không dùng bản fine-tune lỗi |
