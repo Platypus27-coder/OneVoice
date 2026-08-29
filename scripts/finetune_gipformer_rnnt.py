@@ -16,6 +16,8 @@ import math
 import random
 import shutil
 import sys
+import time
+import warnings
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -212,6 +214,7 @@ def main() -> None:
     stack = import_upstream(args.icefall_dir)
     torch = stack["torch"]
     spm = stack["spm"]
+    warnings.filterwarnings("ignore", category=UserWarning, module=r"torchaudio")
     if not torch.cuda.is_available():
         raise RuntimeError("CUDA GPU is required for GIPFormer fine-tuning")
     device = torch.device("cuda")
@@ -268,6 +271,7 @@ def main() -> None:
         train_loss = 0.0
         train_frames = 0
         for batch in batches(train, args.batch_size, args.seed + epoch):
+            step_started = time.perf_counter()
             features, lengths, texts = make_batch(stack, batch, fbank, device, args.max_duration)
             optimizer.zero_grad(set_to_none=True)
             with torch.autocast(device_type="cuda", dtype=torch.float16, enabled=not args.no_fp16):
@@ -280,8 +284,13 @@ def main() -> None:
             global_step += 1
             train_loss += float(loss.detach().cpu())
             train_frames += int(lengths.sum().detach().cpu())
-            if global_step % 50 == 0:
-                print(f"epoch={epoch} step={global_step} train_loss_per_frame={train_loss / max(train_frames, 1):.6f}", flush=True)
+            if global_step <= 5 or global_step % 10 == 0:
+                elapsed = time.perf_counter() - step_started
+                print(
+                    f"epoch={epoch} step={global_step} train_loss_per_frame="
+                    f"{train_loss / max(train_frames, 1):.6f} batch_seconds={elapsed:.2f}",
+                    flush=True,
+                )
             if global_step % args.save_every_steps == 0:
                 atomic_torch_save(torch, {"model": model.state_dict(), "epoch_completed": epoch - 1, "global_step": global_step, "best_dev_loss": best_loss, "train_sha256": sha256(args.train), "dev_sha256": sha256(args.dev)}, args.output / f"checkpoint-step-{global_step}.pt")
 
