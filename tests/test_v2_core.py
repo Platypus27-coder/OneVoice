@@ -35,6 +35,8 @@ from scripts.benchmark_sensevoice_checkpoint import _load_partial_predictions, _
 from scripts.benchmark_asr_v2 import load_partial_predictions as load_asr_partial_predictions
 from scripts.benchmark_asr_v2 import write_partial_predictions as write_asr_partial_predictions
 from scripts.export_sensevoice_checkpoint_onnx import copy_runtime_bundle
+from scripts.finetune_gipformer_rnnt import configure_trainable_parameters
+from scripts.stage_gipformer_training_audio import cache_target, read_rows
 from streaming.semantic_commit import (
     RollingHypothesisAssembler,
     SemanticCommitController,
@@ -844,6 +846,62 @@ class TrainingCheckpointTests(unittest.TestCase):
             quarantined = quarantine_checkpoint(root, result)
             self.assertFalse(checkpoint.exists())
             self.assertTrue(Path(quarantined["quarantined_to"]).is_file())
+        finally:
+            shutil.rmtree(root, ignore_errors=True)
+
+
+class GIPFormerProductionAdaptationTests(unittest.TestCase):
+    def test_head_only_freeze_selects_complete_module_prefixes(self):
+        class Parameter:
+            def __init__(self, size):
+                self.size = size
+                self.requires_grad = None
+
+            def numel(self):
+                return self.size
+
+            def requires_grad_(self, enabled):
+                self.requires_grad = enabled
+
+        class Model:
+            def __init__(self):
+                self.params = {
+                    "encoder.layers.0.weight": Parameter(10),
+                    "decoder.embedding.weight": Parameter(4),
+                    "joiner.output.weight": Parameter(6),
+                }
+
+            def named_parameters(self):
+                return self.params.items()
+
+        model = Model()
+        selected, counts = configure_trainable_parameters(model, ["decoder", "joiner"])
+        self.assertEqual(len(selected), 2)
+        self.assertEqual(counts, {"total": 20, "trainable": 10, "frozen": 10})
+        self.assertFalse(model.params["encoder.layers.0.weight"].requires_grad)
+        self.assertTrue(model.params["decoder.embedding.weight"].requires_grad)
+        with self.assertRaises(ValueError):
+            configure_trainable_parameters(model, ["missing"])
+
+    def test_local_audio_staging_rejects_test_and_uses_stable_names(self):
+        root = ROOT / "tests" / ".tmp" / "gipformer-stage"
+        root.mkdir(parents=True, exist_ok=True)
+        audio = root / "sample.wav"
+        manifest = root / "rows.jsonl"
+        try:
+            audio.write_bytes(b"not decoded in this unit test")
+            manifest.write_text(
+                json.dumps({"audio_path": str(audio), "text": "dung may", "split": "train"}) + "\n",
+                encoding="utf-8",
+            )
+            self.assertEqual(len(read_rows(manifest)), 1)
+            self.assertEqual(cache_target(audio, root / "cache"), cache_target(audio, root / "cache"))
+            manifest.write_text(
+                json.dumps({"audio_path": str(audio), "text": "must not train", "split": "test"}) + "\n",
+                encoding="utf-8",
+            )
+            with self.assertRaises(ValueError):
+                read_rows(manifest)
         finally:
             shutil.rmtree(root, ignore_errors=True)
 

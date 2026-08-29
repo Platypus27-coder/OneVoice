@@ -1,10 +1,15 @@
-"""Controlled GIPFormer RNN-T construction-domain adaptation.
+"""Production-oriented GIPFormer RNN-T construction-domain adaptation.
 
-This trainer deliberately uses the model factory and RNN-T loss implementation
-from the same Icefall Zipformer source loaded by official GIPFormer inference.
-It trains only prepared train/dev JSONL inputs, never a test split.  Checkpoints
-are epoch-resumable and the current best dev-loss model is exported as a local
-inference bundle (``best/model.pt``, ``bpe.model``, ``tokens.txt``).
+The model factory and RNN-T loss come from the same pinned Icefall Zipformer
+source used to prove GIPFormer PyTorch/ONNX compatibility. The default is
+parameter-efficient *head fine-tuning*: only the RNN-T decoder and joiner are
+trainable while the acoustic encoder remains frozen. This preserves the proven
+ONNX architecture, reduces GPU/Drive pressure, and limits catastrophic
+forgetting on a synthetic domain dataset.
+
+Only prepared train/dev JSONL inputs are accepted; test is never loaded. The
+single ``last.pt`` checkpoint includes model, optimizer, scaler and exact batch
+position, so an interrupted Colab job resumes inside the epoch.
 """
 
 from __future__ import annotations
@@ -203,6 +208,40 @@ def rnnt_loss(stack: dict[str, Any], model: Any, params: Any, features: Any, len
     return params.simple_loss_scale * simple_loss + pruned_loss
 
 
+def configure_trainable_parameters(model: Any, prefixes: list[str]) -> tuple[list[Any], dict[str, int]]:
+    """Freeze all parameters except complete modules matched by ``prefixes``.
+
+    Prefix matching is deliberately exact at a module boundary. For example,
+    ``decoder`` accepts ``decoder.*`` but not an accidental ``decoder_extra``.
+    """
+    normalized = [prefix.strip().rstrip(".") for prefix in prefixes if prefix.strip()]
+    if not normalized:
+        raise ValueError("At least one --trainable-prefix is required")
+    matched = {prefix: 0 for prefix in normalized}
+    trainable: list[Any] = []
+    trainable_count = 0
+    total_count = 0
+    for name, parameter in model.named_parameters():
+        total_count += parameter.numel()
+        selected = False
+        for prefix in normalized:
+            if name == prefix or name.startswith(prefix + "."):
+                matched[prefix] += parameter.numel()
+                selected = True
+        parameter.requires_grad_(selected)
+        if selected:
+            trainable.append(parameter)
+            trainable_count += parameter.numel()
+    missing = [prefix for prefix, count in matched.items() if count == 0]
+    if missing:
+        raise ValueError(f"No model parameters match --trainable-prefix: {missing}")
+    return trainable, {
+        "total": total_count,
+        "trainable": trainable_count,
+        "frozen": total_count - trainable_count,
+    }
+
+
 def batches(records: list[Record], batch_size: int, seed: int, bucket_size: int = 1):
     order = list(records)
     rng = random.Random(seed)
@@ -239,6 +278,41 @@ def save_best_bundle(torch: Any, payload: dict[str, Any], model_dir: Path, outpu
         shutil.copy2(model_dir / name, best_dir / name)
 
 
+def make_resume_payload(
+    model: Any,
+    optimizer: Any,
+    scaler: Any,
+    *,
+    epoch: int,
+    next_batch_index: int,
+    global_step: int,
+    train_loss: float,
+    train_frames: int,
+    best_dev_loss: float,
+    train_sha256: str,
+    dev_sha256: str,
+    trainable_prefixes: list[str],
+    run: dict[str, Any],
+) -> dict[str, Any]:
+    """A complete, atomic Colab-resume state; no model-only step snapshots."""
+    return {
+        "recipe": "gipformer_head_ft_v1",
+        "model": model.state_dict(),
+        "optimizer": optimizer.state_dict(),
+        "scaler": scaler.state_dict(),
+        "epoch": epoch,
+        "next_batch_index": next_batch_index,
+        "global_step": global_step,
+        "train_loss": train_loss,
+        "train_frames": train_frames,
+        "best_dev_loss": best_dev_loss,
+        "train_sha256": train_sha256,
+        "dev_sha256": dev_sha256,
+        "trainable_prefixes": trainable_prefixes,
+        "run": run,
+    }
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--train", type=Path, required=True)
@@ -252,6 +326,12 @@ def main() -> None:
     parser.add_argument("--max-duration", type=float, default=20.0)
     parser.add_argument("--seed", type=int, default=20260828)
     parser.add_argument("--save-every-steps", type=int, default=500)
+    parser.add_argument(
+        "--trainable-prefix",
+        action="append",
+        default=None,
+        help="Complete module prefix to train; repeatable. Defaults to decoder + joiner.",
+    )
     parser.add_argument(
         "--bucket-size",
         type=int,
@@ -290,6 +370,7 @@ def main() -> None:
     device = torch.device("cuda")
     torch.manual_seed(args.seed)
     random.seed(args.seed)
+    trainable_prefixes = args.trainable_prefix or ["decoder", "joiner"]
 
     train = read_records(args.train)
     dev = read_records(args.dev)
@@ -300,30 +381,57 @@ def main() -> None:
         args.cache_audio_dir.mkdir(parents=True, exist_ok=True)
         print(f"Audio cache enabled: {args.cache_audio_dir.resolve()}", flush=True)
     model, params = load_model(stack, args.model_dir, device)
+    trainable_parameters, parameter_counts = configure_trainable_parameters(
+        model, trainable_prefixes
+    )
+    print(
+        "Trainable modules=" + ",".join(trainable_prefixes)
+        + f"; parameters={parameter_counts['trainable']:,}/{parameter_counts['total']:,} "
+        + f"({parameter_counts['trainable'] / max(parameter_counts['total'], 1):.2%})",
+        flush=True,
+    )
     params.prune_range = 5
     params.am_scale = 0.0
     params.lm_scale = 0.25
     params.simple_loss_scale = 0.5
     sp = spm.SentencePieceProcessor(model_file=str(args.model_dir / "bpe.model"))
-    optimizer = torch.optim.AdamW(model.parameters(), lr=args.learning_rate, weight_decay=0.01)
+    optimizer = torch.optim.AdamW(trainable_parameters, lr=args.learning_rate, weight_decay=0.01)
     scaler = torch.amp.GradScaler("cuda", enabled=not args.no_fp16)
     fbank = make_fbank(stack, device)
 
     last_path = args.output / "last.pt"
     best_loss = float("inf")
     start_epoch = 1
+    start_batch_index = 0
     global_step = 0
+    resume_train_loss = 0.0
+    resume_train_frames = 0
     if args.resume == "auto" and last_path.is_file():
         state = torch.load(last_path, map_location="cpu", weights_only=False)
         if state.get("train_sha256") != sha256(args.train) or state.get("dev_sha256") != sha256(args.dev):
             raise RuntimeError("Refusing resume: prepared train/dev manifests changed")
+        if state.get("recipe") not in (None, "gipformer_head_ft_v1"):
+            raise RuntimeError(f"Refusing resume from a different recipe: {state.get('recipe')}")
+        saved_prefixes = state.get("trainable_prefixes")
+        if saved_prefixes is not None and list(saved_prefixes) != list(trainable_prefixes):
+            raise RuntimeError("Refusing resume: --trainable-prefix changed")
         model.load_state_dict(state["model"], strict=True)
         optimizer.load_state_dict(state["optimizer"])
         scaler.load_state_dict(state["scaler"])
-        start_epoch = int(state["epoch_completed"]) + 1
+        if "next_batch_index" in state:
+            start_epoch = int(state["epoch"])
+            start_batch_index = int(state["next_batch_index"])
+            resume_train_loss = float(state.get("train_loss", 0.0))
+            resume_train_frames = int(state.get("train_frames", 0))
+        else:
+            # Legacy epoch-only checkpoint: resume at the following epoch.
+            start_epoch = int(state["epoch_completed"]) + 1
         global_step = int(state["global_step"])
         best_loss = float(state["best_dev_loss"])
-        print(f"Resuming after completed epoch {start_epoch - 1}; interrupted epochs are intentionally repeated.")
+        print(
+            f"Resuming epoch {start_epoch} at batch {start_batch_index}; global step {global_step}.",
+            flush=True,
+        )
 
     run = {
         "source_model": str(args.model_dir.resolve()),
@@ -334,6 +442,9 @@ def main() -> None:
         "train_records": len(train),
         "dev_records": len(dev),
         "test_split_included": False,
+        "recipe": "gipformer_head_ft_v1",
+        "trainable_prefixes": trainable_prefixes,
+        "parameter_counts": parameter_counts,
         "args": vars(args),
         "history": [],
     }
@@ -341,9 +452,16 @@ def main() -> None:
 
     for epoch in range(start_epoch, args.epochs + 1):
         model.train()
-        train_loss = 0.0
-        train_frames = 0
-        for batch in batches(train, args.batch_size, args.seed + epoch, args.bucket_size):
+        train_loss = resume_train_loss if epoch == start_epoch else 0.0
+        train_frames = resume_train_frames if epoch == start_epoch else 0
+        epoch_batches = list(batches(train, args.batch_size, args.seed + epoch, args.bucket_size))
+        if start_batch_index > len(epoch_batches):
+            raise RuntimeError(
+                f"Resume batch {start_batch_index} is outside epoch {epoch} ({len(epoch_batches)} batches)"
+            )
+        for batch_index, batch in enumerate(epoch_batches):
+            if epoch == start_epoch and batch_index < start_batch_index:
+                continue
             step_started = time.perf_counter()
             features, lengths, texts = make_batch(
                 stack, batch, fbank, device, args.max_duration, args.load_workers, args.cache_audio_dir
@@ -353,7 +471,7 @@ def main() -> None:
                 loss = rnnt_loss(stack, model, params, features, lengths, texts, sp)
             scaler.scale(loss).backward()
             scaler.unscale_(optimizer)
-            torch.nn.utils.clip_grad_norm_(model.parameters(), 5.0)
+            torch.nn.utils.clip_grad_norm_(trainable_parameters, 5.0)
             scaler.step(optimizer)
             scaler.update()
             global_step += 1
@@ -367,7 +485,25 @@ def main() -> None:
                     flush=True,
                 )
             if global_step % args.save_every_steps == 0:
-                atomic_torch_save(torch, {"model": model.state_dict(), "epoch_completed": epoch - 1, "global_step": global_step, "best_dev_loss": best_loss, "train_sha256": sha256(args.train), "dev_sha256": sha256(args.dev)}, args.output / f"checkpoint-step-{global_step}.pt")
+                atomic_torch_save(
+                    torch,
+                    make_resume_payload(
+                        model,
+                        optimizer,
+                        scaler,
+                        epoch=epoch,
+                        next_batch_index=batch_index + 1,
+                        global_step=global_step,
+                        train_loss=train_loss,
+                        train_frames=train_frames,
+                        best_dev_loss=best_loss,
+                        train_sha256=sha256(args.train),
+                        dev_sha256=sha256(args.dev),
+                        trainable_prefixes=trainable_prefixes,
+                        run=run,
+                    ),
+                    last_path,
+                )
 
         model.eval()
         dev_loss = 0.0
@@ -385,7 +521,21 @@ def main() -> None:
         normalized_train = train_loss / max(train_frames, 1)
         epoch_record = {"epoch": epoch, "global_step": global_step, "train_loss_per_frame": normalized_train, "dev_loss_per_frame": normalized_dev}
         run["history"].append(epoch_record)
-        payload = {"model": model.state_dict(), "optimizer": optimizer.state_dict(), "scaler": scaler.state_dict(), "epoch_completed": epoch, "global_step": global_step, "best_dev_loss": min(best_loss, normalized_dev), "train_sha256": sha256(args.train), "dev_sha256": sha256(args.dev), "run": run}
+        payload = make_resume_payload(
+            model,
+            optimizer,
+            scaler,
+            epoch=epoch + 1,
+            next_batch_index=0,
+            global_step=global_step,
+            train_loss=0.0,
+            train_frames=0,
+            best_dev_loss=min(best_loss, normalized_dev),
+            train_sha256=sha256(args.train),
+            dev_sha256=sha256(args.dev),
+            trainable_prefixes=trainable_prefixes,
+            run=run,
+        )
         atomic_torch_save(torch, payload, args.output / f"epoch-{epoch:03d}.pt")
         atomic_torch_save(torch, payload, last_path)
         if normalized_dev < best_loss:
