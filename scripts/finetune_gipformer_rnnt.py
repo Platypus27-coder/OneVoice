@@ -22,7 +22,6 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 from concurrent.futures import ThreadPoolExecutor
-import wave
 
 
 SAMPLE_RATE = 16000
@@ -53,20 +52,11 @@ def read_records(path: Path) -> list[Record]:
         text = str(row.get("text", "")).strip()
         if not audio_path.is_file() or not text:
             raise ValueError(f"Invalid prepared record at {path}:{number}")
-        duration = row.get("duration_s", row.get("duration_seconds"))
-        if duration is None:
-            # Reading a WAV header is cheap and avoids decoding the same files
-            # repeatedly just to build duration-aware batches.
-            try:
-                with wave.open(str(audio_path), "rb") as handle:
-                    duration = handle.getnframes() / max(handle.getframerate(), 1)
-            except (OSError, EOFError, wave.Error):
-                # Some valid files accepted by torchaudio use a WAV container
-                # variant that Python's stdlib wave reader rejects (for
-                # example non-RIFF/extensible headers). Keep the record and
-                # use a neutral bucket duration; torchaudio remains the
-                # authoritative decoder and validates the audio in make_batch.
-                duration = 1.0
+        # Do not open every WAV here: on Drive/FUSE that metadata scan can take
+        # tens of minutes before training even starts. Prepared manifests may
+        # carry duration_s; otherwise use a neutral value and let torchaudio
+        # validate/decode the real file in make_batch.
+        duration = row.get("duration_s", row.get("duration_seconds", 1.0))
         duration = float(duration)
         if duration <= 0:
             raise ValueError(f"Invalid duration at {path}:{number}")

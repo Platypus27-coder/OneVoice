@@ -62,8 +62,7 @@ def prepare_rows(manifest: Path, split: str) -> list[dict]:
             seen_any.add(str(path))
             if kind == "clean":
                 seen_clean.add(name)
-            records.append(
-                {
+            item = {
                     "id": f"{split}:{kind}:{path.name}",
                     "audio_path": str(path),
                     "text": text,
@@ -72,7 +71,13 @@ def prepare_rows(manifest: Path, split: str) -> list[dict]:
                     "source_audio": name,
                     "source_manifest_line": number,
                 }
-            )
+            # Preserve an existing manifest duration when available.  The
+            # trainer uses it for duration bucketing without rescanning every
+            # WAV on Google Drive.
+            duration = row.get("duration_s", row.get("duration_seconds", row.get("duration")))
+            if duration is not None:
+                item["duration_s"] = float(duration)
+            records.append(item)
     if not records:
         raise ValueError(f"No VI rows selected for {split}")
     return records
