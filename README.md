@@ -301,13 +301,7 @@ synthetic/hosted, chưa phải validation công trường thật.
 
 ### Critical preservation (%)
 
-```mermaid
-xychart-beta
-    title "OneVoice release - critical preservation"
-    x-axis ["VI-EN ASR C", "VI-EN ASR N", "EN-VI ASR C", "EN-VI ASR N", "VI-EN MT T", "VI-EN MT S", "EN-VI MT T", "EN-VI MT S"]
-    y-axis "percent" 0 --> 100
-    bar [85.76, 76.29, 99.52, 99.17, 99.28, 100.00, 98.98, 100.00]
-```
+<img src="docs/benchmark_release_critical.svg" alt="OneVoice release critical preservation chart" width="100%" />
 
 | Nhánh | Artifact đang dùng | Critical | Ghi chú |
 |---|---|---:|---|
@@ -316,6 +310,6 @@ xychart-beta
 | VI -> EN MT | EnViT5 fine-tuned + validator v4 | 99.28% test / 100% safety | Context route |
 | EN -> VI MT | EnViT5 fine-tuned + validator v2 | 98.98% test / 100% safety | Context route |
 
-Biểu đồ được ghi trực tiếp trong Markdown bằng Mermaid để GitHub render được;
+Biểu đồ là SVG tĩnh với nét vẽ hơi thủ công để GitHub render ổn định;
 chi tiết WER, terminology, entity, latency và toàn bộ 10 benchmark nằm trong
 `report.html` và `report.md`.

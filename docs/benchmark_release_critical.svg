@@ -1,0 +1,81 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 620" role="img" aria-labelledby="title desc">
+  <title id="title">OneVoice release critical preservation</title>
+  <desc id="desc">Critical preservation for the current ASR and MT runtime artifacts.</desc>
+  <defs>
+    <!-- A subtle displacement makes the axes and series feel hand-drawn while
+         remaining a completely static, GitHub-safe SVG. -->
+    <filter id="rough" x="-3%" y="-3%" width="106%" height="106%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.018" numOctaves="1" seed="17" result="noise"/>
+      <feDisplacementMap in="SourceGraphic" in2="noise" scale="1.35"/>
+    </filter>
+    <filter id="soft" x="-3%" y="-3%" width="106%" height="106%">
+      <feGaussianBlur stdDeviation="0.35"/>
+    </filter>
+  </defs>
+
+  <rect width="1200" height="620" fill="#0d1117"/>
+  <g font-family="Georgia, 'Times New Roman', serif">
+    <text x="600" y="46" text-anchor="middle" fill="#f0f6fc" font-size="28" font-weight="700">
+      OneVoice release · Critical preservation
+    </text>
+    <text x="600" y="80" text-anchor="middle" fill="#8b949e" font-size="15">
+      Current runtime artifacts only · synthetic/hosted evidence
+    </text>
+
+    <g stroke="#c9d1d9" stroke-opacity="0.16" stroke-width="1">
+      <path d="M150 90 L1080 90"/>
+      <path d="M150 168 L1080 168"/>
+      <path d="M150 246 L1080 246"/>
+      <path d="M150 324 L1080 324"/>
+      <path d="M150 402 L1080 402"/>
+      <path d="M150 480 L1080 480"/>
+    </g>
+
+    <g fill="#f0f6fc" font-size="15" text-anchor="end">
+      <text x="137" y="486">0%</text>
+      <text x="137" y="408">20%</text>
+      <text x="137" y="330">40%</text>
+      <text x="137" y="252">60%</text>
+      <text x="137" y="174">80%</text>
+      <text x="137" y="96">100%</text>
+    </g>
+
+    <!-- Double-stroked axes mimic the lightly imperfect pen line in the reference. -->
+    <g fill="none" stroke="#f0f6fc" stroke-linecap="round" stroke-linejoin="round" filter="url(#rough)">
+      <path d="M150 482 C149 420 152 360 149 300 S153 180 151 90" stroke-width="4"/>
+      <path d="M151 481 C385 480 612 483 1080 480" stroke-width="4"/>
+      <path d="M154 481 C385 484 700 478 1077 482" stroke="#8b949e" stroke-width="1.3" opacity="0.85"/>
+    </g>
+
+    <text x="58" y="315" transform="rotate(-90 58 315)" text-anchor="middle" fill="#f0f6fc" font-size="18">
+      Critical preservation
+    </text>
+    <text x="615" y="570" text-anchor="middle" fill="#f0f6fc" font-size="18">
+      Current release benchmark
+    </text>
+
+    <!-- 85.76, 76.29, 99.52, 99.17, 99.28, 100.00, 98.98, 100.00 -->
+    <g fill="none" stroke="#ff6b72" stroke-linecap="round" stroke-linejoin="round" filter="url(#rough)">
+      <path d="M170 146 C211 158 245 183 286 205 C326 211 350 111 402 96 C445 95 482 96 522 94 C564 94 598 92 642 92 C680 90 718 94 762 93 C804 94 842 91 882 94 C927 90 969 91 1010 90" stroke="#ff6b72" stroke-width="7" opacity="0.24" filter="url(#soft)"/>
+      <path d="M170 146 C211 158 245 183 286 205 C326 211 350 111 402 96 C445 95 482 96 522 94 C564 94 598 92 642 92 C680 90 718 94 762 93 C804 94 842 91 882 94 C927 90 969 91 1010 90" stroke="#ff6b72" stroke-width="3.8"/>
+      <path d="M170 146 C210 157 246 184 286 204 C326 210 351 112 402 97 C445 96 482 95 522 95 C564 93 598 93 642 91 C680 91 718 93 762 92 C804 95 842 90 882 93 C927 91 969 90 1010 89" stroke="#ff9a9f" stroke-width="1.2" opacity="0.8"/>
+    </g>
+
+    <g fill="#f0f6fc" font-size="13" text-anchor="middle">
+      <text x="170" y="516">VI-EN ASR C</text>
+      <text x="286" y="516">VI-EN ASR N</text>
+      <text x="402" y="516">EN-VI ASR C</text>
+      <text x="522" y="516">EN-VI ASR N</text>
+      <text x="642" y="516">VI-EN MT T</text>
+      <text x="762" y="516">VI-EN MT S</text>
+      <text x="882" y="516">EN-VI MT T</text>
+      <text x="1010" y="516">EN-VI MT S</text>
+    </g>
+
+    <g transform="translate(174 106)">
+      <rect x="-14" y="-23" width="274" height="40" rx="10" fill="#0d1117" stroke="#f0f6fc" stroke-width="2"/>
+      <rect x="0" y="-10" width="12" height="12" rx="2" fill="#ff6b72"/>
+      <text x="23" y="1" fill="#f0f6fc" font-size="16">critical preservation (%)</text>
+    </g>
+  </g>
+</svg>
