@@ -36,6 +36,35 @@ def sha256(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
+def manifest_fingerprint(path: Path) -> str:
+    """Hash dataset identity without machine-specific absolute WAV paths.
+
+    Colab accounts can expose the same Drive files through different FUSE
+    prefixes (``MyDrive`` versus ``.shortcut-targets-by-id``). Resume safety
+    should detect changed records, not reject an otherwise identical cache
+    merely because its local path spelling changed.
+    """
+    canonical: list[str] = []
+    for number, line in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
+        if not line.strip():
+            continue
+        row = json.loads(line)
+        identity = {
+            key: row.get(key)
+            for key in ("id", "text", "split", "variant", "source_audio", "source_manifest_line", "duration_s", "duration_seconds")
+            if key in row
+        }
+        # Include the basename as a stable physical-file identity, while
+        # intentionally excluding absolute Drive/cache prefixes.
+        audio = Path(str(row.get("audio_path", "")))
+        identity["audio_name"] = audio.name
+        canonical.append(json.dumps(identity, ensure_ascii=False, sort_keys=True, separators=(",", ":")))
+    if not canonical:
+        raise ValueError(f"Empty manifest: {path}")
+    canonical.sort()
+    return hashlib.sha256("\n".join(canonical).encode("utf-8")).hexdigest()
+
+
 @dataclass(frozen=True)
 class Record:
     audio_path: Path
@@ -326,12 +355,14 @@ def make_resume_payload(
     best_dev_loss: float,
     train_sha256: str,
     dev_sha256: str,
+    train_fingerprint: str,
+    dev_fingerprint: str,
     trainable_prefixes: list[str],
     run: dict[str, Any],
 ) -> dict[str, Any]:
     """A complete, atomic Colab-resume state; no model-only step snapshots."""
     return {
-        "recipe": "gipformer_icefall_ft_v3",
+        "recipe": "gipformer_icefall_ft_v4",
         "model": model.state_dict(),
         "optimizer": optimizer.state_dict(),
         "scaler": scaler.state_dict(),
@@ -344,6 +375,8 @@ def make_resume_payload(
         "best_dev_loss": best_dev_loss,
         "train_sha256": train_sha256,
         "dev_sha256": dev_sha256,
+        "train_fingerprint": train_fingerprint,
+        "dev_fingerprint": dev_fingerprint,
         "trainable_prefixes": trainable_prefixes,
         "run": run,
     }
@@ -414,6 +447,8 @@ def main() -> None:
 
     train = read_records(args.train)
     dev = read_records(args.dev)
+    train_fingerprint = manifest_fingerprint(args.train)
+    dev_fingerprint = manifest_fingerprint(args.dev)
     if {record.audio_path for record in train} & {record.audio_path for record in dev}:
         raise ValueError("Prepared train/dev audio leakage")
     args.output.mkdir(parents=True, exist_ok=True)
@@ -455,9 +490,9 @@ def main() -> None:
     resume_train_frames = 0
     if args.resume == "auto" and last_path.is_file():
         state = torch.load(last_path, map_location="cpu", weights_only=False)
-        if state.get("train_sha256") != sha256(args.train) or state.get("dev_sha256") != sha256(args.dev):
+        if state.get("train_fingerprint") != train_fingerprint or state.get("dev_fingerprint") != dev_fingerprint:
             raise RuntimeError("Refusing resume: prepared train/dev manifests changed")
-        if state.get("recipe") not in (None, "gipformer_head_ft_v1", "gipformer_icefall_ft_v2", "gipformer_icefall_ft_v3"):
+        if state.get("recipe") not in (None, "gipformer_head_ft_v1", "gipformer_icefall_ft_v2", "gipformer_icefall_ft_v3", "gipformer_icefall_ft_v4"):
             raise RuntimeError(f"Refusing resume from a different recipe: {state.get('recipe')}")
         saved_prefixes = state.get("trainable_prefixes")
         if saved_prefixes is not None and list(saved_prefixes) != list(trainable_prefixes):
@@ -488,10 +523,12 @@ def main() -> None:
         "icefall_dir": str(args.icefall_dir.resolve()),
         "train_sha256": sha256(args.train),
         "dev_sha256": sha256(args.dev),
+        "train_fingerprint": train_fingerprint,
+        "dev_fingerprint": dev_fingerprint,
         "train_records": len(train),
         "dev_records": len(dev),
         "test_split_included": False,
-        "recipe": "gipformer_icefall_ft_v3",
+        "recipe": "gipformer_icefall_ft_v4",
         "optimizer": args.optimizer,
         "trainable_prefixes": trainable_prefixes,
         "parameter_counts": parameter_counts,
@@ -553,6 +590,8 @@ def main() -> None:
                         best_dev_loss=best_loss,
                         train_sha256=sha256(args.train),
                         dev_sha256=sha256(args.dev),
+                        train_fingerprint=train_fingerprint,
+                        dev_fingerprint=dev_fingerprint,
                         trainable_prefixes=trainable_prefixes,
                         run=run,
                     ),
@@ -591,6 +630,8 @@ def main() -> None:
             best_dev_loss=min(best_loss, normalized_dev),
             train_sha256=sha256(args.train),
             dev_sha256=sha256(args.dev),
+            train_fingerprint=train_fingerprint,
+            dev_fingerprint=dev_fingerprint,
             trainable_prefixes=trainable_prefixes,
             run=run,
         )
