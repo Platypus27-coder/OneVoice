@@ -21,6 +21,8 @@ import warnings
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
+from concurrent.futures import ThreadPoolExecutor
+import wave
 
 
 SAMPLE_RATE = 16000
@@ -35,6 +37,7 @@ class Record:
     audio_path: Path
     text: str
     variant: str
+    duration_s: float
 
 
 def read_records(path: Path) -> list[Record]:
@@ -50,7 +53,19 @@ def read_records(path: Path) -> list[Record]:
         text = str(row.get("text", "")).strip()
         if not audio_path.is_file() or not text:
             raise ValueError(f"Invalid prepared record at {path}:{number}")
-        records.append(Record(audio_path.resolve(), text, str(row.get("variant", "unknown"))))
+        duration = row.get("duration_s", row.get("duration_seconds"))
+        if duration is None:
+            # Reading a WAV header is cheap and avoids decoding the same files
+            # repeatedly just to build duration-aware batches.
+            try:
+                with wave.open(str(audio_path), "rb") as handle:
+                    duration = handle.getnframes() / max(handle.getframerate(), 1)
+            except (OSError, EOFError) as exc:
+                raise ValueError(f"Cannot read WAV header at {path}:{number}") from exc
+        duration = float(duration)
+        if duration <= 0:
+            raise ValueError(f"Invalid duration at {path}:{number}")
+        records.append(Record(audio_path.resolve(), text, str(row.get("variant", "unknown")), duration))
     if not records:
         raise ValueError(f"No records in {path}")
     return records
@@ -131,22 +146,48 @@ def make_fbank(stack: dict[str, Any], device: Any):
     return kaldifeat.Fbank(opts)
 
 
-def make_batch(stack: dict[str, Any], records: list[Record], fbank: Any, device: Any, max_duration: float):
+def _cached_path(path: Path, cache_dir: Path) -> Path:
+    key = hashlib.sha256(str(path).encode("utf-8")).hexdigest()[:16]
+    return cache_dir / f"{key}_{path.name}"
+
+
+def _load_wave(torchaudio: Any, record: Record, sample_rate: int, cache_dir: Path | None):
+    source = record.audio_path
+    if cache_dir is not None:
+        source = _cached_path(source, cache_dir)
+        source.parent.mkdir(parents=True, exist_ok=True)
+        if not source.is_file():
+            shutil.copy2(record.audio_path, source)
+    wave_data, loaded_rate = torchaudio.load(source)
+    if loaded_rate != sample_rate:
+        wave_data = torchaudio.functional.resample(wave_data, loaded_rate, sample_rate)
+    return wave_data[0].contiguous()
+
+
+def make_batch(
+    stack: dict[str, Any],
+    records: list[Record],
+    fbank: Any,
+    device: Any,
+    max_duration: float,
+    load_workers: int = 1,
+    cache_dir: Path | None = None,
+):
     torch = stack["torch"]
     torchaudio = stack["torchaudio"]
     pad_sequence = stack["pad_sequence"]
-    waves = []
-    texts = []
-    for record in records:
-        wave, sample_rate = torchaudio.load(record.audio_path)
-        if sample_rate != SAMPLE_RATE:
-            wave = torchaudio.functional.resample(wave, sample_rate, SAMPLE_RATE)
-        wave = wave[0].contiguous()
-        duration = wave.numel() / SAMPLE_RATE
-        if duration <= 0 or duration > max_duration:
-            raise ValueError(f"Unsupported audio duration ({duration:.2f}s): {record.audio_path}")
-        waves.append(wave.to(device))
-        texts.append(record.text)
+    if any(record.duration_s > max_duration for record in records):
+        record = next(record for record in records if record.duration_s > max_duration)
+        raise ValueError(f"Unsupported audio duration ({record.duration_s:.2f}s): {record.audio_path}")
+    worker_count = max(1, min(int(load_workers), len(records)))
+    loader = lambda record: _load_wave(torchaudio, record, SAMPLE_RATE, cache_dir)
+    if worker_count == 1:
+        waves = [loader(record) for record in records]
+    else:
+        with ThreadPoolExecutor(max_workers=worker_count) as executor:
+            waves = list(executor.map(loader, records))
+    texts = [record.text for record in records]
+    waves = [wave.to(device) for wave in waves]
     features_list = fbank(waves)
     lengths = torch.tensor([feature.size(0) for feature in features_list], device=device)
     features = pad_sequence(features_list, batch_first=True, padding_value=math.log(1e-10))
@@ -167,11 +208,25 @@ def rnnt_loss(stack: dict[str, Any], model: Any, params: Any, features: Any, len
     return params.simple_loss_scale * simple_loss + pruned_loss
 
 
-def batches(records: list[Record], batch_size: int, seed: int):
+def batches(records: list[Record], batch_size: int, seed: int, bucket_size: int = 1):
     order = list(records)
-    random.Random(seed).shuffle(order)
-    for start in range(0, len(order), batch_size):
-        yield order[start : start + batch_size]
+    rng = random.Random(seed)
+    rng.shuffle(order)
+    if bucket_size <= 1:
+        for start in range(0, len(order), batch_size):
+            yield order[start : start + batch_size]
+        return
+    # Sort only small shuffled pools. This keeps stochasticity while making
+    # each batch contain similarly long utterances, greatly reducing padding
+    # and RNN-T compute on heterogeneous construction speech.
+    pool_width = max(batch_size, batch_size * bucket_size)
+    grouped: list[list[Record]] = []
+    for pool_start in range(0, len(order), pool_width):
+        pool = order[pool_start : pool_start + pool_width]
+        pool.sort(key=lambda record: record.duration_s)
+        grouped.extend(pool[start : start + batch_size] for start in range(0, len(pool), batch_size))
+    rng.shuffle(grouped)
+    yield from grouped
 
 
 def atomic_torch_save(torch: Any, payload: dict[str, Any], path: Path) -> None:
@@ -202,12 +257,32 @@ def main() -> None:
     parser.add_argument("--max-duration", type=float, default=20.0)
     parser.add_argument("--seed", type=int, default=20260828)
     parser.add_argument("--save-every-steps", type=int, default=500)
+    parser.add_argument(
+        "--bucket-size",
+        type=int,
+        default=32,
+        help="Approximate duration bucketing factor; 1 disables bucketing",
+    )
+    parser.add_argument(
+        "--load-workers",
+        type=int,
+        default=2,
+        help="Parallel WAV readers (use 1 if Drive throttles concurrent reads)",
+    )
+    parser.add_argument(
+        "--cache-audio-dir",
+        type=Path,
+        default=None,
+        help="Optional local SSD cache (e.g. /content/gipformer_audio_cache)",
+    )
     parser.add_argument("--resume", choices=("auto", "never"), default="auto")
     parser.add_argument("--device", default="cuda")
     parser.add_argument("--no-fp16", action="store_true")
     args = parser.parse_args()
     if args.epochs < 1 or args.batch_size < 1 or args.learning_rate <= 0:
         parser.error("epochs, batch-size, and learning-rate must be positive")
+    if args.bucket_size < 1 or args.load_workers < 1:
+        parser.error("bucket-size and load-workers must be positive")
     if args.device != "cuda":
         parser.error("Fine-tuning is GPU-only; use the benchmark notebook for CPU evaluation")
 
@@ -226,6 +301,9 @@ def main() -> None:
     if {record.audio_path for record in train} & {record.audio_path for record in dev}:
         raise ValueError("Prepared train/dev audio leakage")
     args.output.mkdir(parents=True, exist_ok=True)
+    if args.cache_audio_dir is not None:
+        args.cache_audio_dir.mkdir(parents=True, exist_ok=True)
+        print(f"Audio cache enabled: {args.cache_audio_dir.resolve()}", flush=True)
     model, params = load_model(stack, args.model_dir, device)
     params.prune_range = 5
     params.am_scale = 0.0
@@ -270,9 +348,11 @@ def main() -> None:
         model.train()
         train_loss = 0.0
         train_frames = 0
-        for batch in batches(train, args.batch_size, args.seed + epoch):
+        for batch in batches(train, args.batch_size, args.seed + epoch, args.bucket_size):
             step_started = time.perf_counter()
-            features, lengths, texts = make_batch(stack, batch, fbank, device, args.max_duration)
+            features, lengths, texts = make_batch(
+                stack, batch, fbank, device, args.max_duration, args.load_workers, args.cache_audio_dir
+            )
             optimizer.zero_grad(set_to_none=True)
             with torch.autocast(device_type="cuda", dtype=torch.float16, enabled=not args.no_fp16):
                 loss = rnnt_loss(stack, model, params, features, lengths, texts, sp)
@@ -298,8 +378,10 @@ def main() -> None:
         dev_loss = 0.0
         dev_frames = 0
         with torch.no_grad():
-            for batch in batches(dev, args.batch_size, args.seed):
-                features, lengths, texts = make_batch(stack, batch, fbank, device, args.max_duration)
+            for batch in batches(dev, args.batch_size, args.seed, args.bucket_size):
+                features, lengths, texts = make_batch(
+                    stack, batch, fbank, device, args.max_duration, args.load_workers, args.cache_audio_dir
+                )
                 with torch.autocast(device_type="cuda", dtype=torch.float16, enabled=not args.no_fp16):
                     loss = rnnt_loss(stack, model, params, features, lengths, texts, sp)
                 dev_loss += float(loss.detach().cpu())
