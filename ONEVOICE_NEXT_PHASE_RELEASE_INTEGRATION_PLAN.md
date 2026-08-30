@@ -378,3 +378,11 @@ onevoice-v2-rc/
 9. D2/D3 — real-site và physical-device production validation.
 
 Không yêu cầu người dùng chạy lại bất kỳ notebook training/data nào đã có evidence hợp lệ. Mỗi task triển khai phải cập nhật checkbox và ghi link commit/report ngay trong file này.
+
+## 17. Evidence cập nhật — release E2E đã đạt
+
+- [x] P1 exit gate: chạy thật trên Google Drive với `--cases-per-route 20`.
+- [x] 80/80 case pass: 40 `normal_mt_tts` và 40 `safety_audio`, gồm cả VI→EN và EN→VI.
+- [x] Offline runtime không dùng network; output normal non-silent và safety output được checksum-verify.
+- [x] Commit hỗ trợ E2E: `d12eb7c` (offline eSpeak fallback), `41f2cb4` (punctuationless question validator), `99984eb` (bounded ASR safety recovery).
+- [ ] P2 streaming, P4 frozen bundle, P5 latency/RAM, P6 Qualcomm và D1/D2/D3 vẫn là các gate chưa hoàn tất.
