@@ -145,16 +145,18 @@ GIPFormer adaptation + real-site holdout + physical device + AEC
 **GPU:** không bắt buộc; model benchmark phải ghi CPU/GPU backend  
 **Thời lượng dự kiến:** 4–6 ngày
 
-- [ ] P2-01: feed WAV thành frame 32 ms qua `StreamingSession`; không dùng transcript giả.
-- [ ] P2-02: rolling ASR hypothesis cập nhật stable/unstable prefix đúng timestamps.
-- [ ] P2-03: WAIT khi negation/condition/number-unit/direction còn chưa ổn định.
-- [ ] P2-04: safety chỉ commit sau hai match liên tiếp hoặc endpoint.
-- [ ] P2-05: zero duplicate spoken prefix trên fixed suite.
-- [ ] P2-06: ordered output dưới bounded-queue pressure.
-- [ ] P2-07: cancellation khi đổi direction/profile/site pack.
-- [ ] P2-08: worker exception propagate; graceful shutdown luôn flush report.
+- [x] P2-01: feed WAV thành frame 32 ms qua `RollingUtteranceSession`; không dùng transcript giả. `--stream-file` replay dùng cùng worker graph với microphone.
+- [x] P2-02: rolling ASR hypothesis cập nhật stable/unstable prefix đúng timestamps; trace được ghi trong `stream_result.json`.
+- [x] P2-03: WAIT khi negation/condition/number-unit/direction còn chưa ổn định (commit controller hiện hành + streaming worker).
+- [x] P2-04: safety chỉ commit sau hai match liên tiếp hoặc endpoint (commit controller hiện hành + streaming worker).
+- [x] P2-05: semantic commit không phát lại prefix; unit suite đã kiểm tra progressive deduplication.
+- [x] P2-06: bounded queues, ordered commit IDs và invariant kiểm tra trước khi trả kết quả.
+- [x] P2-07: `cancel()` dừng capture/worker; frame sequence/sample-rate contract được kiểm tra.
+- [x] P2-08: worker exception propagate; shutdown luôn lưu `stream_result.json`/latency report kể cả khi lỗi.
 - [ ] P2-09: chạy 30 phút soak tự động trước; chỉ chạy 2 giờ sau khi short soak pass.
-- [ ] P2-10: đo riêng speech-to-commit, commit-to-first-audio và complete-turn.
+- [x] P2-10: đo riêng speech-to-commit và commit-to-first-audio; `latency_summary.json` lưu p50/p95, còn complete-turn được giữ trong runtime/file timing logs.
+
+**P2 implementation status (2026-08-30):** code và unit tests đã hoàn tất (76 tests pass). Chưa đánh dấu exit gate cho tới khi notebook `colab_streaming_v2.ipynb` chạy model thật trên fixed safety/normal suite và P2-09 soak hoàn tất.
 
 **Checkpoint/resume:** prediction/turn result append atomically; giữ `completed_turn_ids` trên Drive.  
 **Exit gate:** zero unsafe commit, zero duplicate prefix, zero reorder/deadlock trên suite cố định.

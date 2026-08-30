@@ -133,6 +133,17 @@ Hệ thống là một đường ống hai chiều, cho phép chuyển đổi li
 | **VI → EN** (Mặc định) | Người Việt | Người Anh | `python src/pipeline.py --direction vi2en` |
 | **EN → VI** | Người Anh | Người Việt | `python src/pipeline.py --direction en2vi` |
 
+### Replay streaming (P2)
+
+Để kiểm tra pipeline streaming với model thật mà không cần microphone, dùng `--stream-file`. WAV được chia thành frame 32 ms, tự thêm đuôi im lặng để xác nhận endpoint, tắt playback và ghi trace/latency vào `--report-dir`:
+
+```bash
+python src/pipeline.py --config config/config.yaml --direction vi2en --profile development --offline \
+  --stream-file path/to/input.wav --report-dir reports/streaming_v2_smoke
+```
+
+Colab dùng `notebooks/colab_streaming_v2.ipynb`; notebook chỉ mount Drive và clone/pull GitHub, còn logic streaming nằm trong runtime Python. Kết quả `stream_result.json` ghi frame count, stable/unstable hypotheses, commit IDs, chunk timestamps, dropped frames và worker error (nếu có). Đây là integration smoke/soak gate, chưa phải tuyên bố production latency.
+
 ---
 
 ## Demo Kết Quả Dịch Thuật & Voice Cloning

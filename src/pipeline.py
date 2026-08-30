@@ -26,7 +26,7 @@ sys.path.insert(0, os.path.dirname(__file__))
 
 from context.engine import ConstructionContextEngine
 from context.site_pack import SitePackLoader
-from contracts import ASRHypothesis, AudioFrame, CommitKind
+from contracts import ASRHypothesis, AudioFrame, CommitKind, SynthesizedChunk
 from runtime.preflight import verify_artifacts
 from safety.audio_store import SafetyAudioStore
 from streaming.semantic_commit import (
@@ -137,6 +137,10 @@ class OneVoicePipeline:
         self._asr_loaded = False
         self._translation_loaded = False
         self._tts_loaded = False
+        self._worker_threads: list[threading.Thread] = []
+        self._stream_playback_enabled = True
+        self._stream_chunks: list[SynthesizedChunk] = []
+        self._stream_trace: list[dict] = []
 
     def _put(self, target: queue.Queue, item: object) -> bool:
         while not self.stop_event.is_set():
@@ -219,6 +223,24 @@ class OneVoicePipeline:
                 )
                 context = self.context.analyze(text, self.direction)
                 decision = self.committer.decide(hypothesis, context)
+                self._stream_trace.append(
+                    {
+                        "event_started_at": event.started_at,
+                        "event_updated_at": event.updated_at,
+                        "endpoint": event.endpoint,
+                        "hypothesis": hypothesis.text,
+                        "stable_prefix": hypothesis.stable_prefix,
+                        "unstable_tail": hypothesis.unstable_tail,
+                        "decision": decision.kind.value,
+                        "decision_text": decision.text,
+                        "reason": decision.reason,
+                        "safety_id": (
+                            decision.safety_match.safety_id
+                            if decision.safety_match is not None
+                            else None
+                        ),
+                    }
+                )
                 if event.endpoint:
                     self.aligner.reset()
                     self.hypothesis_assembler.reset()
@@ -335,10 +357,19 @@ class OneVoicePipeline:
                     first_audio_at - item["decision"].decided_at
                 ) * 1000
                 self._log_latency(item, total_ms, commit_to_audio_ms, tts_ms)
-                if not self.tts.is_silence(audio):
-                    self.tts.play(audio, sample_rate=sample_rate)
-                else:
+                chunk = SynthesizedChunk(
+                    audio=np.asarray(audio, dtype=np.float32),
+                    sample_rate=int(sample_rate),
+                    engine=self.tts.engine_name(item["direction"]),
+                    commit_id=commit_id,
+                    committed_at=item["decision"].decided_at,
+                    first_audio_at=first_audio_at,
+                )
+                self._stream_chunks.append(chunk)
+                if self.tts.is_silence(audio):
                     raise RuntimeError("TTS returned silence; commit was not played")
+                if self._stream_playback_enabled:
+                    self.tts.play(audio, sample_rate=sample_rate)
                 self.srt.add_entry(
                     item["text"], item["translated"], len(audio) / sample_rate
                 )
@@ -422,21 +453,8 @@ class OneVoicePipeline:
 
     def start(self) -> None:
         self.load_models()
-        workers = [
-            ("Denoise", self._denoise_worker),
-            ("ASR", self._asr_worker),
-            ("MT", self._mt_worker),
-            ("TTS", self._tts_worker),
-        ]
-        threads = [
-            threading.Thread(
-                target=self._run_worker, args=(name, fn), daemon=True, name=name
-            )
-            for name, fn in workers
-        ]
         self.capture.start()
-        for thread in threads:
-            thread.start()
+        threads = self._start_workers()
         print(f"🎙️ OneVoice V2 LIVE — {self.direction} ({self.profile})")
         try:
             while not self.stop_event.wait(0.2):
@@ -451,10 +469,7 @@ class OneVoicePipeline:
             self._drain_queues(timeout_s=5.0)
             self.stop_event.set()
         finally:
-            self.stop_event.set()
-            self.capture.stop()
-            for thread in threads:
-                thread.join(timeout=2)
+            self._stop_workers(threads)
             self._save_reports()
         if self._fatal_error:
             raise RuntimeError("OneVoice worker failed") from self._fatal_error
@@ -468,6 +483,179 @@ class OneVoicePipeline:
             time.sleep(0.05)
         remaining = sum(target.unfinished_tasks for target in queues)
         print(f"[Shutdown] Queue drain timeout; {remaining} items remain")
+
+    def _start_workers(self) -> list[threading.Thread]:
+        workers = [
+            ("Denoise", self._denoise_worker),
+            ("ASR", self._asr_worker),
+            ("MT", self._mt_worker),
+            ("TTS", self._tts_worker),
+        ]
+        threads = [
+            threading.Thread(
+                target=self._run_worker,
+                args=(name, fn),
+                daemon=True,
+                name=name,
+            )
+            for name, fn in workers
+        ]
+        self._worker_threads = threads
+        for thread in threads:
+            thread.start()
+        return threads
+
+    def _stop_workers(self, threads: list[threading.Thread] | None = None) -> None:
+        self.stop_event.set()
+        self.capture.stop()
+        for thread in threads or self._worker_threads:
+            if thread is not threading.current_thread():
+                thread.join(timeout=2)
+        self._worker_threads = []
+
+    def cancel(self) -> None:
+        """Request cancellation; the active stream exits and flushes reports."""
+        self.stop_event.set()
+        self.capture.stop()
+
+    def stream_file(self, input_path: str, realtime: bool = False) -> dict:
+        """Replay a WAV as 32 ms frames through the real streaming workers.
+
+        This deterministic P2 harness uses the configured ASR/MT/TTS models,
+        bounded queues and the same VAD/commit path as microphone mode, while
+        suppressing speaker playback. A silence tail forces the endpoint so the
+        final utterance is not lost.
+        """
+        import soundfile as sf
+
+        self.stop_event.clear()
+        self._fatal_error = None
+        self._stream_playback_enabled = False
+        self._stream_chunks = []
+        self._stream_trace = []
+        self._latency_log = []
+        self.srt = SRTGenerator(bilingual=True)
+        self.streaming_session.reset(clear_sequence=True)
+        self.aligner.reset()
+        self.hypothesis_assembler.reset()
+        self.committer.reset()
+        self.load_models()
+
+        audio, source_rate = sf.read(input_path, dtype="float32", always_2d=False)
+        if audio.ndim > 1:
+            audio = audio.mean(axis=1)
+        if len(audio) == 0:
+            raise ValueError(f"Input audio is empty: {input_path}")
+        target_rate = int(self.cfg["audio"]["sample_rate"])
+        if source_rate != target_rate:
+            target_size = max(1, round(len(audio) * target_rate / source_rate))
+            audio = np.interp(
+                np.linspace(0, len(audio) - 1, target_size),
+                np.arange(len(audio)),
+                audio,
+            ).astype(np.float32)
+        frame_samples = self.streaming_session.frame_samples
+        frame_ms = self.streaming_session.frame_ms
+        frame_count = 0
+        stream_started_at = time.perf_counter()
+        stream_completed_at = stream_started_at
+        threads = self._start_workers()
+        stream_error: BaseException | None = None
+        try:
+            for offset in range(0, len(audio), frame_samples):
+                if self.stop_event.is_set():
+                    break
+                block = np.asarray(audio[offset : offset + frame_samples], dtype=np.float32)
+                if len(block) < frame_samples:
+                    block = np.pad(block, (0, frame_samples - len(block)))
+                frame_count += 1
+                frame = AudioFrame(
+                    samples=np.ascontiguousarray(block),
+                    sample_rate=target_rate,
+                    sequence=frame_count,
+                    captured_at=time.perf_counter(),
+                )
+                if not self._put(self.q_audio_raw, frame):
+                    break
+                if realtime:
+                    time.sleep(frame_ms / 1000.0)
+
+            # Endpoint after configured silence. One extra frame avoids an
+            # off-by-one when the duration is exactly a multiple of frame_ms.
+            silence_frames = max(
+                1, int(np.ceil(self.streaming_session.endpoint_ms / frame_ms)) + 1
+            )
+            for _ in range(silence_frames):
+                if self.stop_event.is_set():
+                    break
+                frame_count += 1
+                frame = AudioFrame(
+                    samples=np.zeros(frame_samples, dtype=np.float32),
+                    sample_rate=target_rate,
+                    sequence=frame_count,
+                    captured_at=time.perf_counter(),
+                )
+                if not self._put(self.q_audio_raw, frame):
+                    break
+                if realtime:
+                    time.sleep(frame_ms / 1000.0)
+            self._drain_queues(timeout_s=max(10.0, len(audio) / target_rate + 10.0))
+            if self._fatal_error:
+                raise RuntimeError("OneVoice streaming worker failed") from self._fatal_error
+        except BaseException as exc:
+            stream_error = exc
+        finally:
+            self._stop_workers(threads)
+            self._stream_playback_enabled = True
+            self._save_reports()
+            stream_completed_at = time.perf_counter()
+
+        commit_ids = [chunk.commit_id for chunk in self._stream_chunks]
+        result = {
+            "schema_version": 1,
+            "direction": self.direction,
+            "profile": self.profile,
+            "offline": self.offline,
+            "input_path": str(Path(input_path).resolve()),
+            "frame_samples": frame_samples,
+            "frame_ms": frame_ms,
+            "frames_submitted": frame_count,
+            "stream_started_at": stream_started_at,
+            "stream_completed_at": stream_completed_at,
+            "complete_turn_ms": (stream_completed_at - stream_started_at) * 1000,
+            "commits": len(self._stream_chunks),
+            "commit_ids": commit_ids,
+            "hypothesis_trace": self._stream_trace,
+            "chunks": [
+                {
+                    "commit_id": chunk.commit_id,
+                    "sample_rate": chunk.sample_rate,
+                    "samples": int(len(chunk.audio)),
+                    "engine": chunk.engine,
+                    "committed_at": chunk.committed_at,
+                    "first_audio_at": chunk.first_audio_at,
+                    "commit_to_first_audio_ms": (
+                        chunk.first_audio_at - chunk.committed_at
+                    )
+                    * 1000,
+                }
+                for chunk in self._stream_chunks
+            ],
+            "dropped_audio_frames": self.capture.dropped_frames,
+            "fatal_error": repr(self._fatal_error) if self._fatal_error else None,
+        }
+        if self.report_dir:
+            self.report_dir.mkdir(parents=True, exist_ok=True)
+            temporary = self.report_dir / "stream_result.json.tmp"
+            temporary.write_text(
+                json.dumps(result, ensure_ascii=False, indent=2), encoding="utf-8"
+            )
+            temporary.replace(self.report_dir / "stream_result.json")
+        if commit_ids != sorted(commit_ids) or len(commit_ids) != len(set(commit_ids)):
+            raise RuntimeError("Streaming output commit order is not monotonic")
+        if stream_error is not None:
+            raise stream_error.with_traceback(stream_error.__traceback__)
+        return result
 
     def process_file(self, input_path: str, output_path: str | None = None) -> str:
         import soundfile as sf
@@ -692,9 +880,21 @@ def main() -> None:
     parser.add_argument("--site-pack")
     parser.add_argument("--offline", action="store_true")
     parser.add_argument("--input-file")
+    parser.add_argument(
+        "--stream-file",
+        help="Replay a WAV through 32 ms streaming/VAD/commit workers (no speaker playback)",
+    )
+    parser.add_argument(
+        "--realtime",
+        action="store_true",
+        help="Throttle --stream-file replay to capture frame rate",
+    )
     parser.add_argument("--output-file")
     parser.add_argument("--report-dir")
     args = parser.parse_args()
+
+    if args.input_file and args.stream_file:
+        parser.error("--input-file and --stream-file are mutually exclusive")
 
     pipeline = OneVoicePipeline(
         config_path=args.config,
@@ -704,7 +904,10 @@ def main() -> None:
         offline=args.offline,
         report_dir=args.report_dir,
     )
-    if args.input_file:
+    if args.stream_file:
+        result = pipeline.stream_file(args.stream_file, realtime=args.realtime)
+        print(json.dumps(result, ensure_ascii=False, indent=2))
+    elif args.input_file:
         print(f"✅ Output saved: {pipeline.process_file(args.input_file, args.output_file)}")
     else:
         pipeline.start()

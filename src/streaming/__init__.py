@@ -7,7 +7,11 @@ from .semantic_commit import (
 )
 from .session import RollingAudioEvent, RollingUtteranceSession
 
+# Public V2 name from the design document; keep the descriptive legacy class
+# name as the implementation and compatibility import.
+StreamingSession = RollingUtteranceSession
+
 __all__ = [
     "RollingHypothesisAssembler", "SemanticCommitController", "StablePrefixAligner",
-    "RollingAudioEvent", "RollingUtteranceSession",
+    "RollingAudioEvent", "RollingUtteranceSession", "StreamingSession",
 ]

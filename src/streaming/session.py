@@ -42,9 +42,25 @@ class RollingUtteranceSession:
         self._voiced_ms = 0.0
         self._silence_ms = 0.0
         self._last_emit_ms = 0.0
+        self._last_sequence: int | None = None
 
     def accept(self, frame: AudioFrame, denoise_ms: float = 0.0) -> RollingAudioEvent | None:
         samples = np.asarray(frame.samples, dtype=np.float32)
+        if int(frame.sample_rate) != self.sample_rate:
+            raise ValueError(
+                f"AudioFrame sample rate {frame.sample_rate} does not match session {self.sample_rate}"
+            )
+        if samples.ndim != 1:
+            raise ValueError("AudioFrame samples must be mono float32")
+        if samples.size != self.frame_samples:
+            raise ValueError(
+                f"AudioFrame has {samples.size} samples; expected {self.frame_samples}"
+            )
+        if self._last_sequence is not None and frame.sequence <= self._last_sequence:
+            raise ValueError(
+                f"AudioFrame sequence must increase ({frame.sequence} after {self._last_sequence})"
+            )
+        self._last_sequence = frame.sequence
         rms = float(np.sqrt(np.mean(samples * samples))) if samples.size else 0.0
         voiced = rms >= self.threshold
         if not self._active:
@@ -94,10 +110,18 @@ class RollingUtteranceSession:
             denoise_ms=sum(value for _, value in selected),
         )
 
-    def reset(self) -> None:
+    def reset(self, *, clear_sequence: bool = False) -> None:
+        """Reset utterance state while retaining frame ordering by default.
+
+        Endpoint resets start the next utterance in the same capture stream, so
+        their sequence numbers must remain monotonic. A new replay/capture
+        session can explicitly clear the sequence with ``clear_sequence``.
+        """
         self._active = False
         self._frames = []
         self._voiced_ms = 0.0
         self._silence_ms = 0.0
         self._last_emit_ms = 0.0
+        if clear_sequence:
+            self._last_sequence = None
         self._pre_roll.clear()

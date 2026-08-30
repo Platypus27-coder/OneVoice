@@ -57,3 +57,5 @@ the current release.
 
 To intentionally rebuild the complete historical report, change `PROFILE` to
 `'all'`; this is an audit view, not the release result.
+
+12. `colab_streaming_v2.ipynb` — replay một WAV qua pipeline streaming thật (frame 32 ms, VAD rolling, stable-prefix/semantic commit, bounded workers và ordered TTS); ghi `stream_result.json`, `latency.json` và `latency_summary.json` trên Drive. Notebook chỉ mount Drive/clone GitHub; không chứa logic runtime.

@@ -391,6 +391,23 @@ class StreamingTests(unittest.TestCase):
         self.assertLessEqual(len(partial.audio), 2 * 512)
         self.assertTrue(events[-1].endpoint)
 
+    def test_rolling_session_rejects_invalid_frame_contract(self):
+        session = RollingUtteranceSession(
+            {"sample_rate": 16000, "chunk_size": 512},
+            {},
+        )
+        with self.assertRaisesRegex(ValueError, "sample rate"):
+            session.accept(
+                AudioFrame(np.zeros(512, dtype=np.float32), 8000, 1, 1.0)
+            )
+        with self.assertRaisesRegex(ValueError, "expected 512"):
+            session.accept(
+                AudioFrame(np.zeros(256, dtype=np.float32), 16000, 1, 1.0)
+            )
+        session.accept(AudioFrame(np.zeros(512, dtype=np.float32), 16000, 2, 2.0))
+        with self.assertRaisesRegex(ValueError, "must increase"):
+            session.accept(AudioFrame(np.zeros(512, dtype=np.float32), 16000, 2, 3.0))
+
 
 class RuntimeSafetyTests(unittest.TestCase):
     def test_sensevoice_onnx_export_bundle_excludes_pytorch_weights(self):
