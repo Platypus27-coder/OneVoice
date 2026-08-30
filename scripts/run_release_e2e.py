@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import csv
 import hashlib
 import json
 import os
@@ -56,6 +57,7 @@ def select_cases(
     direction: str,
     context: ConstructionContextEngine,
     count: int,
+    routes: tuple[str, ...] = ("normal", "safety"),
 ) -> list[dict]:
     selected = {"normal": [], "safety": []}
     seen_audio: set[str] = set()
@@ -90,12 +92,71 @@ def select_cases(
         )
         if all(len(values) >= count for values in selected.values()):
             break
-    shortages = {route: count - len(values) for route, values in selected.items() if len(values) < count}
+    shortages = {
+        route: count - len(selected[route])
+        for route in routes
+        if len(selected[route]) < count
+    }
     if shortages:
         raise ValueError(
             f"{manifest} does not contain enough unique test cases for {direction}: {shortages}"
         )
-    return selected["normal"] + selected["safety"]
+    return [case for route in routes for case in selected[route]]
+
+
+def select_safety_audio_cases(
+    safety_manifest: Path,
+    safety_csv: Path,
+    direction: str,
+    count: int,
+) -> list[dict]:
+    """Select reviewed, checksum-verified safety WAVs as a fixed holdout."""
+    payload = json.loads(safety_manifest.read_text(encoding="utf-8"))
+    entries = {
+        (str(row.get("safety_id")), str(row.get("direction"))): row
+        for row in payload.get("entries", [])
+    }
+    source_rows = {}
+    with safety_csv.open("r", encoding="utf-8-sig", newline="") as handle:
+        for row in csv.DictReader(handle):
+            source_rows[str(row.get("safety_id", ""))] = row
+    input_direction = "en2vi" if direction == "vi2en" else "vi2en"
+    cases = []
+    for safety_id in sorted(source_rows):
+        row = source_rows[safety_id]
+        entry = entries.get((safety_id, input_direction))
+        if not entry:
+            continue
+        path = Path(str(entry.get("path", "")))
+        if not path.is_absolute():
+            path = safety_manifest.parent / path
+        if not path.is_file():
+            continue
+        text = str(row.get("vi" if direction == "vi2en" else "en", "")).strip()
+        if not text:
+            continue
+        cases.append(
+            {
+                "case_id": f"{direction}-safety-{len(cases) + 1:03d}",
+                "direction": direction,
+                "expected_route": "safety",
+                "safety_id": safety_id,
+                "input_path": str(path.resolve()),
+                "reference_text": text,
+                "reference_translation": str(
+                    row.get("en" if direction == "vi2en" else "vi", "")
+                ),
+                "source_id": safety_id,
+            }
+        )
+        if len(cases) >= count:
+            break
+    if len(cases) < count:
+        raise ValueError(
+            f"Safety manifest has only {len(cases)} usable {direction} cases; "
+            f"need {count}"
+        )
+    return cases
 
 
 def valid_resume(result_path: Path) -> bool:
@@ -147,6 +208,16 @@ def main() -> None:
     parser.add_argument("--vi-manifest", required=True, type=Path)
     parser.add_argument("--en-manifest", required=True, type=Path)
     parser.add_argument("--output-dir", required=True, type=Path)
+    parser.add_argument(
+        "--safety-manifest",
+        type=Path,
+        help="Reviewed safety audio manifest; defaults to pipeline.safety_audio_manifest.",
+    )
+    parser.add_argument(
+        "--safety-csv",
+        type=Path,
+        help="Reviewed safety source CSV; defaults to pipeline.safety_source_csv.",
+    )
     parser.add_argument("--cases-per-route", type=int, default=20)
     parser.add_argument("--profile", choices=["development", "edge", "premium"], default="development")
     parser.add_argument("--offline", action=argparse.BooleanOptionalAction, default=True)
@@ -164,11 +235,24 @@ def main() -> None:
         Path(data_dir) / "safety_fast_path.csv"
     )
     context = ConstructionContextEngine.from_data_dir(data_dir, safety_path=safety_csv)
+    safety_manifest = args.safety_manifest or Path(
+        config["pipeline"].get("safety_audio_manifest", "artifacts/safety_audio/manifest.json")
+    )
+    safety_csv_path = args.safety_csv or Path(safety_csv)
+    if not safety_manifest.is_file():
+        raise FileNotFoundError(f"Safety audio manifest not found: {safety_manifest}")
+    if not safety_csv_path.is_file():
+        raise FileNotFoundError(f"Safety source CSV not found: {safety_csv_path}")
     manifests = {"vi2en": args.vi_manifest, "en2vi": args.en_manifest}
     cases = [
         case
         for direction, manifest in manifests.items()
-        for case in select_cases(manifest, direction, context, args.cases_per_route)
+        for case in (
+            select_cases(manifest, direction, context, args.cases_per_route, routes=("normal",))
+            + select_safety_audio_cases(
+                safety_manifest, safety_csv_path, direction, args.cases_per_route
+            )
+        )
     ]
     atomic_json(args.output_dir / "case_manifest.json", {"schema_version": 1, "cases": cases})
 

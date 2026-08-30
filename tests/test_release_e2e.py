@@ -6,7 +6,7 @@ import unittest
 from pathlib import Path
 from types import SimpleNamespace
 
-from scripts.run_release_e2e import select_cases, sha256, valid_resume
+from scripts.run_release_e2e import select_cases, select_safety_audio_cases, sha256, valid_resume
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -74,6 +74,31 @@ class ReleaseE2ETests(unittest.TestCase):
         self.assertTrue(valid_resume(result))
         output.write_bytes(b"corrupt")
         self.assertFalse(valid_resume(result))
+
+    def test_safety_cases_are_selected_from_verified_audio_manifest(self):
+        safety_dir = self.root / "safety"
+        safety_dir.mkdir()
+        (safety_dir / "S1_vi2en.wav").write_bytes(b"en")
+        (safety_dir / "S1_en2vi.wav").write_bytes(b"vi")
+        manifest = safety_dir / "manifest.json"
+        manifest.write_text(
+            json.dumps(
+                {
+                    "schema_version": 2,
+                    "approval_id": "review-v1",
+                    "entries": [
+                        {"safety_id": "S1", "direction": "vi2en", "path": "S1_vi2en.wav"},
+                        {"safety_id": "S1", "direction": "en2vi", "path": "S1_en2vi.wav"},
+                    ],
+                }
+            ),
+            encoding="utf-8",
+        )
+        source = safety_dir / "review.csv"
+        source.write_text("safety_id,vi,en\nS1,Dừng lại,Stop\n", encoding="utf-8")
+        cases = select_safety_audio_cases(manifest, source, "vi2en", 1)
+        self.assertEqual(cases[0]["safety_id"], "S1")
+        self.assertTrue(cases[0]["input_path"].endswith("S1_en2vi.wav"))
 
 
 if __name__ == "__main__":
