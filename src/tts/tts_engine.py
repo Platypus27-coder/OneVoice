@@ -20,6 +20,9 @@ import time
 import queue
 import sys
 import os
+import shutil
+import subprocess
+import wave
 import numpy as np
 try:
     import sounddevice as sd
@@ -303,6 +306,11 @@ class TTSEngine:
 
     def _load_edge_vi_tts(self):
         """Load a lightweight local VI fallback without remote model access."""
+        # Linux Colab's pyttsx3/espeak driver can acknowledge save_to_file()
+        # while leaving a non-RIFF placeholder behind.  Keep pyttsx3 as the
+        # configured backend, but remember the native executable as a reliable
+        # local fallback for writing a real PCM WAV.
+        self._vi_tts_executable = shutil.which("espeak-ng") or shutil.which("espeak")
         try:
             import pyttsx3
             engine = pyttsx3.init()
@@ -311,7 +319,49 @@ class TTSEngine:
             self._vi_tts_engine_name = "pyttsx3-offline-demo"
             print("[TTS] ✅ Local pyttsx3 VI fallback loaded for edge profile.")
         except Exception as exc:
+            if self._vi_tts_executable:
+                self._vi_tts_engine_name = "espeak-ng-offline-demo"
+                print(f"[TTS] ✅ Local {os.path.basename(self._vi_tts_executable)} VI fallback loaded.")
+                return
             raise RuntimeError(f"No local Vietnamese edge TTS available: {exc}") from exc
+
+    def _synthesize_espeak_vi(self, text: str) -> tuple[np.ndarray, int]:
+        """Synthesize a standards-compliant PCM WAV with the local eSpeak CLI."""
+        executable = getattr(self, "_vi_tts_executable", None)
+        if not executable:
+            raise RuntimeError("espeak/espeak-ng executable is not installed")
+        import tempfile
+
+        tmp_path = None
+        try:
+            with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as tmp:
+                tmp_path = tmp.name
+            subprocess.run(
+                [executable, "-v", "vi", "-s", "165", "-w", tmp_path, text],
+                check=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True,
+            )
+            with wave.open(tmp_path, "rb") as handle:
+                channels = handle.getnchannels()
+                sample_width = handle.getsampwidth()
+                sample_rate = handle.getframerate()
+                frames = handle.readframes(handle.getnframes())
+            if sample_width == 2:
+                audio = np.frombuffer(frames, dtype="<i2").astype(np.float32) / 32768.0
+            elif sample_width == 1:
+                audio = (np.frombuffer(frames, dtype=np.uint8).astype(np.float32) - 128.0) / 128.0
+            else:
+                raise RuntimeError(f"Unsupported eSpeak sample width: {sample_width}")
+            if channels > 1:
+                audio = audio.reshape(-1, channels).mean(axis=1)
+            if audio.size == 0:
+                raise RuntimeError("eSpeak produced an empty WAV")
+            return audio.astype(np.float32), int(sample_rate)
+        finally:
+            if tmp_path and os.path.exists(tmp_path):
+                os.unlink(tmp_path)
 
     def _synthesize_gtts(self, text: str, language: str) -> tuple[np.ndarray, int]:
         """Development-only online synthesis for pre-generated, reviewed WAVs."""
@@ -408,6 +458,18 @@ class TTSEngine:
                 return audio, sr
             except Exception as exc:
                 print(f"[TTS VI] ⚠ Local edge TTS failed: {exc}")
+
+        # pyttsx3 may produce an invalid placeholder WAV under Colab's
+        # headless eSpeak driver.  Retry through the native CLI before ever
+        # returning the silence stub.
+        if getattr(self, "_vi_tts_executable", None):
+            try:
+                audio, sr = self._synthesize_espeak_vi(text)
+                self._vi_tts_engine_name = "espeak-ng-offline-demo"
+                print(f"[TTS VI] ✅ {os.path.basename(self._vi_tts_executable)} fallback")
+                return audio, sr
+            except Exception as exc:
+                print(f"[TTS VI] ⚠ eSpeak fallback failed: {exc}")
 
         if not self.offline:
             try:
