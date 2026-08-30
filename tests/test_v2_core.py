@@ -79,6 +79,11 @@ class ContextAndSafetyTests(unittest.TestCase):
         self.assertEqual(len(result.safety_candidates), 1)
         self.assertTrue(result.safety_candidates[0].translated_text)
 
+    def test_safety_match_recovers_single_asr_token_slip(self):
+        result = self.engine.analyze("disconck the power immediately", "en2vi")
+        self.assertEqual(len(result.safety_candidates), 1)
+        self.assertIn("Ngắt điện ngay", result.safety_candidates[0].translated_text)
+
     def test_site_pack_validation(self):
         with self.assertRaises(SitePackError):
             SitePackLoader.from_dict({"site_id": "only-one-field"})

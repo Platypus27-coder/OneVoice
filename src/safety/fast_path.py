@@ -20,6 +20,50 @@ def normalize_match_text(text: str) -> str:
     return " ".join(value.split())
 
 
+def _edit_distance_at_most(left: str, right: str, limit: int) -> bool:
+    """Return whether two tokens have Levenshtein distance within ``limit``."""
+    if left == right:
+        return True
+    if abs(len(left) - len(right)) > limit:
+        return False
+    previous = list(range(len(right) + 1))
+    for row, left_char in enumerate(left, 1):
+        current = [row]
+        for column, right_char in enumerate(right, 1):
+            current.append(
+                min(
+                    current[-1] + 1,
+                    previous[column] + 1,
+                    previous[column - 1] + (left_char != right_char),
+                )
+            )
+        if min(current) > limit:
+            return False
+        previous = current
+    return previous[-1] <= limit
+
+
+def _conservative_asr_match(normalized: str, candidate: str) -> bool:
+    """Accept one bounded ASR token slip for an otherwise exact safety phrase."""
+    observed = normalized.split()
+    expected = candidate.split()
+    if len(observed) < 2 or len(observed) != len(expected):
+        return False
+    fuzzy_tokens = 0
+    for actual, wanted in zip(observed, expected):
+        if actual == wanted:
+            continue
+        # Longer words can lose a syllable and still be recognizable (for
+        # example, SenseVoice produced ``disconck`` for ``disconnect``).
+        limit = max(1, min(3, len(wanted) // 3))
+        if not _edit_distance_at_most(actual, wanted, limit):
+            return False
+        fuzzy_tokens += 1
+        if fuzzy_tokens > 1:
+            return False
+    return fuzzy_tokens == 1
+
+
 def _as_bool(value: object) -> bool:
     return str(value).strip().casefold() in {"1", "true", "yes", "y"}
 
@@ -108,4 +152,15 @@ class SafetyFastPath:
     def match(self, text: str, direction: str) -> SafetyMatch | None:
         normalized = normalize_match_text(text)
         table = self._vi if direction == "vi2en" else self._en
-        return table.get(normalized)
+        exact = table.get(normalized)
+        if exact is not None:
+            return exact
+        # ASR can make a single-character slip in a critical phrase (for
+        # example, "disconck the power immediately").  Fuzzy matching is
+        # deliberately limited to equal-length phrases with at most one
+        # boundedly-corrupted token, preventing ordinary sentences from
+        # entering safety path.
+        for candidate, safety_match in table.items():
+            if _conservative_asr_match(normalized, candidate):
+                return safety_match
+        return None
