@@ -234,6 +234,11 @@ class ContextAndSafetyTests(unittest.TestCase):
             "missing_negation",
             self.engine.validate_translation("Has the restricted area been checked?", question, "vi2en"),
         )
+        punctuationless_question = self.engine.analyze("Khu v?c c?m ?? ???c ki?m tra ch?a", "vi2en")
+        self.assertNotIn(
+            "missing_negation",
+            self.engine.validate_translation("Has the restricted area been checked?", punctuationless_question, "vi2en"),
+        )
         self.assertNotIn(
             "missing_negation",
             self.engine.validate_translation("The scaffold is unsafe!", unsafe, "vi2en"),

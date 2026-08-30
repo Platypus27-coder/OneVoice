@@ -346,8 +346,18 @@ class ConstructionContextEngine:
             negation = match.group(0)
             # "đã ... chưa?" is a yes/no completion question, not a
             # prohibition/negative instruction that must render as "not".
-            if negation == "chưa" and "?" in text[match.end() :]:
-                continue
+            # ASR normally removes punctuation, so also recognize a trailing
+            # "chưa" or a phrase containing "đã ... chưa" without '?'.
+            if negation == "chưa":
+                prefix = normalized[: match.start()].strip()
+                suffix = normalized[match.end() :].strip()
+                completion_question = (
+                    "?" in text[match.end() :]
+                    or not suffix
+                    or bool(re.search(r"\bđã\b", prefix))
+                )
+                if completion_question:
+                    continue
             negations.append(negation)
         if numbers:
             entities["numbers"] = numbers
