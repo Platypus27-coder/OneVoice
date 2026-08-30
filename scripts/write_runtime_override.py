@@ -59,6 +59,9 @@ def main() -> None:
     config["sensevoice"]["quantize"] = False  # INT8 candidate failed its quality gate.
     config["sensevoice"]["allow_remote_fallback"] = False
     config["sensevoice"].pop("remote_model", None)
+    # Normal offline E2E uses a real local system voice. This is explicitly a
+    # development/internal-demo backend, never a network or silence fallback.
+    config["tts"]["offline_engine"] = "pyttsx3"
     config["translation"]["directions"]["vi2en"]["local_model_dir"] = str(args.mt_vi2en_dir.resolve())
     config["translation"]["directions"]["en2vi"]["local_model_dir"] = str(args.mt_en2vi_dir.resolve())
     config["pipeline"]["profile"] = args.profile

@@ -57,7 +57,11 @@ class TTSEngine:
         """Initialize all TTS backends."""
         print(f"[TTS] Initializing engines...")
         if direction in (None, "en2vi"):
-            if self.tts_tier == "premium":
+            # Explicit offline/demo mode uses a real local system voice and
+            # avoids OmniVoice's large optional dependency stack.
+            if self.offline and self.cfg.get("offline_engine") == "pyttsx3":
+                self._load_edge_vi_tts()
+            elif self.tts_tier == "premium":
                 self._load_omnivoice()
             else:
                 self._load_edge_vi_tts()
@@ -304,6 +308,7 @@ class TTSEngine:
             engine = pyttsx3.init()
             engine.setProperty("rate", 165)
             self._vi_tts_engine = engine
+            self._vi_tts_engine_name = "pyttsx3-offline-demo"
             print("[TTS] ✅ Local pyttsx3 VI fallback loaded for edge profile.")
         except Exception as exc:
             raise RuntimeError(f"No local Vietnamese edge TTS available: {exc}") from exc

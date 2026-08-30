@@ -533,6 +533,22 @@ class RuntimeSafetyTests(unittest.TestCase):
         self.assertFalse(engine.is_silence(english))
         self.assertFalse(engine.is_silence(vietnamese))
 
+    def test_offline_demo_tts_selects_local_system_voice_instead_of_omnivoice(self):
+        from unittest import mock
+
+        config = {
+            "audio": {"sample_rate": 16000},
+            "tts": {"offline_engine": "pyttsx3"},
+            "profiles": {"development": {"tts_tier": "premium"}},
+        }
+        engine = TTSEngine(config, profile="development", offline=True)
+        calls = []
+        engine._load_edge_vi_tts = lambda: calls.append("local")
+        engine._load_omnivoice = lambda: calls.append("omnivoice")
+        with mock.patch("builtins.print"):
+            engine.load(direction="en2vi")
+        self.assertEqual(calls, ["local"])
+
     def test_split_reconciliation_preserves_test_holdout_and_pattern_groups(self):
         rows, report = reconcile_rows(
             [

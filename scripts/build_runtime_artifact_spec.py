@@ -80,6 +80,7 @@ def main() -> None:
             {"name": "GIPFormer runtime", "python_module": "sherpa_onnx", "profiles": ["development"], "directions": ["vi2en"]},
             {"name": "SenseVoice runtime", "python_module": "funasr_onnx", "profiles": ["development"], "directions": ["en2vi"]},
             {"name": "EnViT5 runtime", "python_module": "transformers", "profiles": ["development"], "directions": ["vi2en", "en2vi"]},
+            {"name": "Offline demo TTS", "python_module": "pyttsx3", "profiles": ["development"], "directions": ["vi2en", "en2vi"]},
         ],
         "artifacts": artifacts,
     }
