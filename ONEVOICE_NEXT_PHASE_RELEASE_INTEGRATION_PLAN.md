@@ -169,14 +169,21 @@ GIPFormer adaptation + real-site holdout + physical device + AEC
 **GPU:** không bắt buộc  
 **Thời lượng dự kiến:** 3–5 ngày
 
-- [ ] P3-01: đối chiếu số lượng safety benchmark (196 rows) với approved safety source (126 canonical rows/252 WAV); tạo mapping và giải thích duplicate/variant.
-- [ ] P3-02: fail release nếu safety ID đang dùng không có đủ VI/EN WAV, review status và checksum.
-- [ ] P3-03: giữ gTTS bundle ở nhãn `development/internal-demo`; không ghi là production voice.
-- [ ] P3-04: chọn normal offline TTS riêng cho EN output và VI output; runtime không gọi gTTS.
-- [ ] P3-05: benchmark tối thiểu 200 prompts/language gồm term, number, unit, acronym và tên thiết bị.
-- [ ] P3-06: phát hiện silence, clipping, corrupt WAV và sample-rate mismatch.
-- [ ] P3-07: đo synthesis-to-first-sample p50/p95 và peak RSS.
-- [ ] P3-08: premium F5/OmniVoice nằm ngoài edge memory gate.
+- [x] P3-01: đối chiếu số lượng safety benchmark (196 rows) với approved safety source (126 canonical rows/252 WAV); tạo mapping và giải thích duplicate/variant.
+- [x] P3-02: fail release nếu safety ID đang dùng không có đủ VI/EN WAV, review status và checksum.
+- [x] P3-03: giữ gTTS bundle ở nhãn `development/internal-demo`; không ghi là production voice.
+- [x] P3-04: chọn normal offline TTS riêng cho EN output và VI output; runtime không gọi gTTS.
+- [x] P3-05: benchmark tối thiểu 200 prompts/language gồm term, number, unit, acronym và tên thiết bị.
+- [x] P3-06: phát hiện silence, clipping, corrupt WAV và sample-rate mismatch.
+- [x] P3-07: đo synthesis-to-first-sample p50/p95 và peak RSS.
+- [x] P3-08: premium F5/OmniVoice nằm ngoài edge memory gate.
+
+**P3 demo gate evidence (2026-08-31):** safety reconciliation đạt 196/126/252
+và benchmark normal offline TTS đạt 200/200 cho mỗi hướng, không silence,
+corrupt WAV hay clipping. VI→EN dùng `espeak-ng-offline-demo` (p95 45.549 ms),
+EN→VI dùng `pyttsx3-offline-demo` (p95 13.490 ms), peak RSS khoảng 102.4 MB.
+P3-01 đến P3-07 được xem là hoàn tất cho release-candidate demo; P3-08 được
+khóa bởi profile edge. Đây không phải production voice-quality validation.
 
 **P3 implementation status (2026-08-31):** `scripts/reconcile_safety_audio.py` và cell
 reconciliation trong `colab_safety_audio_v2.ipynb` đã được triển khai. Chúng sẽ tạo
