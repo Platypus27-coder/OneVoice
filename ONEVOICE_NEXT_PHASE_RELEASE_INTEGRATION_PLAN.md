@@ -153,7 +153,7 @@ GIPFormer adaptation + real-site holdout + physical device + AEC
 - [x] P2-06: bounded queues, ordered commit IDs và invariant kiểm tra trước khi trả kết quả.
 - [x] P2-07: `cancel()` dừng capture/worker; frame sequence/sample-rate contract được kiểm tra.
 - [x] P2-08: worker exception propagate; shutdown luôn lưu `stream_result.json`/latency report kể cả khi lỗi.
-- [ ] P2-09: chạy 30 phút soak tự động trước; chỉ chạy 2 giờ sau khi short soak pass.
+- [ ] P2-09: `scripts/run_streaming_soak.py` đã sẵn sàng để chạy 30 phút soak tự động trước; chỉ chạy 2 giờ sau khi short soak pass.
 - [x] P2-10: đo riêng speech-to-commit và commit-to-first-audio; `latency_summary.json` lưu p50/p95, còn complete-turn được giữ trong runtime/file timing logs.
 
 **P2 implementation status (2026-08-31):** code, `scripts/run_streaming_e2e.py` fixed-suite runner và unit tests đã hoàn tất (80 tests pass). Regression test đã khóa lỗi safety commit trùng tại endpoint. Chưa đánh dấu exit gate cho tới khi notebook `colab_streaming_v2.ipynb` chạy model thật trên fixed safety/normal suite và P2-09 soak hoàn tất.

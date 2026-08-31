@@ -8,6 +8,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 
 from run_streaming_e2e import validate_stream_result
+from run_streaming_soak import initial_state, load_state
 
 
 def safety_result() -> tuple[dict, list[dict]]:
@@ -50,6 +51,18 @@ class StreamingE2ETests(unittest.TestCase):
             result,
             [{"route": "mt", "validation_errors": []}],
         )
+
+    def test_soak_state_is_resumable_only_for_same_duration(self):
+        with self.subTest("initial state"):
+            state = initial_state(1800.0)
+            self.assertEqual(state["completed_turns"], 0)
+            self.assertFalse(state["finished"])
+        with self.subTest("changed duration rejected"):
+            temporary = ROOT / "tests" / ".tmp" / "soak-state.json"
+            temporary.parent.mkdir(parents=True, exist_ok=True)
+            temporary.write_text('{"target_seconds": 1800}', encoding="utf-8")
+            with self.assertRaisesRegex(RuntimeError, "duration changed"):
+                load_state(temporary, 3600.0, True)
 
 
 if __name__ == "__main__":

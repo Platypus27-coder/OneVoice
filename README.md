@@ -146,6 +146,8 @@ Colab dùng `notebooks/colab_streaming_v2.ipynb`; notebook chỉ mount Drive và
 
 Cell cuối của notebook chạy `scripts/run_streaming_e2e.py`: fixed suite gồm normal + safety ở cả hai chiều, ghi `case_manifest.json`, report từng turn và `summary.json` có resume. Smoke mặc định dùng 1 case/route; chỉ tăng số case hoặc chạy soak sau khi smoke pass.
 
+Sau fixed suite pass, dùng `scripts/run_streaming_soak.py --duration-minutes 30 --realtime --resume` để lặp fixed cases trong thời gian thực. `soak_state.json` tích luỹ thời lượng đã chạy, còn `events.jsonl` ghi từng turn nên có thể chuyển Colab account rồi chạy lại cùng output directory.
+
 ---
 
 ## Demo Kết Quả Dịch Thuật & Voice Cloning
