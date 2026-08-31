@@ -705,10 +705,10 @@ class TTSEngine:
             return str(getattr(self, "_en_tts_engine", None) or "unavailable")
         if self._omni is not None:
             return "omnivoice"
-        if self._vi_tts_engine is not None:
-            return "pyttsx3"
         if self._vi_tts_engine_name:
             return self._vi_tts_engine_name
+        if self._vi_tts_engine is not None:
+            return "pyttsx3"
         return "unavailable"
 
     def run(self, text_queue: queue.Queue):

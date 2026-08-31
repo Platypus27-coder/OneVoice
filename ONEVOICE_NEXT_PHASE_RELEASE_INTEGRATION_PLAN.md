@@ -184,6 +184,10 @@ report trên Drive và fail closed nếu 196-row suite, 126 canonical rows hoặ
 checksum-verified WAV không khớp. P3-01/P3-02 chỉ được đánh dấu hoàn tất sau khi
 cell chạy thành công với manifest approved trên Drive.
 
+`scripts/benchmark_offline_tts.py` và cell benchmark trong
+`colab_runtime_artifacts_v2.ipynb` cũng đã sẵn sàng cho P3-04/P3-07; benchmark
+bắt buộc `offline=True`, loại gTTS/unavailable, và lưu ledger có thể resume.
+
 **Exit gate:** safety deterministic; normal path có TTS offline thật, không silence stub và không runtime network.
 
 ---
