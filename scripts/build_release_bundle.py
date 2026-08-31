@@ -185,7 +185,9 @@ def build_bundle(
         "portable": mode == "copy",
         "artifacts": manifest_entries,
     }
-    atomic_json(output_dir / "manifest.json", bundle_manifest)
+    bundle_manifest_path = output_dir / "manifest.json"
+    atomic_json(bundle_manifest_path, bundle_manifest)
+    receipt["bundle_manifest_sha256"] = sha256(bundle_manifest_path)
     atomic_json(output_dir / "receipt.json", receipt)
     return receipt
 

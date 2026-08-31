@@ -200,6 +200,11 @@ P4 direction-scoped inventory đã được triển khai trong
 định chỉ ghi manifest/receipt trỏ tới file đã hash trên Drive, không nhân đôi
 model lớn; `--mode copy` là bước materialize portable bundle khi đủ dung lượng.
 
+`scripts/verify_release_bundle.py` và cell no-network smoke đã được thêm cho
+P4-04/P4-05: khóa socket trước khi import pipeline, kiểm tra manifest/receipt
+và chạy safety E2E cho từng direction. P4 chỉ được đánh dấu hoàn tất sau khi
+hai smoke report trên Drive đều có `passed: true`.
+
 **Exit gate:** safety deterministic; normal path có TTS offline thật, không silence stub và không runtime network.
 
 ---

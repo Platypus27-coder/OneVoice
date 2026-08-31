@@ -41,6 +41,7 @@ from scripts.finetune_gipformer_rnnt import configure_trainable_parameters
 from scripts.stage_gipformer_training_audio import cache_target, read_rows
 from scripts.reconcile_safety_audio import reconcile, sha256 as safety_sha256
 from scripts.build_release_bundle import build_bundle
+from scripts.verify_release_bundle import verify_static
 from streaming.semantic_commit import (
     RollingHypothesisAssembler,
     SemanticCommitController,
@@ -156,6 +157,8 @@ class ContextAndSafetyTests(unittest.TestCase):
             manifest = json.loads((root / "bundle" / "manifest.json").read_text(encoding="utf-8"))
             self.assertEqual(manifest["direction"], "vi2en")
             self.assertEqual(manifest["artifacts"][0]["directions"], ["vi2en"])
+            checked = verify_static(root / "bundle", "vi2en")
+            self.assertEqual(len(checked["checked"]), 1)
         finally:
             shutil.rmtree(root, ignore_errors=True)
 
