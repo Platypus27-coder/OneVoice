@@ -205,6 +205,11 @@ P4-04/P4-05: khóa socket trước khi import pipeline, kiểm tra manifest/rece
 và chạy safety E2E cho từng direction. P4 chỉ được đánh dấu hoàn tất sau khi
 hai smoke report trên Drive đều có `passed: true`.
 
+**P4 smoke evidence (2026-09-01):** `vi2en` và `en2vi` đều chạy socket-blocked
+safety E2E thành công trên inventory tương ứng. P4-04/P4-05 đã đạt; bundle hiện
+vẫn là `portable:false` để tránh nhân đôi model trên Drive, nên P4-07/copy
+portable được giữ lại cho bước có đủ dung lượng.
+
 **Exit gate:** safety deterministic; normal path có TTS offline thật, không silence stub và không runtime network.
 
 ---
