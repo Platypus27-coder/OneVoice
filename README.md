@@ -144,6 +144,8 @@ python src/pipeline.py --config config/config.yaml --direction vi2en --profile d
 
 Colab dùng `notebooks/colab_streaming_v2.ipynb`; notebook chỉ mount Drive và clone/pull GitHub, còn logic streaming nằm trong runtime Python. Kết quả `stream_result.json` ghi frame count, stable/unstable hypotheses, commit IDs, chunk timestamps, dropped frames và worker error (nếu có). Đây là integration smoke/soak gate, chưa phải tuyên bố production latency.
 
+Cell cuối của notebook chạy `scripts/run_streaming_e2e.py`: fixed suite gồm normal + safety ở cả hai chiều, ghi `case_manifest.json`, report từng turn và `summary.json` có resume. Smoke mặc định dùng 1 case/route; chỉ tăng số case hoặc chạy soak sau khi smoke pass.
+
 ---
 
 ## Demo Kết Quả Dịch Thuật & Voice Cloning
