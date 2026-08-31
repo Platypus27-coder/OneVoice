@@ -210,6 +210,11 @@ safety E2E thành công trên inventory tương ứng. P4-04/P4-05 đã đạt; 
 vẫn là `portable:false` để tránh nhân đôi model trên Drive, nên P4-07/copy
 portable được giữ lại cho bước có đủ dung lượng.
 
+P5 profiler đã được triển khai trong `scripts/profile_release_runtime.py` và
+notebook runtime artifacts. Profiler khóa network, chạy model/runtime thật trên
+normal+safety input, lặp ba lần, đo load/latency/RSS và ghi blocker nếu vượt SLA;
+nó không biến budget overrun thành pass giả.
+
 **Exit gate:** safety deterministic; normal path có TTS offline thật, không silence stub và không runtime network.
 
 ---
