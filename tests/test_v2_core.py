@@ -40,6 +40,7 @@ from scripts.export_sensevoice_checkpoint_onnx import copy_runtime_bundle
 from scripts.finetune_gipformer_rnnt import configure_trainable_parameters
 from scripts.stage_gipformer_training_audio import cache_target, read_rows
 from scripts.reconcile_safety_audio import reconcile, sha256 as safety_sha256
+from scripts.build_release_bundle import build_bundle
 from streaming.semantic_commit import (
     RollingHypothesisAssembler,
     SemanticCommitController,
@@ -130,6 +131,31 @@ class ContextAndSafetyTests(unittest.TestCase):
             report = reconcile(csv_path, manifest, expected_benchmark_rows=126)
             self.assertFalse(report["passed"])
             self.assertIn("SAFE_0000/en2vi", report["missing_audio_entries"])
+        finally:
+            shutil.rmtree(root, ignore_errors=True)
+
+    def test_release_bundle_inventory_is_direction_scoped_and_hash_locked(self):
+        root = ROOT / "tests" / ".tmp" / "release-bundle"
+        root.mkdir(parents=True, exist_ok=True)
+        try:
+            source = root / "models" / "model.bin"
+            source.parent.mkdir(parents=True, exist_ok=True)
+            source.write_bytes(b"onevoice-artifact")
+            digest = hashlib.sha256(source.read_bytes()).hexdigest()
+            artifact_manifest = root / "artifact_manifest.json"
+            artifact_manifest.write_text(json.dumps({
+                "schema_version": 2,
+                "artifacts": [
+                    {"name": "gipformer/tokens.txt", "path": str(source), "sha256": digest, "license": "MIT", "directions": ["vi2en"], "profiles": ["development"]},
+                    {"name": "mt_en2vi/config.json", "path": str(source), "sha256": digest, "license": "OpenRAIL", "directions": ["en2vi"], "profiles": ["development"]},
+                ],
+            }), encoding="utf-8")
+            receipt = build_bundle(artifact_manifest, root / "bundle", "vi2en")
+            self.assertEqual(receipt["artifact_count"], 1)
+            self.assertFalse(receipt["portable"])
+            manifest = json.loads((root / "bundle" / "manifest.json").read_text(encoding="utf-8"))
+            self.assertEqual(manifest["direction"], "vi2en")
+            self.assertEqual(manifest["artifacts"][0]["directions"], ["vi2en"])
         finally:
             shutil.rmtree(root, ignore_errors=True)
 

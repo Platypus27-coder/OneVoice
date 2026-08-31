@@ -195,6 +195,11 @@ cell chạy thành công với manifest approved trên Drive.
 `colab_runtime_artifacts_v2.ipynb` cũng đã sẵn sàng cho P3-04/P3-07; benchmark
 bắt buộc `offline=True`, loại gTTS/unavailable, và lưu ledger có thể resume.
 
+P4 direction-scoped inventory đã được triển khai trong
+`scripts/build_release_bundle.py` và notebook runtime artifacts. Chế độ mặc
+định chỉ ghi manifest/receipt trỏ tới file đã hash trên Drive, không nhân đôi
+model lớn; `--mode copy` là bước materialize portable bundle khi đủ dung lượng.
+
 **Exit gate:** safety deterministic; normal path có TTS offline thật, không silence stub và không runtime network.
 
 ---
