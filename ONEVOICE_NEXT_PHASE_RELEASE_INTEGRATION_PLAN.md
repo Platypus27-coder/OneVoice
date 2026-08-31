@@ -178,6 +178,12 @@ GIPFormer adaptation + real-site holdout + physical device + AEC
 - [ ] P3-07: đo synthesis-to-first-sample p50/p95 và peak RSS.
 - [ ] P3-08: premium F5/OmniVoice nằm ngoài edge memory gate.
 
+**P3 implementation status (2026-08-31):** `scripts/reconcile_safety_audio.py` và cell
+reconciliation trong `colab_safety_audio_v2.ipynb` đã được triển khai. Chúng sẽ tạo
+report trên Drive và fail closed nếu 196-row suite, 126 canonical rows hoặc 252
+checksum-verified WAV không khớp. P3-01/P3-02 chỉ được đánh dấu hoàn tất sau khi
+cell chạy thành công với manifest approved trên Drive.
+
 **Exit gate:** safety deterministic; normal path có TTS offline thật, không silence stub và không runtime network.
 
 ---

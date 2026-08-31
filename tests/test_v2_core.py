@@ -39,6 +39,7 @@ from scripts.benchmark_asr_v2 import write_partial_predictions as write_asr_part
 from scripts.export_sensevoice_checkpoint_onnx import copy_runtime_bundle
 from scripts.finetune_gipformer_rnnt import configure_trainable_parameters
 from scripts.stage_gipformer_training_audio import cache_target, read_rows
+from scripts.reconcile_safety_audio import reconcile, sha256 as safety_sha256
 from streaming.semantic_commit import (
     RollingHypothesisAssembler,
     SemanticCommitController,
@@ -83,6 +84,54 @@ class ContextAndSafetyTests(unittest.TestCase):
         result = self.engine.analyze("disconck the power immediately", "en2vi")
         self.assertEqual(len(result.safety_candidates), 1)
         self.assertIn("Ngắt điện ngay", result.safety_candidates[0].translated_text)
+
+    def test_safety_reconciliation_requires_both_direction_audio(self):
+        root = ROOT / "tests" / ".tmp" / "safety-reconcile"
+        root.mkdir(parents=True, exist_ok=True)
+        try:
+            try:
+                import soundfile as sf
+            except ImportError:
+                self.skipTest("soundfile is optional in the lightweight unit-test environment")
+
+            csv_path = root / "safety.csv"
+            fields = [
+                "safety_id", "vi", "en", "fixed_translation_candidate",
+                "review_status", "reviewer", "reviewed_at",
+            ]
+            rows = []
+            for index in range(126):
+                rows.append({
+                    "safety_id": f"SAFE_{index:04d}", "vi": "Dừng lại", "en": "Stop",
+                    "fixed_translation_candidate": "True", "review_status": "approved",
+                    "reviewer": "Impact", "reviewed_at": "2026-08-26",
+                })
+            csv_path.write_text(
+                ",".join(fields) + "\n" + "\n".join(
+                    ",".join(row[field] for field in fields) for row in rows
+                ) + "\n",
+                encoding="utf-8",
+            )
+            # The default expected benchmark size is intentionally overridden for
+            # this compact fixture; one audio direction is omitted to exercise the gate.
+            wav = root / "SAFE_0000_vi2en.wav"
+            sf.write(wav, np.ones(160, dtype=np.float32) * 0.1, 16000)
+            manifest = root / "manifest.json"
+            manifest.write_text(json.dumps({
+                "schema_version": 2,
+                "source_sha256": safety_sha256(csv_path),
+                "approval_id": "impact-safety-v1",
+                "entries": [{
+                    "safety_id": "SAFE_0000", "direction": "vi2en",
+                    "path": wav.name, "sample_rate": 16000,
+                    "sha256": safety_sha256(wav),
+                }],
+            }), encoding="utf-8")
+            report = reconcile(csv_path, manifest, expected_benchmark_rows=126)
+            self.assertFalse(report["passed"])
+            self.assertIn("SAFE_0000/en2vi", report["missing_audio_entries"])
+        finally:
+            shutil.rmtree(root, ignore_errors=True)
 
     def test_site_pack_validation(self):
         with self.assertRaises(SitePackError):
