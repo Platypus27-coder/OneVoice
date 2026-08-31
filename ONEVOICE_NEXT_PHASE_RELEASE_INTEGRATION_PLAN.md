@@ -156,7 +156,7 @@ GIPFormer adaptation + real-site holdout + physical device + AEC
 - [ ] P2-09: chạy 30 phút soak tự động trước; chỉ chạy 2 giờ sau khi short soak pass.
 - [x] P2-10: đo riêng speech-to-commit và commit-to-first-audio; `latency_summary.json` lưu p50/p95, còn complete-turn được giữ trong runtime/file timing logs.
 
-**P2 implementation status (2026-08-30):** code và unit tests đã hoàn tất (76 tests pass). Chưa đánh dấu exit gate cho tới khi notebook `colab_streaming_v2.ipynb` chạy model thật trên fixed safety/normal suite và P2-09 soak hoàn tất.
+**P2 implementation status (2026-08-31):** code và unit tests đã hoàn tất (77 tests pass). Regression test đã khóa lỗi safety commit trùng tại endpoint. Chưa đánh dấu exit gate cho tới khi notebook `colab_streaming_v2.ipynb` chạy model thật trên fixed safety/normal suite và P2-09 soak hoàn tất.
 
 **Checkpoint/resume:** prediction/turn result append atomically; giữ `completed_turn_ids` trên Drive.  
 **Exit gate:** zero unsafe commit, zero duplicate prefix, zero reorder/deadlock trên suite cố định.

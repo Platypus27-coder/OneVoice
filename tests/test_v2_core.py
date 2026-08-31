@@ -317,6 +317,24 @@ class StreamingTests(unittest.TestCase):
         self.assertEqual(first.kind, CommitKind.WAIT)
         self.assertEqual(second.kind, CommitKind.SAFETY)
 
+    def test_safety_endpoint_does_not_duplicate_confirmed_audio(self):
+        controller = SemanticCommitController(safety_confirmations=2)
+        text = "Dừng lại ngay!"
+        context = self.engine.analyze(text, "vi2en")
+        self.assertEqual(
+            controller.decide(self._hypothesis(text), context).kind,
+            CommitKind.WAIT,
+        )
+        self.assertEqual(
+            controller.decide(self._hypothesis(text), context).kind,
+            CommitKind.SAFETY,
+        )
+        endpoint = controller.decide(
+            self._hypothesis(text, endpoint=True), context
+        )
+        self.assertEqual(endpoint.kind, CommitKind.WAIT)
+        self.assertEqual(endpoint.reason, "safety_already_committed")
+
     def test_pending_safety_does_not_commit_normal_prefix(self):
         controller = SemanticCommitController(safety_confirmations=2)
         text = "Dừng lại ngay!"

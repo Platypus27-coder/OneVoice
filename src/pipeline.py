@@ -360,7 +360,11 @@ class OneVoicePipeline:
                 chunk = SynthesizedChunk(
                     audio=np.asarray(audio, dtype=np.float32),
                     sample_rate=int(sample_rate),
-                    engine=self.tts.engine_name(item["direction"]),
+                    engine=(
+                        "safety_audio"
+                        if pre_generated
+                        else self.tts.engine_name(item["direction"])
+                    ),
                     commit_id=commit_id,
                     committed_at=item["decision"].decided_at,
                     first_audio_at=first_audio_at,

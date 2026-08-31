@@ -76,6 +76,7 @@ class SemanticCommitController:
         self._emitted_words = 0
         self._last_safety_id: str | None = None
         self._safety_streak = 0
+        self._committed_safety_id: str | None = None
 
     def decide(
         self, hypothesis: ASRHypothesis, context: ContextResult
@@ -88,7 +89,14 @@ class SemanticCommitController:
             else:
                 self._last_safety_id = safety.safety_id
                 self._safety_streak = 1
+            if safety.safety_id == self._committed_safety_id:
+                return CommitDecision(
+                    CommitKind.WAIT,
+                    reason="safety_already_committed",
+                    decided_at=now,
+                )
             if hypothesis.endpoint or self._safety_streak >= self.safety_confirmations:
+                self._committed_safety_id = safety.safety_id
                 self._emitted_words = len(hypothesis.text.split())
                 return CommitDecision(
                     kind=CommitKind.SAFETY,
@@ -105,6 +113,7 @@ class SemanticCommitController:
         else:
             self._last_safety_id = None
             self._safety_streak = 0
+            self._committed_safety_id = None
 
         candidate = hypothesis.text if hypothesis.endpoint else hypothesis.stable_prefix
         words = candidate.split()
@@ -140,3 +149,4 @@ class SemanticCommitController:
         self._emitted_words = 0
         self._last_safety_id = None
         self._safety_streak = 0
+        self._committed_safety_id = None
