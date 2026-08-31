@@ -594,6 +594,36 @@ class RuntimeSafetyTests(unittest.TestCase):
             engine.load(direction="en2vi")
         self.assertEqual(calls, ["local"])
 
+    def test_english_tts_uses_native_espeak_after_pyttsx3_silence(self):
+        from types import SimpleNamespace
+        from unittest import mock
+
+        config = {
+            "audio": {"sample_rate": 16000},
+            "tts": {"en_speed": 1.0},
+            "profiles": {"development": {"tts_tier": "edge"}},
+        }
+        engine = TTSEngine(config, profile="development", offline=True)
+        engine._en_tts_executable = "espeak-ng"
+        engine._synthesize_espeak_en = lambda text: (  # type: ignore[method-assign]
+            np.array([0.2, -0.2], dtype=np.float32),
+            22050,
+        )
+        fake_engine = SimpleNamespace(
+            setProperty=lambda *args: None,
+            save_to_file=lambda *args: None,
+            runAndWait=lambda: None,
+        )
+        fake_soundfile = SimpleNamespace(
+            read=lambda *args, **kwargs: (np.zeros(32, dtype=np.float32), 22050)
+        )
+        with mock.patch.dict(sys.modules, {"pyttsx3": SimpleNamespace(init=lambda: fake_engine), "soundfile": fake_soundfile}), \
+             mock.patch("builtins.print"):
+            audio, sample_rate = engine.synthesize_en("Check the load")
+        self.assertEqual(sample_rate, 22050)
+        self.assertFalse(engine.is_silence(audio))
+        self.assertEqual(engine.engine_name("vi2en"), "espeak-ng-offline-demo")
+
     def test_split_reconciliation_preserves_test_holdout_and_pattern_groups(self):
         rows, report = reconcile_rows(
             [

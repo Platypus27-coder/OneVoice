@@ -52,6 +52,7 @@ class TTSEngine:
         self.en_preset_text  = self.cfg.get("en_preset_text",  None)
         self._omni = None          # OmniVoice for Vietnamese TTS
         self._en_tts = None        # English TTS engine
+        self._en_tts_executable = None
         self._vallex = None        # VALL-E X (Premium Mode)
         self._vi_tts_engine = None
         self._vi_tts_engine_name = None
@@ -253,6 +254,11 @@ class TTSEngine:
         artifact contract. Loading a graph without its adapter previously caused
         the runtime to claim VITS while actually falling through to pyttsx3.
         """
+        # Keep the native eSpeak CLI available as a deterministic local escape
+        # hatch. On headless Colab, pyttsx3 can occasionally return a valid WAV
+        # container containing only zeros after many repeated calls.
+        self._en_tts_executable = shutil.which("espeak-ng") or shutil.which("espeak")
+
         # Priority 1: F5-TTS — premium profile only
         try:
             if self.tts_tier != "premium":
@@ -358,6 +364,53 @@ class TTSEngine:
                 audio = audio.reshape(-1, channels).mean(axis=1)
             if audio.size == 0:
                 raise RuntimeError("eSpeak produced an empty WAV")
+            return audio.astype(np.float32), int(sample_rate)
+        finally:
+            if tmp_path and os.path.exists(tmp_path):
+                os.unlink(tmp_path)
+
+    def _synthesize_espeak_en(self, text: str) -> tuple[np.ndarray, int]:
+        """Synthesize a non-silent English WAV via the native eSpeak CLI."""
+        executable = getattr(self, "_en_tts_executable", None)
+        if not executable:
+            raise RuntimeError("espeak/espeak-ng executable is not installed")
+        import tempfile
+
+        tmp_path = None
+        try:
+            with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as tmp:
+                tmp_path = tmp.name
+            subprocess.run(
+                [
+                    executable,
+                    "-v",
+                    "en-us",
+                    "-s",
+                    str(max(80, int(160 * self.en_speed))),
+                    "-w",
+                    tmp_path,
+                    text,
+                ],
+                check=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True,
+            )
+            with wave.open(tmp_path, "rb") as handle:
+                channels = handle.getnchannels()
+                sample_width = handle.getsampwidth()
+                sample_rate = handle.getframerate()
+                frames = handle.readframes(handle.getnframes())
+            if sample_width == 2:
+                audio = np.frombuffer(frames, dtype="<i2").astype(np.float32) / 32768.0
+            elif sample_width == 1:
+                audio = (np.frombuffer(frames, dtype=np.uint8).astype(np.float32) - 128.0) / 128.0
+            else:
+                raise RuntimeError(f"Unsupported eSpeak sample width: {sample_width}")
+            if channels > 1:
+                audio = audio.reshape(-1, channels).mean(axis=1)
+            if self.is_silence(audio):
+                raise RuntimeError("eSpeak produced an empty or silent WAV")
             return audio.astype(np.float32), int(sample_rate)
         finally:
             if tmp_path and os.path.exists(tmp_path):
@@ -574,6 +627,7 @@ class TTSEngine:
                 print(f"[TTS EN] ↓ Falling back to pyttsx3...")
 
         # ── [2] pyttsx3 (Fallback — Windows) ─────────────────────────────────
+        tmp_path = None
         try:
             import pyttsx3
             import tempfile, soundfile as sf
@@ -584,12 +638,28 @@ class TTSEngine:
             _fallback_engine.save_to_file(text, tmp_path)
             _fallback_engine.runAndWait()
             audio, sr = sf.read(tmp_path, dtype="float32")
-            os.unlink(tmp_path)
+            if self.is_silence(audio):
+                raise RuntimeError("pyttsx3 produced silent audio")
             elapsed_ms = (time.perf_counter() - t0) * 1000
             print(f"[TTS EN] ⏱ {elapsed_ms:.0f}ms | pyttsx3 fallback (rate={int(160 * self.en_speed)} WPM)")
             return audio, sr
         except Exception as e:
             print(f"[TTS EN] ⚠ pyttsx3 fallback failed: {e}")
+        finally:
+            if tmp_path and os.path.exists(tmp_path):
+                os.unlink(tmp_path)
+
+        # Native eSpeak is more robust than pyttsx3's headless driver under a
+        # long Colab soak. It remains a development/offline demo voice only.
+        if getattr(self, "_en_tts_executable", None):
+            try:
+                audio, sr = self._synthesize_espeak_en(text)
+                self._en_tts_engine = "espeak-ng-offline-demo"
+                elapsed_ms = (time.perf_counter() - t0) * 1000
+                print(f"[TTS EN] ⏱ {elapsed_ms:.0f}ms | {os.path.basename(self._en_tts_executable)} fallback")
+                return audio, sr
+            except Exception as e:
+                print(f"[TTS EN] ⚠ eSpeak fallback failed: {e}")
 
         # ── [3] Silence stub (last resort) ───────────────────────────────────
         print("[TTS EN] ⚠ No English TTS engine available — returning silence.")
