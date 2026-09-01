@@ -7,6 +7,12 @@ import json
 from pathlib import Path
 
 
+# The same hashed local bundle is used by the development smoke profile and
+# the offline edge profile.  Keeping both profiles in the generated manifest
+# prevents edge startup from being rejected before model loading.
+RUNTIME_PROFILES = ["development", "edge"]
+
+
 def parse_asset(values: list[str]) -> tuple[str, Path, list[str], str]:
     name, raw_path, raw_directions, license_name = values
     path = Path(raw_path).resolve()
@@ -43,7 +49,7 @@ def inventory(
                 "source_path": str(path),
                 "license": license_name,
                 "directions": directions,
-                "profiles": ["development"],
+                "profiles": RUNTIME_PROFILES.copy(),
             }
         )
     return result
@@ -77,10 +83,10 @@ def main() -> None:
         "schema_version": 2,
         "sample_rates": [16000],
         "required_backends": [
-            {"name": "GIPFormer runtime", "python_module": "sherpa_onnx", "profiles": ["development"], "directions": ["vi2en"]},
-            {"name": "SenseVoice runtime", "python_module": "funasr_onnx", "profiles": ["development"], "directions": ["en2vi"]},
-            {"name": "EnViT5 runtime", "python_module": "transformers", "profiles": ["development"], "directions": ["vi2en", "en2vi"]},
-            {"name": "Offline demo TTS", "python_module": "pyttsx3", "profiles": ["development"], "directions": ["vi2en", "en2vi"]},
+            {"name": "GIPFormer runtime", "python_module": "sherpa_onnx", "profiles": RUNTIME_PROFILES.copy(), "directions": ["vi2en"]},
+            {"name": "SenseVoice runtime", "python_module": "funasr_onnx", "profiles": RUNTIME_PROFILES.copy(), "directions": ["en2vi"]},
+            {"name": "EnViT5 runtime", "python_module": "transformers", "profiles": RUNTIME_PROFILES.copy(), "directions": ["vi2en", "en2vi"]},
+            {"name": "Offline demo TTS", "python_module": "pyttsx3", "profiles": RUNTIME_PROFILES.copy(), "directions": ["vi2en", "en2vi"]},
         ],
         "artifacts": artifacts,
     }
