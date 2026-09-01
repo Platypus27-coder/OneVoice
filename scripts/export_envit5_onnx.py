@@ -67,8 +67,10 @@ def main() -> None:
         from transformers import AutoTokenizer
     except ImportError as exc:
         raise RuntimeError(
-            "Install the export dependencies first: pip install 'optimum-onnx[onnxruntime]' "
-            "onnxruntime transformers sentencepiece"
+            "ONNX export dependencies failed to import. In Colab, uninstall the "
+            "preinstalled incompatible diffusers package, then install: "
+            "optimum-onnx[onnxruntime] onnx onnxscript onnxruntime "
+            "transformers sentencepiece"
         ) from exc
 
     output.parent.mkdir(parents=True, exist_ok=True)
