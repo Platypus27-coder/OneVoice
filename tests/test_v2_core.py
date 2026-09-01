@@ -40,7 +40,7 @@ from scripts.export_sensevoice_checkpoint_onnx import copy_runtime_bundle
 from scripts.finetune_gipformer_rnnt import configure_trainable_parameters
 from scripts.stage_gipformer_training_audio import cache_target, read_rows
 from scripts.reconcile_safety_audio import reconcile, sha256 as safety_sha256
-from scripts.build_release_bundle import build_bundle
+from scripts.build_release_bundle import build_bundle, destination_for
 from scripts.verify_release_bundle import verify_static
 from streaming.semantic_commit import (
     RollingHypothesisAssembler,
@@ -787,6 +787,18 @@ class RuntimeSafetyTests(unittest.TestCase):
                 Translator(config, direction="vi2en", profile="edge").load()
         finally:
             shutil.rmtree(root, ignore_errors=True)
+
+    def test_edge_mt_artifacts_have_direction_scoped_bundle_destinations(self):
+        self.assertEqual(
+            destination_for("mt_vi2en_ort/encoder_model.onnx", "vi2en").as_posix(),
+            "mt/envit5_ort/encoder_model.onnx",
+        )
+        self.assertEqual(
+            destination_for("mt_en2vi_ort/encoder_model.onnx", "en2vi").as_posix(),
+            "mt/envit5_ort/encoder_model.onnx",
+        )
+        with self.assertRaises(ValueError):
+            destination_for("mt_vi2en_ort/encoder_model.onnx", "en2vi")
 
     def test_release_policy_rejects_failed_asr_candidates_and_int8(self):
         valid = {

@@ -24,6 +24,8 @@ ASSET_DESTINATIONS = {
     "sensevoice_fp32": "asr/sensevoice_fp32",
     "mt_vi2en": "mt/envit5",
     "mt_en2vi": "mt/envit5",
+    "mt_vi2en_ort": "mt/envit5_ort",
+    "mt_en2vi_ort": "mt/envit5_ort",
     "safety_audio": "safety_audio",
     "reviewed_safety_csv": "site_packs",
 }
@@ -73,6 +75,10 @@ def destination_for(name: str, direction: str) -> Path:
         raise ValueError(f"VI→EN MT artifact leaked into {direction}: {name}")
     if head == "mt_en2vi" and direction != "en2vi":
         raise ValueError(f"EN→VI MT artifact leaked into {direction}: {name}")
+    if head == "mt_vi2en_ort" and direction != "vi2en":
+        raise ValueError(f"VI→EN edge MT artifact leaked into {direction}: {name}")
+    if head == "mt_en2vi_ort" and direction != "en2vi":
+        raise ValueError(f"EN→VI edge MT artifact leaked into {direction}: {name}")
     relative = Path(tail) if tail else Path(Path(name).name)
     if head == "reviewed_safety_csv":
         relative = Path("reviewed_safety.csv")
