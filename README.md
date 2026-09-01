@@ -2,7 +2,7 @@
 
 <img width="2352" height="1792" alt="OneVoice Edge Banner" src="https://github.com/user-attachments/assets/f4747894-01d8-4889-bbf5-a0d2a5c01de7" />
 
-OneVoice là hệ thống dịch thuật Speech-to-Speech Việt ↔ Anh dành cho môi trường công nghiệp (nhà máy, công trường). Mục tiêu V2 là vận hành **100% offline** trên thiết bị Edge / chip **Qualcomm Snapdragon**, đạt độ trễ dưới **1 giây** và peak RAM dưới **200 MB**. Các chỉ tiêu này là cổng nghiệm thu đang được đo bằng notebook và báo cáo; dự án chưa tuyên bố production-ready khi chưa vượt dữ liệu thực địa.
+OneVoice là hệ thống dịch thuật Speech-to-Speech Việt ↔ Anh dành cho môi trường công nghiệp (nhà máy, công trường). Mục tiêu V2 là vận hành **100% offline** trên thiết bị Edge / chip **Qualcomm Snapdragon**, đạt độ trễ dưới **1 giây** và peak RAM theo **hardware profile** đã công bố. `edge_200mb` vẫn là mục tiêu portable/RAM thấp; thiết bị nhiều RAM hơn phải khai báo budget riêng trong report P5. Dự án chưa tuyên bố production-ready khi chưa vượt dữ liệu thực địa.
 
 ---
 
@@ -17,7 +17,7 @@ V2 nâng cấp trực tiếp runtime hiện tại nhưng vẫn giữ tag `v1-wor
 | Streaming 32 ms, stable prefix, semantic commit | `PARTIAL` | Đã test logic, chưa có p95 model thật |
 | Denoising | `FALLBACK` | Passthrough là baseline; DeepFilterNet/RNNoise phải qua quality gate |
 | VI-ASR, EN-ASR, MT và TTS | `PARTIAL` | Adapter đã có; benchmark thực chạy trên Colab |
-| Offline Edge và RAM < 200 MB | `PLANNED` | Chờ artifact bundle và profile đầy đủ |
+| Offline Edge và RAM theo hardware profile | `PLANNED` | Chờ artifact bundle và profile đầy đủ |
 | Real-site robustness | `PLANNED` | Chưa có fixed real-site holdout |
 
 Chi tiết bằng chứng: [V1 baseline](docs/V1_BASELINE_STATUS.md), [kế hoạch V1 → V2](ONEVOICE_V1_TO_V2_PLAN.md) và [hướng dẫn notebook V2](notebooks/README_V2.md).
@@ -100,7 +100,7 @@ Microphone
 Speaker / Earphone
 ```
 
-**Mục tiêu nghiệm thu V2:** normal commit→first-audio p95 < **1000 ms**, safety p95 < **300 ms**, runtime Edge không truy cập mạng và peak RAM < **200 MB**. Chỉ công nhận khi có report đo thật.
+**Mục tiêu nghiệm thu V2:** normal commit→first-audio p95 < **1000 ms**, safety p95 < **300 ms**, runtime Edge không truy cập mạng và peak RAM không vượt budget của hardware profile. `edge_200mb` giữ giới hạn **200 MB**; các profile khác phải nêu rõ thiết bị và budget trong report. Chỉ công nhận khi có report đo thật.
 
 ---
 

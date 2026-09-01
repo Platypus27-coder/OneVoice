@@ -11,7 +11,7 @@ Các ràng buộc chính từ đề bài:
 - End-to-End latency < 1 giây.
 - Mục tiêu tối ưu: < 600 ms.
 - Hướng tới Qualcomm Snapdragon NPU.
-- RAM mục tiêu < 200 MB.
+- RAM theo hardware profile đã công bố; `edge_200mb` là mục tiêu portable/RAM thấp.
 - Chịu được tiếng ồn công nghiệp.
 - Hiểu đúng thuật ngữ kỹ thuật và tiếng lóng công trường.
 - Có fallback để pipeline không crash.

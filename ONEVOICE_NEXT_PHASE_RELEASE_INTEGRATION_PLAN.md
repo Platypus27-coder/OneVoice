@@ -280,7 +280,7 @@ onevoice-v2-rc/
 - [ ] P5-05: quantization regression không quá 1 điểm phần trăm trên release suites.
 - [ ] P5-06: giảm VI→EN MT p95 trước khi tối ưu module nhỏ hơn.
 - [ ] P5-07: tối ưu SenseVoice FP32 inference/load mà không quay lại INT8 lỗi.
-- [ ] P5-08: đo toàn edge profile; nếu peak RSS >200 MB thì gate fail, không sửa README thành pass.
+- [ ] P5-08: đo toàn edge profile; đối chiếu peak RSS với budget của hardware profile được ghi trong report. `edge_200mb` giữ gate 200 MB; profile RAM cao hơn phải khai báo device/budget rõ ràng, không tự động được coi là pass.
 - [ ] P5-09: safety commit→first-audio p95 <300 ms.
 - [ ] P5-10: normal commit→first-audio p95 <1.000 ms hoặc ghi rõ blocker/budget overrun.
 

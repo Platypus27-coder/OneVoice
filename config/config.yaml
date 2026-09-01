@@ -89,6 +89,15 @@ pipeline:
   log_latency: true        # Print per-stage timing to console
   profile: "development"   # development | edge | premium
   offline: false
+  # P5 resource gates are device-specific. Keep this portable low-RAM budget
+  # as the default; deployments with a different SoC/RAM allowance must add a
+  # named profile (or pass an explicit CLI override), which is recorded in the
+  # profile report instead of silently changing the acceptance criteria.
+  edge_hardware_profiles:
+    edge_200mb:
+      max_rss_mb: 200
+      normal_target_ms: 1000
+      safety_target_ms: 300
   artifact_manifest: "artifacts/manifest.json"
   construction_data_dir: "data/onevoice_construction_v2"
   # Set to an audited site/review CSV when using pre-generated safety audio.

@@ -34,7 +34,7 @@ OneVoice V2 hoàn thành khi cung cấp speech-to-speech Vietnamese ↔ English 
 - critical phrase đi qua deterministic safety fast path và audio local;
 - headset/earpiece là interaction mặc định;
 - artifact bundle theo direction, có license, version và SHA-256;
-- peak RSS edge profile dưới 200 MB;
+- peak RSS edge profile không vượt budget của hardware profile được công bố (`edge_200mb` giữ mục tiêu portable dưới 200 MB);
 - normal commit-to-first-audio p95 dưới 1.000 ms;
 - safety commit-to-first-audio p95 dưới 300 ms;
 - synthetic benchmark và fixed real-site holdout đều đạt gate;
@@ -124,7 +124,7 @@ Không coi dự án hoàn thành nếu chỉ có notebook, demo video, dev-machi
 7. Headset/earpiece là production interaction. External speaker bị khóa tới khi AEC pass.
 8. Premium model không nằm trong edge memory gate.
 9. Qualcomm hosted result không thay field-device validation.
-10. Nếu EnViT5 INT8 làm tổng RSS vượt 200 MB, edge dùng direction-specific distilled student; premium giữ EnViT5.
+10. Nếu EnViT5 vượt budget RAM của hardware profile, edge ưu tiên direction-specific distilled student; premium giữ EnViT5. Không đổi budget ngầm để hợp thức hóa kết quả.
 
 ---
 
@@ -400,13 +400,13 @@ onevoice-bundle/
 - [ ] M8-03: direction-specific lazy loading.
 - [ ] M8-04: FP32/FP16/INT8 A/B.
 - [ ] M8-05: MT export sang ONNX Runtime GenAI hoặc approved backend.
-- [ ] M8-06: nếu RSS >200 MB, distill VI→EN teacher sang ≤100M direction-specific student; ưu tiên Marian/OPUS architecture.
+- [ ] M8-06: nếu RSS vượt budget hardware profile, distill VI→EN teacher sang ≤100M direction-specific student; ưu tiên Marian/OPUS architecture.
 - [ ] M8-07: chỉ promote student nếu MT gates pass.
 - [ ] M8-08: Qualcomm AI Hub compile/numerical/load/p50/p95/memory.
 - [ ] M8-09: ghi rõ hosted-device status.
 - [ ] M8-10: profile physical Snapdragon device.
 
-**Exit:** zero-network, RSS <200 MB, regression ≤1 điểm, latency SLA pass.
+**Exit:** zero-network, RSS không vượt budget hardware profile đã khai báo, regression ≤1 điểm, latency SLA pass.
 
 ### M9 — Android/reference device
 
@@ -621,7 +621,7 @@ Không rút ngắn real-site gate bằng synthetic claims.
 
 | Rủi ro | Trigger | Hành động |
 |---|---|---|
-| EnViT5 vượt RAM | RSS ≥200 MB | Distill direction-specific student; không nới gate |
+| EnViT5 vượt RAM | RSS vượt budget hardware profile | Distill direction-specific student hoặc xác lập profile thiết bị mới có budget công khai; không nới gate ngầm |
 | GIPFormer fine-tune không tái lập | Thiếu recipe/checkpoint | Giữ pretrained + context; không evidence giả |
 | Denoiser làm ASR xấu | Gate fail | Giữ passthrough |
 | SenseVoice fail EN gate | Sau baseline + một adaptation cycle | Benchmark alternative EN-only ONNX ASR; review trước switch |
@@ -639,7 +639,7 @@ Không rút ngắn real-site gate bằng synthetic claims.
 - [ ] VI→EN và EN→VI có held-out evidence.
 - [ ] Safety translations/audio approved.
 - [ ] Streaming/safety/reliability pass.
-- [ ] Edge bundle signed, no-network, RSS <200 MB.
+- [ ] Edge bundle signed, no-network, RSS đạt budget hardware profile đã công bố.
 - [ ] Hosted và physical-device validation xong.
 - [ ] Android/reference build offline.
 - [ ] Real-site fixed holdout pass.

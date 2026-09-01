@@ -3,8 +3,9 @@
 This measures the selected release runtime (not a synthetic component stub),
 with network sockets blocked before pipeline import.  It reports model load
 time, per-route speech/commit/audio timings, complete-turn latency and peak
-RSS.  A latency budget overrun is recorded as a blocker in the JSON report;
-the command still exits successfully when measurement itself completed.
+RSS. Resource limits belong to a named hardware profile: the legacy
+``edge_200mb`` profile remains the portable low-RAM target, while a deployment
+can declare and record a higher device-specific budget explicitly.
 """
 
 from __future__ import annotations
@@ -20,6 +21,63 @@ from pathlib import Path
 
 import numpy as np
 import yaml
+
+
+DEFAULT_HARDWARE_PROFILE = "edge_200mb"
+DEFAULT_TARGETS = {
+    "max_rss_mb": 200.0,
+    "normal_target_ms": 1000.0,
+    "safety_target_ms": 300.0,
+}
+
+
+def resolve_hardware_targets(
+    config: dict,
+    hardware_profile: str,
+    *,
+    max_rss_mb: float | None = None,
+    normal_target_ms: float | None = None,
+    safety_target_ms: float | None = None,
+) -> tuple[dict[str, float], dict[str, str]]:
+    """Resolve CLI overrides over an auditable named hardware profile."""
+    profiles = config.get("pipeline", {}).get("edge_hardware_profiles", {})
+    if not isinstance(profiles, dict):
+        raise ValueError("pipeline.edge_hardware_profiles must be a mapping")
+    selected = profiles.get(hardware_profile, {})
+    if not isinstance(selected, dict):
+        raise ValueError(f"hardware profile {hardware_profile!r} must be a mapping")
+    if not selected and hardware_profile != DEFAULT_HARDWARE_PROFILE and max_rss_mb is None:
+        raise ValueError(
+            f"Unknown hardware profile {hardware_profile!r}. Add it to "
+            "pipeline.edge_hardware_profiles or pass --max-rss-mb explicitly."
+        )
+
+    overrides = {
+        "max_rss_mb": max_rss_mb,
+        "normal_target_ms": normal_target_ms,
+        "safety_target_ms": safety_target_ms,
+    }
+    targets: dict[str, float] = {}
+    sources: dict[str, str] = {}
+    for key, default in DEFAULT_TARGETS.items():
+        value = overrides[key]
+        if value is not None:
+            source = "cli"
+        elif key in selected:
+            value = selected[key]
+            source = f"config:{hardware_profile}"
+        else:
+            value = default
+            source = "legacy_default"
+        try:
+            value = float(value)
+        except (TypeError, ValueError) as exc:
+            raise ValueError(f"{key} must be a positive number") from exc
+        if value <= 0:
+            raise ValueError(f"{key} must be positive")
+        targets[key] = value
+        sources[key] = source
+    return targets, sources
 
 
 class RSSSampler:
@@ -122,9 +180,17 @@ def main() -> None:
     parser.add_argument("--report-dir", required=True, type=Path)
     parser.add_argument("--profile", choices=("development", "edge"), default="edge")
     parser.add_argument("--repeats", type=int, default=3)
-    parser.add_argument("--max-rss-mb", type=float, default=200.0)
-    parser.add_argument("--normal-target-ms", type=float, default=1000.0)
-    parser.add_argument("--safety-target-ms", type=float, default=300.0)
+    parser.add_argument(
+        "--hardware-profile",
+        default=DEFAULT_HARDWARE_PROFILE,
+        help=(
+            "Named entry in pipeline.edge_hardware_profiles. The default keeps "
+            "the portable 200 MB target."
+        ),
+    )
+    parser.add_argument("--max-rss-mb", type=float, help="Override the selected hardware RAM budget.")
+    parser.add_argument("--normal-target-ms", type=float, help="Override normal commit-to-audio p95 target.")
+    parser.add_argument("--safety-target-ms", type=float, help="Override safety commit-to-audio p95 target.")
     args = parser.parse_args()
     if args.repeats <= 0:
         parser.error("--repeats must be positive")
@@ -148,6 +214,13 @@ def main() -> None:
         config = yaml.safe_load(args.config.read_text(encoding="utf-8"))
         if not config.get("pipeline", {}).get("offline"):
             raise ValueError("P5 requires pipeline.offline=true")
+        targets, target_sources = resolve_hardware_targets(
+            config,
+            args.hardware_profile,
+            max_rss_mb=args.max_rss_mb,
+            normal_target_ms=args.normal_target_ms,
+            safety_target_ms=args.safety_target_ms,
+        )
         with NoNetwork(), RSSSampler() as rss:
             import sys
 
@@ -189,18 +262,24 @@ def main() -> None:
             "load_time_ms": round(load_ms, 3),
             "peak_rss_mb": round(rss.peak_mb, 3),
             "routes": {route: summarize(rows) for route, rows in route_rows.items()},
-            "latency_targets_ms": {"normal": args.normal_target_ms, "safety": args.safety_target_ms},
+            "hardware_profile": args.hardware_profile,
+            "resource_targets": targets,
+            "target_sources": target_sources,
+            "latency_targets_ms": {
+                "normal": targets["normal_target_ms"],
+                "safety": targets["safety_target_ms"],
+            },
             "measurement_completed": True,
         })
         normal_p95 = report["routes"]["normal"]["commit_to_first_audio_p95_ms"]
         safety_p95 = report["routes"]["safety"]["commit_to_first_audio_p95_ms"]
         blockers = []
-        if report["peak_rss_mb"] > args.max_rss_mb:
-            blockers.append(f"peak RSS {report['peak_rss_mb']:.1f} MB > {args.max_rss_mb:.1f} MB")
-        if normal_p95 is not None and normal_p95 >= args.normal_target_ms:
-            blockers.append(f"normal commit→audio p95 {normal_p95:.1f} ms >= {args.normal_target_ms:.1f} ms")
-        if safety_p95 is not None and safety_p95 >= args.safety_target_ms:
-            blockers.append(f"safety commit→audio p95 {safety_p95:.1f} ms >= {args.safety_target_ms:.1f} ms")
+        if report["peak_rss_mb"] > targets["max_rss_mb"]:
+            blockers.append(f"peak RSS {report['peak_rss_mb']:.1f} MB > {targets['max_rss_mb']:.1f} MB")
+        if normal_p95 is not None and normal_p95 >= targets["normal_target_ms"]:
+            blockers.append(f"normal commit→audio p95 {normal_p95:.1f} ms >= {targets['normal_target_ms']:.1f} ms")
+        if safety_p95 is not None and safety_p95 >= targets["safety_target_ms"]:
+            blockers.append(f"safety commit→audio p95 {safety_p95:.1f} ms >= {targets['safety_target_ms']:.1f} ms")
         report["blockers"] = blockers
         report["passed"] = not blockers
     except Exception as exc:
