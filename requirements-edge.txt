@@ -8,6 +8,8 @@ psutil
 sherpa-onnx
 funasr_onnx
 onnxruntime
+onnx
+onnxscript
 optimum-onnx[onnxruntime]
 transformers==4.57.1
 tokenizers==0.22.1
