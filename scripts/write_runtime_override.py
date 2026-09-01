@@ -26,6 +26,16 @@ def main() -> None:
     parser.add_argument("--sensevoice-dir", required=True, type=Path)
     parser.add_argument("--mt-vi2en-dir", required=True, type=Path)
     parser.add_argument("--mt-en2vi-dir", required=True, type=Path)
+    parser.add_argument(
+        "--mt-vi2en-edge-dir",
+        type=Path,
+        help="Validated local ONNX Runtime Seq2Seq export for VI→EN edge runtime.",
+    )
+    parser.add_argument(
+        "--mt-en2vi-edge-dir",
+        type=Path,
+        help="Validated local ONNX Runtime Seq2Seq export for EN→VI edge runtime.",
+    )
     parser.add_argument("--safety-csv", required=True, type=Path)
     parser.add_argument("--safety-manifest", required=True, type=Path)
     parser.add_argument(
@@ -46,6 +56,10 @@ def main() -> None:
     require_dir(args.sensevoice_dir, "SenseVoice FP32", "model.onnx")
     require_dir(args.mt_vi2en_dir, "VI→EN MT", "config.json")
     require_dir(args.mt_en2vi_dir, "EN→VI MT", "config.json")
+    if args.mt_vi2en_edge_dir is not None:
+        require_dir(args.mt_vi2en_edge_dir, "VI→EN edge MT", "encoder_model.onnx")
+    if args.mt_en2vi_edge_dir is not None:
+        require_dir(args.mt_en2vi_edge_dir, "EN→VI edge MT", "encoder_model.onnx")
     require_file(args.safety_csv, "reviewed safety CSV")
     require_file(args.safety_manifest, "safety audio manifest")
     if args.artifact_manifest is not None:
@@ -64,6 +78,14 @@ def main() -> None:
     config["tts"]["offline_engine"] = "pyttsx3"
     config["translation"]["directions"]["vi2en"]["local_model_dir"] = str(args.mt_vi2en_dir.resolve())
     config["translation"]["directions"]["en2vi"]["local_model_dir"] = str(args.mt_en2vi_dir.resolve())
+    if args.mt_vi2en_edge_dir is not None:
+        config["translation"]["directions"]["vi2en"]["edge_model_dir"] = str(
+            args.mt_vi2en_edge_dir.resolve()
+        )
+    if args.mt_en2vi_edge_dir is not None:
+        config["translation"]["directions"]["en2vi"]["edge_model_dir"] = str(
+            args.mt_en2vi_edge_dir.resolve()
+        )
     config["pipeline"]["profile"] = args.profile
     config["pipeline"]["offline"] = True
     config["pipeline"]["safety_source_csv"] = str(args.safety_csv.resolve())

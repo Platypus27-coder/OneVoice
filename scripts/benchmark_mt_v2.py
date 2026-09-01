@@ -77,10 +77,29 @@ def main() -> None:
         help="Optional immutable Hugging Face revision paired with --model-source",
     )
     parser.add_argument("--config", default="config/config.yaml")
+    parser.add_argument("--profile", choices=["development", "edge"], default="development")
+    parser.add_argument(
+        "--edge-model-dir",
+        type=Path,
+        help="Explicit local ONNX Runtime Seq2Seq bundle used only with --profile edge.",
+    )
     parser.add_argument("--report-dir", default="reports/mt_v2")
+    parser.add_argument(
+        "--resume",
+        action="store_true",
+        help="Reuse a complete aggregate/predictions pair in --report-dir.",
+    )
     args = parser.parse_args()
     with open(args.config, "r", encoding="utf-8") as handle:
         config = yaml.safe_load(handle)
+    if args.edge_model_dir is not None:
+        config["translation"]["directions"][args.direction]["edge_model_dir"] = str(
+            args.edge_model_dir.resolve()
+        )
+    output = Path(args.report_dir)
+    if args.resume and (output / "aggregate.json").is_file() and (output / "predictions.csv").is_file():
+        print(f"[MT benchmark] complete report already exists; skipping: {output}")
+        return
     data_root = Path(config["pipeline"]["construction_data_dir"])
     suite_files = {
         "test": "test.csv",
@@ -101,6 +120,7 @@ def main() -> None:
         direction=args.direction,
         model_source=args.model_source,
         model_revision=args.model_revision,
+        profile=args.profile,
     )
     translator.load()
     context_engine = ConstructionContextEngine.from_data_dir(data_root)
@@ -202,7 +222,6 @@ def main() -> None:
         "latency_p50_ms": latencies[round((len(latencies) - 1) * 0.50)],
         "latency_p95_ms": latencies[round((len(latencies) - 1) * 0.95)],
     }
-    output = Path(args.report_dir)
     output.mkdir(parents=True, exist_ok=True)
     with (output / "predictions.csv").open("w", encoding="utf-8", newline="") as handle:
         writer = csv.DictWriter(handle, fieldnames=predictions[0].keys())
@@ -214,7 +233,11 @@ def main() -> None:
     create_run_manifest(
         output / "run_manifest.json",
         command="benchmark_mt_v2",
-        inputs=[data_file, args.config, translator.model_dir],
+        inputs=[
+            data_file,
+            args.config,
+            translator.edge_model_dir if args.profile == "edge" else translator.model_dir,
+        ],
         metadata={**vars(args), "model_reference": translator.model_reference},
     )
     print(json.dumps(aggregate, ensure_ascii=False, indent=2))

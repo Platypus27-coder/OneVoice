@@ -1,8 +1,10 @@
 """Profile-aware VI↔EN translation adapters.
 
 Development/premium may use the original Transformers EnViT5 checkpoint.
-Edge accepts only a pre-exported ONNX Runtime GenAI encoder/decoder bundle and
-never downloads at runtime. Model export is a separate quality-gated step.
+Edge accepts only a pre-exported ONNX Runtime Seq2Seq bundle and never
+downloads at runtime. EnViT5 is a T5 encoder-decoder model, so it cannot use
+the decoder-only ONNX Runtime GenAI bundle format. Model export is a separate
+quality-gated step.
 """
 
 from __future__ import annotations
@@ -52,7 +54,7 @@ class Translator:
         )
         self.edge_model_dir = Path(
             direction_cfg.get("edge_model_dir")
-            or cfg.get("edge_model_dir", "models/envit5_ort_genai")
+            or cfg.get("edge_model_dir", "models/envit5_ort")
         )
         self.max_length = int(cfg.get("max_length", 512))
         self._backend: str | None = None
@@ -60,7 +62,6 @@ class Translator:
         self._tokenizer = None
         self._torch = None
         self._device = "cpu"
-        self._og = None
 
     @property
     def model_reference(self) -> dict[str, str | None]:
@@ -80,23 +81,32 @@ class Translator:
             self._load_transformers()
 
     def _load_edge(self) -> None:
-        config_file = self.edge_model_dir / "genai_config.json"
-        if not config_file.is_file():
+        required = ("config.json", "encoder_model.onnx")
+        missing = [name for name in required if not (self.edge_model_dir / name).is_file()]
+        has_decoder = any(self.edge_model_dir.glob("decoder*.onnx"))
+        if missing or not has_decoder:
+            detail = ", ".join(missing + ([] if has_decoder else ["decoder*.onnx"]))
             raise FileNotFoundError(
-                "Edge MT requires a validated ONNX Runtime GenAI bundle at "
-                f"{self.edge_model_dir}; genai_config.json is missing"
+                "Edge MT requires a validated ONNX Runtime Seq2Seq T5 bundle at "
+                f"{self.edge_model_dir}; missing {detail}"
             )
         try:
-            import onnxruntime_genai as og
+            from optimum.onnxruntime import ORTModelForSeq2SeqLM
+            from transformers import AutoTokenizer
         except ImportError as exc:
             raise RuntimeError(
-                "Edge MT requires the local 'onnxruntime-genai' CPU package"
+                "Edge MT requires local optimum-onnx/onnxruntime and transformers packages"
             ) from exc
-        self._og = og
-        self._model = og.Model(str(self.edge_model_dir))
-        self._tokenizer = og.Tokenizer(self._model)
-        self._backend = "onnxruntime_genai_cpu"
-        print(f"[MT] ONNX Runtime GenAI edge bundle loaded: {self.edge_model_dir}")
+        self._tokenizer = AutoTokenizer.from_pretrained(
+            str(self.edge_model_dir), local_files_only=True
+        )
+        self._model = ORTModelForSeq2SeqLM.from_pretrained(
+            str(self.edge_model_dir),
+            provider="CPUExecutionProvider",
+            local_files_only=True,
+        )
+        self._backend = "onnxruntime_seq2seq_cpu"
+        print(f"[MT] ONNX Runtime Seq2Seq edge bundle loaded: {self.edge_model_dir}")
 
     def _load_transformers(self) -> None:
         try:
@@ -145,7 +155,7 @@ class Translator:
         if self._backend == "transformers":
             result = self._translate_transformers(prompt)
         else:
-            result = self._translate_ort_genai(prompt)
+            result = self._translate_ort_seq2seq(prompt)
         result = re.sub(r"^(en|vi):\s*", "", result, flags=re.IGNORECASE).strip()
         print(
             f"[MT] {direction} backend={self._backend} "
@@ -169,16 +179,20 @@ class Translator:
             )
         return self._tokenizer.decode(output[0], skip_special_tokens=True)
 
-    def _translate_ort_genai(self, prompt: str) -> str:
-        tokens = self._tokenizer.encode(prompt)
-        params = self._og.GeneratorParams(self._model)
-        params.set_search_options(max_length=self.max_length, num_beams=5)
-        generator = self._og.Generator(self._model, params)
-        generator.append_tokens(tokens)
-        while not generator.is_done():
-            generator.generate_next_token()
-        sequence = generator.get_sequence(0)
-        return self._tokenizer.decode(sequence)
+    def _translate_ort_seq2seq(self, prompt: str) -> str:
+        inputs = self._tokenizer(
+            prompt,
+            return_tensors="pt",
+            truncation=True,
+            max_length=self.max_length,
+        )
+        output = self._model.generate(
+            **inputs,
+            max_length=self.max_length,
+            num_beams=5,
+            early_stopping=True,
+        )
+        return self._tokenizer.decode(output[0], skip_special_tokens=True)
 
     def run(self, text_in_queue: queue.Queue, text_out_queue: queue.Queue) -> None:
         while True:

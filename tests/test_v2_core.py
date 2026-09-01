@@ -767,6 +767,27 @@ class RuntimeSafetyTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             release.translate("xin chào", "en2vi")
 
+    def test_edge_mt_requires_real_seq2seq_bundle_not_genai_placeholder(self):
+        root = ROOT / "tests" / ".tmp" / "empty-edge-mt"
+        shutil.rmtree(root, ignore_errors=True)
+        root.mkdir(parents=True)
+        try:
+            config = {
+                "translation": {
+                    "directions": {
+                        "vi2en": {
+                            "release_model": "release-vi-en",
+                            "local_model_dir": "models/mt/vi2en",
+                            "edge_model_dir": str(root),
+                        }
+                    }
+                }
+            }
+            with self.assertRaisesRegex(FileNotFoundError, "ONNX Runtime Seq2Seq T5 bundle"):
+                Translator(config, direction="vi2en", profile="edge").load()
+        finally:
+            shutil.rmtree(root, ignore_errors=True)
+
     def test_release_policy_rejects_failed_asr_candidates_and_int8(self):
         valid = {
             "asr": {"gipformer_model_dir": "models/gipformer"},

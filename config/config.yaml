@@ -50,11 +50,13 @@ translation:
     vi2en:
       release_model: "platypus123/onevoice-envit5-vi-en"
       local_model_dir: "models/envit5_finetuned_vi2en_v1/"
-      edge_model_dir: "models/mt/vi2en_ort_genai/"
+      # Standard ONNX Runtime Seq2Seq export of the fine-tuned T5 model.
+      # EnViT5 is encoder-decoder, not an ORT GenAI decoder-only model.
+      edge_model_dir: "models/mt/vi2en_ort/"
     en2vi:
       release_model: "platypus123/onevoice-envit5-en-vi"
       local_model_dir: "models/envit5_finetuned_en2vi_v1/best/"
-      edge_model_dir: "models/mt/en2vi_ort_genai/"
+      edge_model_dir: "models/mt/en2vi_ort/"
 
 # ─────────────────────────────────────────────
 # Trạm 3: TTS (premium F5/OmniVoice or lightweight local system voice)

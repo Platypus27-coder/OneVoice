@@ -26,12 +26,24 @@ def parse_asset(values: list[str]) -> tuple[str, Path, list[str], str]:
     return name, path, directions, license_name.strip()
 
 
+def parse_asset_profiles(values: list[str]) -> tuple[str, list[str]]:
+    name, raw_profiles = values
+    profiles = [value.strip() for value in raw_profiles.split(",") if value.strip()]
+    if not profiles or any(value not in RUNTIME_PROFILES for value in profiles):
+        raise ValueError(
+            f"Invalid profiles for asset {name}: {raw_profiles}; "
+            f"allowed={','.join(RUNTIME_PROFILES)}"
+        )
+    return name, profiles
+
+
 def inventory(
     name: str,
     root: Path,
     directions: list[str],
     license_name: str,
     excluded_names: set[str],
+    profiles: list[str],
 ) -> list[dict]:
     paths = [root] if root.is_file() else sorted(
         path
@@ -49,7 +61,7 @@ def inventory(
                 "source_path": str(path),
                 "license": license_name,
                 "directions": directions,
-                "profiles": RUNTIME_PROFILES.copy(),
+                "profiles": profiles,
             }
         )
     return result
@@ -67,6 +79,17 @@ def main() -> None:
         help="Repeat for each file or bundle. DIRECTIONS is vi2en,en2vi or one direction.",
     )
     parser.add_argument(
+        "--asset-profiles",
+        action="append",
+        nargs=2,
+        metavar=("NAME", "PROFILES"),
+        default=[],
+        help=(
+            "Restrict an asset to comma-separated runtime profiles "
+            "(development,edge). Repeat per asset name."
+        ),
+    )
+    parser.add_argument(
         "--exclude-name",
         action="append",
         default=[],
@@ -77,15 +100,27 @@ def main() -> None:
 
     artifacts = []
     excluded_names = {name.strip() for name in args.exclude_name if name.strip()}
+    asset_profiles = dict(parse_asset_profiles(values) for values in args.asset_profiles)
     for values in args.asset:
-        artifacts.extend(inventory(*parse_asset(values), excluded_names))
+        name, root, directions, license_name = parse_asset(values)
+        artifacts.extend(
+            inventory(
+                name,
+                root,
+                directions,
+                license_name,
+                excluded_names,
+                asset_profiles.get(name, RUNTIME_PROFILES.copy()),
+            )
+        )
     spec = {
         "schema_version": 2,
         "sample_rates": [16000],
         "required_backends": [
             {"name": "GIPFormer runtime", "python_module": "sherpa_onnx", "profiles": RUNTIME_PROFILES.copy(), "directions": ["vi2en"]},
             {"name": "SenseVoice runtime", "python_module": "funasr_onnx", "profiles": RUNTIME_PROFILES.copy(), "directions": ["en2vi"]},
-            {"name": "EnViT5 runtime", "python_module": "transformers", "profiles": RUNTIME_PROFILES.copy(), "directions": ["vi2en", "en2vi"]},
+            {"name": "EnViT5 development runtime", "python_module": "transformers", "profiles": ["development"], "directions": ["vi2en", "en2vi"]},
+            {"name": "EnViT5 edge runtime", "python_module": "optimum.onnxruntime", "profiles": ["edge"], "directions": ["vi2en", "en2vi"]},
             {"name": "Offline demo TTS", "python_module": "pyttsx3", "profiles": RUNTIME_PROFILES.copy(), "directions": ["vi2en", "en2vi"]},
         ],
         "artifacts": artifacts,

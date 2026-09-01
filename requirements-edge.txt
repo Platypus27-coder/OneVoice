@@ -7,4 +7,8 @@ pyttsx3
 psutil
 sherpa-onnx
 funasr_onnx
-onnxruntime-genai
+onnxruntime
+optimum-onnx[onnxruntime]
+transformers==4.57.1
+tokenizers==0.22.1
+sentencepiece==0.2.0

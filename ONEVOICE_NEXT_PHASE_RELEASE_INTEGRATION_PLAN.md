@@ -275,7 +275,7 @@ onevoice-v2-rc/
 
 - [ ] P5-01: profile load time, per-stage p50/p95, complete-turn và peak RSS theo direction.
 - [ ] P5-02: lazy-load direction và loại premium TTS khỏi edge profile.
-- [ ] P5-03: export EnViT5 sang approved local edge backend; A/B quality trước/sau export.
+- [ ] P5-03: export EnViT5 sang **ONNX Runtime Seq2Seq** local bundle (không dùng ORT GenAI vì EnViT5 là T5 encoder-decoder); A/B toàn bộ test/minimal/safety trước/sau export, mỗi metric không regression quá 1 điểm phần trăm trước khi đưa vào release lock.
 - [ ] P5-04: thử FP32/FP16; chỉ thử INT8 khi numerical/runtime contract đúng.
 - [ ] P5-05: quantization regression không quá 1 điểm phần trăm trên release suites.
 - [ ] P5-06: giảm VI→EN MT p95 trước khi tối ưu module nhỏ hơn.

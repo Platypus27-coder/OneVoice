@@ -56,6 +56,10 @@ Vào `Runtime → Change runtime type → T4 GPU` (hoặc GPU đang có) trướ
    `colab_mt_finetune_v2.ipynb` khi tạo một candidate VI→EN mới.
 6. `colab_mt_v2.ipynb`: chỉ chạy khi cần benchmark mới; job complete tự được skip. Cuối notebook tạo
    `MyDrive/OneVoice/reports/benchmark_dashboard.md`.
+7. `colab_runtime_artifacts_v2.ipynb`: dùng khi dựng hoặc cập nhật runtime offline/edge. Notebook export hai
+   checkpoint EnViT5 đã fine-tune sang **ONNX Runtime Seq2Seq**, benchmark toàn bộ `test`/`minimal`/`safety`
+   so với checkpoint Transformers, rồi mới cho phép tạo lại release lock và chạy P5. Không tạo
+   `genai_config.json`: EnViT5 là T5 encoder-decoder, không phải model ORT GenAI decoder-only.
 
 English ASR và Qualcomm profile chỉ chạy sau khi có English V2.1 / model ONNX frozen tương ứng.
 
