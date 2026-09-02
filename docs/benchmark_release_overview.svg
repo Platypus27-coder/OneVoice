@@ -1,0 +1,130 @@
+<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 1290' role='img' aria-labelledby='title desc'>
+  <title id='title'>OneVoice current release benchmark overview</title>
+  <desc id='desc'>Critical preservation, error rate, and model-level p95 latency for the current ASR and MT release artifacts.</desc>
+  <defs>
+    <filter id='rough' x='-2%' y='-2%' width='104%' height='104%'>
+      <feTurbulence type='fractalNoise' baseFrequency='0.015' numOctaves='1' seed='23' result='noise'/>
+      <feDisplacementMap in='SourceGraphic' in2='noise' scale='1.1'/>
+    </filter>
+  </defs>
+  <rect width='100%' height='100%' fill='#0d1117'/>
+  <g font-family="Georgia, 'Times New Roman', serif">
+    <text x='720' y='42' text-anchor='middle' class='title'>OneVoice · Current release benchmark</text>
+    <text x='720' y='69' text-anchor='middle' class='subtitle'>10 checked ASR/MT artifacts · synthetic/hosted evidence</text>
+    <text x='720' y='94' text-anchor='middle' class='note'>Higher is better for preservation · lower is better for error · p95 is model-stage latency</text>
+    <g filter='url(#rough)'>
+      <text x='30' y='122' class='panel-title'>Critical preservation</text>
+<rect x='30' y='134' width='1380' height='312' rx='12' class='panel-bg'/>
+<path d='M1316.6 150 V424' class='threshold'/>
+<text x='1321.6' y='150' class='threshold-label'>95% gate</text>
+<text x='42' y='165' class='label'>VI→EN ASR / clean</text>
+<rect x='226' y='152' width='984.5' height='17' rx='5' fill='#e9c46a' class='bar'/>
+<text x='1218.5' y='165' class='value'>85.8%</text>
+<text x='42' y='193' class='label'>VI→EN ASR / noisy</text>
+<rect x='226' y='180' width='875.8' height='17' rx='5' fill='#e9c46a' class='bar'/>
+<text x='1109.8' y='193' class='value'>76.3%</text>
+<text x='42' y='221' class='label'>EN→VI ASR / clean</text>
+<rect x='226' y='208' width='1142.5' height='17' rx='5' fill='#59c3a9' class='bar'/>
+<text x='1376.5' y='221' class='value'>99.5%</text>
+<text x='42' y='249' class='label'>EN→VI ASR / noisy</text>
+<rect x='226' y='236' width='1138.4' height='17' rx='5' fill='#59c3a9' class='bar'/>
+<text x='1372.4' y='249' class='value'>99.2%</text>
+<text x='42' y='277' class='label'>EN→VI MT / minimal</text>
+<rect x='226' y='264' width='1100.2' height='17' rx='5' fill='#59c3a9' class='bar'/>
+<text x='1334.2' y='277' class='value'>95.8%</text>
+<text x='42' y='305' class='label'>EN→VI MT / safety</text>
+<rect x='226' y='292' width='1148.0' height='17' rx='5' fill='#59c3a9' class='bar'/>
+<text x='1382.0' y='305' class='value'>100.0%</text>
+<text x='42' y='333' class='label'>EN→VI MT / test</text>
+<rect x='226' y='320' width='1136.3' height='17' rx='5' fill='#59c3a9' class='bar'/>
+<text x='1370.3' y='333' class='value'>99.0%</text>
+<text x='42' y='361' class='label'>VI→EN MT / minimal</text>
+<rect x='226' y='348' width='1124.1' height='17' rx='5' fill='#59c3a9' class='bar'/>
+<text x='1358.1' y='361' class='value'>97.9%</text>
+<text x='42' y='389' class='label'>VI→EN MT / safety</text>
+<rect x='226' y='376' width='1148.0' height='17' rx='5' fill='#59c3a9' class='bar'/>
+<text x='1382.0' y='389' class='value'>100.0%</text>
+<text x='42' y='417' class='label'>VI→EN MT / test</text>
+<rect x='226' y='404' width='1139.8' height='17' rx='5' fill='#59c3a9' class='bar'/>
+<text x='1373.8' y='417' class='value'>99.3%</text>
+      <text x='30' y='522' class='panel-title'>Error rate (WER/reference error)</text>
+<rect x='30' y='534' width='1380' height='312' rx='12' class='panel-bg'/>
+<text x='42' y='565' class='label'>VI→EN ASR / clean</text>
+<rect x='226' y='552' width='102.5' height='17' rx='5' fill='#f08a82' class='bar'/>
+<text x='336.5' y='565' class='value'>8.9%</text>
+<text x='42' y='593' class='label'>VI→EN ASR / noisy</text>
+<rect x='226' y='580' width='130.0' height='17' rx='5' fill='#f08a82' class='bar'/>
+<text x='364.0' y='593' class='value'>11.3%</text>
+<text x='42' y='621' class='label'>EN→VI ASR / clean</text>
+<rect x='226' y='608' width='4.3' height='17' rx='5' fill='#f08a82' class='bar'/>
+<text x='238.3' y='621' class='value'>0.4%</text>
+<text x='42' y='649' class='label'>EN→VI ASR / noisy</text>
+<rect x='226' y='636' width='6.3' height='17' rx='5' fill='#f08a82' class='bar'/>
+<text x='240.3' y='649' class='value'>0.5%</text>
+<text x='42' y='677' class='label'>EN→VI MT / minimal</text>
+<rect x='226' y='664' width='101.0' height='17' rx='5' fill='#f08a82' class='bar'/>
+<text x='335.0' y='677' class='value'>8.8%</text>
+<text x='42' y='705' class='label'>EN→VI MT / safety</text>
+<rect x='226' y='692' width='261.7' height='17' rx='5' fill='#f08a82' class='bar'/>
+<text x='495.7' y='705' class='value'>22.8%</text>
+<text x='42' y='733' class='label'>EN→VI MT / test</text>
+<rect x='226' y='720' width='20.7' height='17' rx='5' fill='#f08a82' class='bar'/>
+<text x='254.7' y='733' class='value'>1.8%</text>
+<text x='42' y='761' class='label'>VI→EN MT / minimal</text>
+<rect x='226' y='748' width='176.3' height='17' rx='5' fill='#f08a82' class='bar'/>
+<text x='410.3' y='761' class='value'>15.4%</text>
+<text x='42' y='789' class='label'>VI→EN MT / safety</text>
+<rect x='226' y='776' width='2.0' height='17' rx='5' fill='#f08a82' class='bar'/>
+<text x='236.0' y='789' class='value'>0.1%</text>
+<text x='42' y='817' class='label'>VI→EN MT / test</text>
+<rect x='226' y='804' width='16.9' height='17' rx='5' fill='#f08a82' class='bar'/>
+<text x='250.9' y='817' class='value'>1.5%</text>
+      <text x='30' y='922' class='panel-title'>p95 model-stage latency</text>
+<rect x='30' y='934' width='1380' height='312' rx='12' class='panel-bg'/>
+<text x='42' y='965' class='label'>VI→EN ASR / clean</text>
+<rect x='226' y='952' width='251.9' height='17' rx='5' fill='#f08a82' class='bar'/>
+<text x='485.9' y='965' class='value'>525 ms</text>
+<text x='42' y='993' class='label'>VI→EN ASR / noisy</text>
+<rect x='226' y='980' width='204.4' height='17' rx='5' fill='#f08a82' class='bar'/>
+<text x='438.4' y='993' class='value'>426 ms</text>
+<text x='42' y='1021' class='label'>EN→VI ASR / clean</text>
+<rect x='226' y='1008' width='759.1' height='17' rx='5' fill='#f08a82' class='bar'/>
+<text x='993.1' y='1021' class='value'>1582 ms</text>
+<text x='42' y='1049' class='label'>EN→VI ASR / noisy</text>
+<rect x='226' y='1036' width='763.6' height='17' rx='5' fill='#f08a82' class='bar'/>
+<text x='997.6' y='1049' class='value'>1591 ms</text>
+<text x='42' y='1077' class='label'>EN→VI MT / minimal</text>
+<rect x='226' y='1064' width='222.1' height='17' rx='5' fill='#f08a82' class='bar'/>
+<text x='456.1' y='1077' class='value'>463 ms</text>
+<text x='42' y='1105' class='label'>EN→VI MT / safety</text>
+<rect x='226' y='1092' width='152.9' height='17' rx='5' fill='#f08a82' class='bar'/>
+<text x='386.9' y='1105' class='value'>319 ms</text>
+<text x='42' y='1133' class='label'>EN→VI MT / test</text>
+<rect x='226' y='1120' width='183.4' height='17' rx='5' fill='#f08a82' class='bar'/>
+<text x='417.4' y='1133' class='value'>382 ms</text>
+<text x='42' y='1161' class='label'>VI→EN MT / minimal</text>
+<rect x='226' y='1148' width='1145.5' height='17' rx='5' fill='#f08a82' class='bar'/>
+<text x='1379.5' y='1161' class='value'>2387 ms</text>
+<text x='42' y='1189' class='label'>VI→EN MT / safety</text>
+<rect x='226' y='1176' width='901.6' height='17' rx='5' fill='#f08a82' class='bar'/>
+<text x='1135.6' y='1189' class='value'>1879 ms</text>
+<text x='42' y='1217' class='label'>VI→EN MT / test</text>
+<rect x='226' y='1204' width='1148.0' height='17' rx='5' fill='#f08a82' class='bar'/>
+<text x='1382.0' y='1217' class='value'>2392 ms</text>
+    </g>
+    <text x='1410' y='1272' text-anchor='end' class='footer'>Source summary generated: 2026-08-29T13:42:43+00:00 · P5 full-pipeline latency is reported separately</text>
+  </g>
+  <style>
+    .title { fill:#f0f6fc; font-size:30px; font-weight:700; }
+    .subtitle { fill:#8b949e; font-size:15px; }
+    .note { fill:#8b949e; font-size:14px; }
+    .panel-title { fill:#f0f6fc; font-size:19px; font-weight:700; }
+    .panel-bg { fill:#111820; stroke:#303b46; stroke-width:1.3; }
+    .label { fill:#d8dee4; font-size:13px; }
+    .value { fill:#f0f6fc; font-size:13px; font-weight:700; }
+    .bar { filter:url(#rough); }
+    .threshold { stroke:#f0f6fc; stroke-width:1.4; stroke-dasharray:5 5; opacity:.55; }
+    .threshold-label { fill:#c9d1d9; font-size:11px; }
+    .footer { fill:#8b949e; font-size:12px; }
+  </style>
+</svg>

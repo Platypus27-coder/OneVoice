@@ -318,6 +318,15 @@ synthetic/hosted, chưa phải validation công trường thật.
 
 <img src="docs/benchmark_release_critical.svg" alt="OneVoice release critical preservation chart" width="100%" />
 
+### Release overview: quality and model latency
+
+<img src="docs/benchmark_release_overview.svg" alt="OneVoice current release benchmark overview" width="100%" />
+
+Biểu đồ tổng quan trên được sinh trực tiếp từ `summary.json` của release hiện tại.
+Latency trong biểu đồ là latency p95 của từng model/stage. Latency end-to-end của
+toàn bộ pipeline streaming (P5: audio → ASR → MT → TTS) được đo và báo cáo riêng,
+không trộn vào số liệu model để tránh so sánh sai đơn vị.
+
 Ký hiệu trên biểu đồ: `C` = clean audio (âm thanh sạch), `N` = noisy audio
 (có nhiễu), `T` = test suite và `S` = safety suite. Bộ `minimal` vẫn được
 đánh giá nhưng chỉ hiển thị trong [report.md](report.md) và [report.html](report.html)
