@@ -322,6 +322,13 @@ synthetic/hosted, chưa phải validation công trường thật.
 
 <img src="docs/benchmark_release_overview.svg" alt="OneVoice current release benchmark overview" width="100%" />
 
+### Android Snapdragon / headset next gate
+
+Mobile deployment begins with a copied local artifact bundle and a per-stage
+RSS audit; it does not reuse Google Drive paths at runtime. The executable
+pre-device commands and acceptance boundary are in
+[Android Snapdragon execution gate](docs/ANDROID_SNAPDRAGON_EXECUTION.md).
+
 Biểu đồ tổng quan trên được sinh trực tiếp từ `summary.json` của release hiện tại.
 Latency trong biểu đồ là latency p95 của từng model/stage. Latency end-to-end của
 toàn bộ pipeline streaming (P5: audio → ASR → MT → TTS) được đo và báo cáo riêng,

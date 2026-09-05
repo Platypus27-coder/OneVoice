@@ -1,9 +1,10 @@
 """Build a direction-scoped OneVoice release bundle or inventory.
 
-``inventory`` is the safe default for Google Drive: it creates a portable
-manifest/receipt without duplicating large model files. ``copy`` materializes
-the same layout under the output directory and resumes files whose SHA-256
-already matches. Both modes are fail-closed and never download artifacts.
+``inventory`` is the safe default for Google Drive: it creates a hash-locked
+receipt without duplicating large model files. ``copy`` materializes the same
+layout under the output directory and resumes files whose SHA-256 already
+matches. With ``--runtime-config``, copy also writes a local edge config.
+Both modes are fail-closed and never download artifacts.
 """
 
 from __future__ import annotations
@@ -18,16 +19,21 @@ import tempfile
 from datetime import datetime, timezone
 from pathlib import Path
 
+import yaml
+
 
 ASSET_DESTINATIONS = {
-    "gipformer": "asr/gipformer",
-    "sensevoice_fp32": "asr/sensevoice_fp32",
-    "mt_vi2en": "mt/envit5",
-    "mt_en2vi": "mt/envit5",
-    "mt_vi2en_ort": "mt/envit5_ort",
-    "mt_en2vi_ort": "mt/envit5_ort",
-    "safety_audio": "safety_audio",
-    "reviewed_safety_csv": "site_packs",
+    # The copied layout deliberately matches the runtime config paths.  A
+    # bundle can therefore be executed from its own root without Drive paths.
+    "gipformer": "models/gipformer",
+    "sensevoice_fp32": "models/sensevoice_en_construction_v1_onnx_fp32",
+    "mt_vi2en": "models/envit5_finetuned_vi2en_v1",
+    "mt_en2vi": "models/envit5_finetuned_en2vi_v1",
+    "mt_vi2en_ort": "models/mt/vi2en_ort",
+    "mt_en2vi_ort": "models/mt/en2vi_ort",
+    "safety_audio": "artifacts/safety_audio",
+    "reviewed_safety_csv": "data/onevoice_construction_v2",
+    "construction_data": "data/onevoice_construction_v2",
 }
 
 
@@ -81,8 +87,73 @@ def destination_for(name: str, direction: str) -> Path:
         raise ValueError(f"EN→VI edge MT artifact leaked into {direction}: {name}")
     relative = Path(tail) if tail else Path(Path(name).name)
     if head == "reviewed_safety_csv":
-        relative = Path("reviewed_safety.csv")
+        relative = Path("safety_fast_path_review.csv")
     return Path(ASSET_DESTINATIONS[head]) / relative
+
+
+def _filter_backends(backends: object, direction: str) -> list[dict]:
+    if not isinstance(backends, list):
+        return []
+    result = []
+    for backend in backends:
+        if not isinstance(backend, dict):
+            continue
+        directions = set(backend.get("directions", ["vi2en", "en2vi"]))
+        if direction in directions:
+            result.append(dict(backend))
+    return result
+
+
+def write_portable_runtime_config(
+    source_config: Path,
+    destination: Path,
+    direction: str,
+    asset_names: set[str],
+) -> None:
+    """Write an edge config whose relative paths are rooted at a copied bundle.
+
+    This is intentionally stricter than the inventory mode: the context and
+    safety sources are required alongside the model bundles.  It produces a
+    local runtime contract, not an Android app; Android still needs native
+    adapters for the listed Python backends.
+    """
+    required = {
+        "vi2en": {"gipformer", "mt_vi2en_ort", "safety_audio", "reviewed_safety_csv", "construction_data"},
+        "en2vi": {"sensevoice_fp32", "mt_en2vi_ort", "safety_audio", "reviewed_safety_csv", "construction_data"},
+    }[direction]
+    missing = sorted(required - asset_names)
+    if missing:
+        raise ValueError(
+            "Cannot materialize portable runtime config; missing artifact roots: "
+            + ", ".join(missing)
+        )
+    payload = yaml.safe_load(source_config.read_text(encoding="utf-8"))
+    if not isinstance(payload, dict):
+        raise ValueError(f"Invalid runtime config: {source_config}")
+    pipeline = payload.setdefault("pipeline", {})
+    pipeline.update(
+        {
+            "offline": True,
+            "profile": "edge",
+            "artifact_manifest": "manifest.json",
+            "construction_data_dir": "data/onevoice_construction_v2",
+            "safety_source_csv": "data/onevoice_construction_v2/safety_fast_path_review.csv",
+            "safety_audio_manifest": "artifacts/safety_audio/manifest.json",
+        }
+    )
+    if direction == "vi2en":
+        payload.setdefault("asr", {})["gipformer_model_dir"] = "models/gipformer"
+        payload.setdefault("translation", {}).setdefault("directions", {}).setdefault("vi2en", {})[
+            "edge_model_dir"
+        ] = "models/mt/vi2en_ort"
+    else:
+        payload.setdefault("sensevoice", {})["model_path"] = "models/sensevoice_en_construction_v1_onnx_fp32"
+        payload.setdefault("translation", {}).setdefault("directions", {}).setdefault("en2vi", {})[
+            "edge_model_dir"
+        ] = "models/mt/en2vi_ort"
+    profiles = payload.setdefault("profiles", {})
+    profiles.setdefault("edge", {})["allow_downloads"] = False
+    destination.write_text(yaml.safe_dump(payload, allow_unicode=True, sort_keys=False), encoding="utf-8")
 
 
 def build_bundle(
@@ -92,7 +163,10 @@ def build_bundle(
     mode: str = "inventory",
     release_lock: Path | None = None,
     config: Path | None = None,
+    runtime_config: Path | None = None,
 ) -> dict:
+    if runtime_config is not None and mode != "copy":
+        raise ValueError("--runtime-config requires --mode copy")
     payload = json.loads(artifact_manifest.read_text(encoding="utf-8"))
     if int(payload.get("schema_version", 0)) < 2:
         raise ValueError("P4 requires a schema v2 artifact manifest")
@@ -189,11 +263,21 @@ def build_bundle(
         "manifest_kind": "onevoice.direction_release_bundle",
         "direction": direction,
         "portable": mode == "copy",
+        "sample_rates": payload.get("sample_rates", [16000]),
+        "required_backends": _filter_backends(payload.get("required_backends"), direction),
         "artifacts": manifest_entries,
     }
     bundle_manifest_path = output_dir / "manifest.json"
     atomic_json(bundle_manifest_path, bundle_manifest)
     receipt["bundle_manifest_sha256"] = sha256(bundle_manifest_path)
+    if runtime_config is not None:
+        runtime_config_path = output_dir / "runtime_config.yaml"
+        write_portable_runtime_config(
+            runtime_config, runtime_config_path, direction,
+            {asset_name(str(entry["name"]))[0] for entry, *_rest in selected},
+        )
+        receipt["runtime_config"] = runtime_config_path.name
+        receipt["runtime_config_sha256"] = sha256(runtime_config_path)
     atomic_json(output_dir / "receipt.json", receipt)
     return receipt
 
@@ -206,6 +290,11 @@ def main() -> None:
     parser.add_argument("--mode", choices=("inventory", "copy"), default="inventory")
     parser.add_argument("--release-lock", type=Path)
     parser.add_argument("--config", type=Path)
+    parser.add_argument(
+        "--runtime-config",
+        type=Path,
+        help="Source config to rewrite for a copied, self-contained edge bundle.",
+    )
     args = parser.parse_args()
     if not args.artifact_manifest.is_file():
         raise FileNotFoundError(args.artifact_manifest)
@@ -213,6 +302,8 @@ def main() -> None:
         raise FileNotFoundError(args.release_lock)
     if args.config and not args.config.is_file():
         raise FileNotFoundError(args.config)
+    if args.runtime_config and not args.runtime_config.is_file():
+        raise FileNotFoundError(args.runtime_config)
     receipt = build_bundle(
         args.artifact_manifest,
         args.output_dir,
@@ -220,6 +311,7 @@ def main() -> None:
         args.mode,
         args.release_lock,
         args.config,
+        args.runtime_config,
     )
     print(json.dumps(receipt, ensure_ascii=False, indent=2))
 

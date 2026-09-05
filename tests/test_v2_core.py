@@ -791,11 +791,11 @@ class RuntimeSafetyTests(unittest.TestCase):
     def test_edge_mt_artifacts_have_direction_scoped_bundle_destinations(self):
         self.assertEqual(
             destination_for("mt_vi2en_ort/encoder_model.onnx", "vi2en").as_posix(),
-            "mt/envit5_ort/encoder_model.onnx",
+            "models/mt/vi2en_ort/encoder_model.onnx",
         )
         self.assertEqual(
             destination_for("mt_en2vi_ort/encoder_model.onnx", "en2vi").as_posix(),
-            "mt/envit5_ort/encoder_model.onnx",
+            "models/mt/en2vi_ort/encoder_model.onnx",
         )
         with self.assertRaises(ValueError):
             destination_for("mt_vi2en_ort/encoder_model.onnx", "en2vi")
