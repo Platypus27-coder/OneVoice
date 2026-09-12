@@ -98,6 +98,14 @@ pipeline:
       max_rss_mb: 200
       normal_target_ms: 1000
       safety_target_ms: 300
+    # Desktop reference target for the current CV/demo machine:
+    # ASUS TUF Gaming F15 (i5-11400H, 24 GB RAM, RTX 2050 4 GB).
+    # This is a declared desktop acceptance budget, not a claim that the
+    # runtime meets the portable 200 MB mobile target.
+    desktop_tuf_f15_rtx2050:
+      max_rss_mb: 8192
+      normal_target_ms: 3000
+      safety_target_ms: 300
   artifact_manifest: "artifacts/manifest.json"
   construction_data_dir: "data/onevoice_construction_v2"
   # Set to an audited site/review CSV when using pre-generated safety audio.

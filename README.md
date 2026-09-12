@@ -2,7 +2,7 @@
 
 <img width="2352" height="1792" alt="OneVoice Edge Banner" src="https://github.com/user-attachments/assets/f4747894-01d8-4889-bbf5-a0d2a5c01de7" />
 
-OneVoice là hệ thống dịch thuật Speech-to-Speech Việt ↔ Anh dành cho môi trường công nghiệp (nhà máy, công trường). Mục tiêu V2 là vận hành **100% offline** trên thiết bị Edge / chip **Qualcomm Snapdragon**, đạt độ trễ dưới **1 giây** và peak RAM theo **hardware profile** đã công bố. `edge_200mb` vẫn là mục tiêu portable/RAM thấp; thiết bị nhiều RAM hơn phải khai báo budget riêng trong report P5. Dự án chưa tuyên bố production-ready khi chưa vượt dữ liệu thực địa.
+OneVoice là hệ thống dịch thuật Speech-to-Speech Việt ↔ Anh dành cho môi trường công nghiệp (nhà máy, công trường). Mục tiêu release hiện tại là **Windows PC offline desktop demo** để tái lập, demo và đưa vào hồ sơ dự án. Android/Snapdragon và tai nghe Bluetooth được giữ là roadmap tiếp theo. `edge_200mb` vẫn là mục tiêu portable/RAM thấp; desktop phải khai báo budget phần cứng riêng trong report P5. Dự án chưa tuyên bố production-ready khi chưa vượt dữ liệu thực địa.
 
 ---
 
@@ -17,7 +17,8 @@ V2 nâng cấp trực tiếp runtime hiện tại nhưng vẫn giữ tag `v1-wor
 | Streaming 32 ms, stable prefix, semantic commit | `PARTIAL` | Đã test logic, chưa có p95 model thật |
 | Denoising | `FALLBACK` | Passthrough là baseline; DeepFilterNet/RNNoise phải qua quality gate |
 | VI-ASR, EN-ASR, MT và TTS | `PARTIAL` | Adapter đã có; benchmark thực chạy trên Colab |
-| Offline Edge và RAM theo hardware profile | `PLANNED` | Chờ artifact bundle và profile đầy đủ |
+| Offline Windows desktop và RAM theo hardware profile | `IN PROGRESS` | Bundle local + P5 trên ASUS TUF F15 là release gate hiện tại |
+| Android / Snapdragon / Bluetooth | `ROADMAP` | Chỉ bắt đầu sau desktop release candidate |
 | Real-site robustness | `PLANNED` | Chưa có fixed real-site holdout |
 
 Chi tiết bằng chứng: [V1 baseline](docs/V1_BASELINE_STATUS.md), [kế hoạch V1 → V2](ONEVOICE_V1_TO_V2_PLAN.md) và [hướng dẫn notebook V2](notebooks/README_V2.md).
@@ -322,12 +323,14 @@ synthetic/hosted, chưa phải validation công trường thật.
 
 <img src="docs/benchmark_release_overview.svg" alt="OneVoice current release benchmark overview" width="100%" />
 
-### Android Snapdragon / headset next gate
+### Windows desktop release candidate
 
-Mobile deployment begins with a copied local artifact bundle and a per-stage
-RSS audit; it does not reuse Google Drive paths at runtime. The executable
-pre-device commands and acceptance boundary are in
-[Android Snapdragon execution gate](docs/ANDROID_SNAPDRAGON_EXECUTION.md).
+Release hiện tại được chốt cho Windows PC offline: local bundle, no-network
+smoke, streaming/soak evidence và P5 đo trên đúng máy demo. Hướng dẫn chạy,
+tiêu chí hoàn tất và câu mô tả CV an toàn nằm trong
+[Windows desktop release candidate](docs/PC_DESKTOP_RELEASE.md). Android
+Snapdragon/headset vẫn là [roadmap kế tiếp](docs/ANDROID_SNAPDRAGON_EXECUTION.md),
+không phải điều kiện để hoàn tất bản desktop.
 
 Biểu đồ tổng quan trên được sinh trực tiếp từ `summary.json` của release hiện tại.
 Latency trong biểu đồ là latency p95 của từng model/stage. Latency end-to-end của

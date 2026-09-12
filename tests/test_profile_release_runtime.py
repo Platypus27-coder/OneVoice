@@ -41,6 +41,25 @@ class HardwareProfileTargetTests(unittest.TestCase):
         self.assertEqual(sources["max_rss_mb"], "cli")
         self.assertEqual(sources["normal_target_ms"], "config:device-8gb")
 
+    def test_desktop_profile_can_record_a_separate_acceptance_contract(self):
+        config = {
+            "pipeline": {
+                "edge_hardware_profiles": {
+                    "desktop_tuf_f15_rtx2050": {
+                        "max_rss_mb": 8192,
+                        "normal_target_ms": 3000,
+                        "safety_target_ms": 300,
+                    }
+                }
+            }
+        }
+
+        targets, sources = resolve_hardware_targets(config, "desktop_tuf_f15_rtx2050")
+
+        self.assertEqual(targets["max_rss_mb"], 8192.0)
+        self.assertEqual(targets["normal_target_ms"], 3000.0)
+        self.assertEqual(sources["max_rss_mb"], "config:desktop_tuf_f15_rtx2050")
+
     def test_unknown_profile_requires_explicit_memory_budget(self):
         with self.assertRaisesRegex(ValueError, "Unknown hardware profile"):
             resolve_hardware_targets({}, "unregistered-device")
