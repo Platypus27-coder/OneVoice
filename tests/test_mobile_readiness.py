@@ -42,7 +42,7 @@ class MobileReadinessTests(unittest.TestCase):
 
     def test_copied_bundle_has_local_runtime_contract_and_mobile_audit(self):
         entries = []
-        for asset in ("gipformer", "mt_vi2en_ort", "safety_audio", "reviewed_safety_csv", "construction_data"):
+        for asset in ("gipformer", "mt_vi2en_ort", "safety_audio", "reviewed_safety_csv"):
             source, digest = self._source(f"{asset}.asset")
             entries.append({
                 "name": f"{asset}/payload.bin", "path": str(source), "sha256": digest,
@@ -62,17 +62,23 @@ class MobileReadinessTests(unittest.TestCase):
         config = yaml.safe_load((bundle / "runtime_config.yaml").read_text(encoding="utf-8"))
         self.assertTrue(config["pipeline"]["offline"])
         self.assertEqual(config["asr"]["gipformer_model_dir"], "models/gipformer")
+        for name in ("terminology_master.csv", "term_aliases.csv"):
+            self.assertTrue((bundle / "data/onevoice_construction_v2" / name).is_file())
+        self.assertTrue(any(
+            entry["name"] == "construction_data/terminology_master.csv"
+            for entry in json.loads((bundle / "manifest.json").read_text(encoding="utf-8"))["artifacts"]
+        ))
         report = audit(bundle, "vi2en")
         self.assertTrue(report["artifact_portable"])
         self.assertTrue(report["runtime_config_present"])
         self.assertFalse(report["android_app_ready"])
         self.assertEqual(report["blockers"], [])
 
-    def test_runtime_config_refuses_missing_mobile_context_assets(self):
-        with self.assertRaisesRegex(ValueError, "construction_data"):
+    def test_runtime_config_requires_reviewed_runtime_assets(self):
+        with self.assertRaisesRegex(ValueError, "reviewed_safety_csv"):
             write_portable_runtime_config(
                 self._runtime_config(), self.root / "runtime_config.yaml", "en2vi",
-                {"sensevoice_fp32", "mt_en2vi_ort", "safety_audio", "reviewed_safety_csv"},
+                {"sensevoice_fp32", "mt_en2vi_ort", "safety_audio"},
             )
 
     def test_component_sample_reports_nonnegative_delta(self):

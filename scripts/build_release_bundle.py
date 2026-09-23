@@ -35,6 +35,11 @@ ASSET_DESTINATIONS = {
     "reviewed_safety_csv": "data/onevoice_construction_v2",
     "construction_data": "data/onevoice_construction_v2",
 }
+RUNTIME_CONTEXT_FILES = (
+    "terminology_master.csv",
+    "term_aliases.csv",
+)
+PROJECT_DATA_LICENSE = "CC-BY-NC-4.0"
 
 
 def sha256(path: Path) -> str:
@@ -118,8 +123,8 @@ def write_portable_runtime_config(
     adapters for the listed Python backends.
     """
     required = {
-        "vi2en": {"gipformer", "mt_vi2en_ort", "safety_audio", "reviewed_safety_csv", "construction_data"},
-        "en2vi": {"sensevoice_fp32", "mt_en2vi_ort", "safety_audio", "reviewed_safety_csv", "construction_data"},
+        "vi2en": {"gipformer", "mt_vi2en_ort", "safety_audio", "reviewed_safety_csv"},
+        "en2vi": {"sensevoice_fp32", "mt_en2vi_ort", "safety_audio", "reviewed_safety_csv"},
     }[direction]
     missing = sorted(required - asset_names)
     if missing:
@@ -237,6 +242,45 @@ def build_bundle(
             }
         )
 
+    # Context runtime needs just the terminology master and alias table. They
+    # are versioned with the source repo and deliberately copied separately
+    # from generated train/dev/test CSVs, which are not runtime requirements.
+    if runtime_config is not None:
+        context_source = Path(__file__).resolve().parents[1] / "data" / "onevoice_construction_v2"
+        for filename in RUNTIME_CONTEXT_FILES:
+            source = context_source / filename
+            if not source.is_file():
+                raise FileNotFoundError(f"Required runtime context table is missing: {source}")
+            digest = sha256(source)
+            relative_destination = Path("data/onevoice_construction_v2") / filename
+            key = relative_destination.as_posix()
+            if key in used_destinations:
+                raise ValueError(f"Runtime context destination collides with a manifest artifact: {key}")
+            used_destinations.add(key)
+            destination = output_dir / relative_destination
+            destination.parent.mkdir(parents=True, exist_ok=True)
+            if destination.is_file():
+                if sha256(destination) != digest:
+                    raise FileExistsError(f"Refusing to overwrite different bundle file: {destination}")
+                reused += 1
+            else:
+                temporary = destination.with_suffix(destination.suffix + ".tmp")
+                shutil.copy2(source, temporary)
+                if sha256(temporary) != digest:
+                    temporary.unlink(missing_ok=True)
+                    raise IOError(f"Copied runtime context table failed SHA-256 verification: {source}")
+                temporary.replace(destination)
+                copied += 1
+            manifest_entries.append({
+                "name": f"construction_data/{filename}",
+                "path": key,
+                "sha256": digest,
+                "license": PROJECT_DATA_LICENSE,
+                "directions": [direction],
+                "profiles": ["edge"],
+                "source_path": str(source.resolve()),
+            })
+
     receipt = {
         "schema_version": 1,
         "manifest_kind": "onevoice.direction_release_bundle",
@@ -274,7 +318,8 @@ def build_bundle(
         runtime_config_path = output_dir / "runtime_config.yaml"
         write_portable_runtime_config(
             runtime_config, runtime_config_path, direction,
-            {asset_name(str(entry["name"]))[0] for entry, *_rest in selected},
+            {asset_name(str(entry["name"]))[0] for entry, *_rest in selected}
+            | {"construction_data"},
         )
         receipt["runtime_config"] = runtime_config_path.name
         receipt["runtime_config_sha256"] = sha256(runtime_config_path)
