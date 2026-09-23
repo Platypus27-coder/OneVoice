@@ -48,6 +48,12 @@ class MobileReadinessTests(unittest.TestCase):
                 "name": f"{asset}/payload.bin", "path": str(source), "sha256": digest,
                 "license": "test", "directions": ["vi2en"], "profiles": ["edge"],
             })
+        dev_source, dev_digest = self._source("mt_vi2en/model.safetensors")
+        entries.append({
+            "name": "mt_vi2en/model.safetensors", "path": str(dev_source),
+            "sha256": dev_digest, "license": "test", "directions": ["vi2en"],
+            "profiles": ["development"],
+        })
         manifest = self.root / "manifest.json"
         manifest.write_text(json.dumps({
             "schema_version": 2, "sample_rates": [16000],
@@ -59,6 +65,7 @@ class MobileReadinessTests(unittest.TestCase):
             manifest, bundle, "vi2en", mode="copy", runtime_config=self._runtime_config()
         )
         self.assertTrue(receipt["portable"])
+        self.assertFalse((bundle / "models/envit5_finetuned_vi2en_v1/model.safetensors").exists())
         config = yaml.safe_load((bundle / "runtime_config.yaml").read_text(encoding="utf-8"))
         self.assertTrue(config["pipeline"]["offline"])
         self.assertEqual(config["asr"]["gipformer_model_dir"], "models/gipformer")

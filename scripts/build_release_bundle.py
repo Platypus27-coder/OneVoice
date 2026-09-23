@@ -185,6 +185,13 @@ def build_bundle(
         directions = set(entry.get("directions", ["vi2en", "en2vi"]))
         if direction not in directions:
             continue
+        profiles = set(entry.get("profiles", ["development", "edge"]))
+        # A portable runtime config always selects the offline edge path. Do
+        # not package development-only Transformer weights beside their ONNX
+        # equivalents; keep inventory and copy-without-runtime-config behavior
+        # unchanged for callers that explicitly need both profiles.
+        if runtime_config is not None and "edge" not in profiles:
+            continue
         name = str(entry.get("name", "")).strip()
         raw_path = str(entry.get("path", "")).strip()
         expected = str(entry.get("sha256", "")).casefold()
@@ -237,7 +244,7 @@ def build_bundle(
                 "sha256": digest,
                 "license": str(entry["license"]),
                 "directions": [direction],
-                "profiles": entry.get("profiles", ["development"]),
+                "profiles": sorted(profiles),
                 "source_path": str(source.resolve()),
             }
         )
