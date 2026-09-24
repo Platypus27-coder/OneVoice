@@ -7,6 +7,7 @@ pyttsx3
 psutil
 sherpa-onnx
 funasr_onnx
+jieba
 onnxruntime
 onnx
 onnxscript
