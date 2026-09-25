@@ -78,6 +78,21 @@ once. In particular, the selected runtime needs `sherpa_onnx` for VI ASR,
 `funasr_onnx` for EN ASR, ONNX Runtime/Transformers for MT, and an offline
 system TTS backend. The preflight check fails clearly if one is absent.
 
+For the local eSpeak NG demo fallback installed inside the `onevoice` Conda
+environment, register its executable and voice-data paths once:
+
+```powershell
+$Repo = "D:\code\.vscode\OneVoice\onevoice-edge"
+& "$Repo\scripts\install_espeak_conda_hooks.ps1" `
+  -Prefix "D:\MINICONDA\envs\onevoice"
+```
+
+Then open a new PowerShell session and run `conda activate onevoice`. The
+activation hook makes `espeak-ng` discoverable and sets `ESPEAK_DATA_PATH`; it
+does not install eSpeak NG or change the voice model. This lightweight system
+voice is a functional offline demo fallback, not a production voice-quality
+claim.
+
 Run each command from the corresponding bundle directory so
 `runtime_config.yaml` resolves only local paths:
 
