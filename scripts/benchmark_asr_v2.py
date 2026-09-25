@@ -11,6 +11,8 @@ import time
 from collections import defaultdict
 from pathlib import Path
 
+import numpy as np
+import soundfile as sf
 import yaml
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "../src"))
@@ -20,6 +22,27 @@ from audio.denoise import Denoiser
 from context.engine import ConstructionContextEngine
 from evaluation.metrics import corpus_error_rate
 from evaluation.reporting import create_run_manifest
+
+
+def load_construction_context(config: dict) -> ConstructionContextEngine:
+    pipeline_config = config["pipeline"]
+    return ConstructionContextEngine.from_data_dir(
+        pipeline_config["construction_data_dir"],
+        safety_path=pipeline_config.get("safety_source_csv") or None,
+    )
+
+
+def load_audio_mono_16k(path: Path) -> np.ndarray:
+    audio, sample_rate = sf.read(path, dtype="float32", always_2d=False)
+    if audio.ndim > 1:
+        audio = audio.mean(axis=1)
+    if sample_rate != 16000:
+        try:
+            import librosa
+        except ImportError as exc:
+            raise RuntimeError("Resampling benchmark audio requires librosa") from exc
+        audio = librosa.resample(audio, orig_sr=sample_rate, target_sr=16000)
+    return np.asarray(audio, dtype=np.float32)
 
 
 def read_manifest(path: Path, split: str, language: str) -> list[dict]:
@@ -99,11 +122,6 @@ def main() -> None:
     parser.add_argument("--report-dir", default="reports/asr_v2")
     args = parser.parse_args()
 
-    try:
-        import librosa
-    except ImportError as exc:
-        raise RuntimeError("ASR benchmark requires librosa") from exc
-
     with open(args.config, "r", encoding="utf-8") as handle:
         config = yaml.safe_load(handle)
     if args.sensevoice_model_dir:
@@ -148,9 +166,7 @@ def main() -> None:
     denoiser_config["backend"] = args.denoiser
     denoiser = Denoiser(denoiser_config)
     denoiser.load()
-    context = ConstructionContextEngine.from_data_dir(
-        config["pipeline"]["construction_data_dir"]
-    )
+    context = load_construction_context(config)
     root = manifest.parent
     benchmark_started = time.perf_counter()
     if predictions:
@@ -166,7 +182,7 @@ def main() -> None:
         if name in completed:
             continue
         audio_path = root / args.audio / name
-        audio, _ = librosa.load(audio_path, sr=16000, mono=True)
+        audio = load_audio_mono_16k(audio_path)
         started = time.perf_counter()
         enhanced = denoiser.process(audio, 16000)
         result = asr.transcribe(enhanced, args.direction)
