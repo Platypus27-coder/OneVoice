@@ -14,7 +14,7 @@ import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from pipeline import OneVoicePipeline
+from pipeline import OneVoicePipeline, main as pipeline_main
 from streaming.session import RollingUtteranceSession
 
 
@@ -34,6 +34,24 @@ class _SoundFileStub:
 
 
 class StreamingPipelineTests(unittest.TestCase):
+    def test_cli_forwards_vad_override_to_live_pipeline(self):
+        with mock.patch.object(sys, "argv", ["pipeline.py", "--vad-energy-threshold", "0.005"]):
+            with mock.patch("pipeline.OneVoicePipeline") as factory:
+                pipeline_main()
+        self.assertEqual(factory.call_args.kwargs["vad_energy_threshold"], 0.005)
+        factory.return_value.start.assert_called_once_with()
+
+    def test_cli_rejects_invalid_vad_threshold_before_loading_models(self):
+        for value in ("0", "-0.1", "1.5", "nan"):
+            with self.subTest(value=value):
+                with mock.patch.object(sys, "argv", ["pipeline.py", "--vad-energy-threshold", value]):
+                    with mock.patch("pipeline.OneVoicePipeline") as factory:
+                        with contextlib.redirect_stderr(io.StringIO()):
+                            with self.assertRaises(SystemExit) as error:
+                                pipeline_main()
+                self.assertEqual(error.exception.code, 2)
+                factory.assert_not_called()
+
     def test_stream_file_submits_fixed_frames_and_flushes_endpoint(self):
         pipeline = OneVoicePipeline.__new__(OneVoicePipeline)
         pipeline.direction = "vi2en"

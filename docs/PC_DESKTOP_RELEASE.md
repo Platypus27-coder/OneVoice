@@ -115,6 +115,35 @@ python "$Repo\scripts\verify_release_bundle.py" `
 Expected result: two `bundle_verify_*.json` reports with `passed: true` and
 `network_blocked: true`.
 
+## Thử trực tiếp bằng mic laptop
+
+Chọn **Microphone Array (Realtek)** làm input mặc định trong Windows và tai
+nghe làm output. Chạy từ thư mục bundle sau khi kích hoạt Conda `onevoice`.
+Runtime dùng bản sao riêng của từng frame mic để buffer của driver không ghi
+đè âm thanh đang chờ ASR; các bài replay WAV không kiểm tra vòng đời buffer này.
+Đây cũng là cách giữ dữ liệu trong
+[ví dụ callback chính thức của sounddevice](https://github.com/spatialaudio/python-sounddevice/blob/master/examples/rec_unlimited.py).
+
+Nếu mức RMS giọng nói đo trên mic thấp hơn ngưỡng `0.015`, có thể thử
+`--vad-energy-threshold 0.005`. Tùy chọn chỉ áp dụng cho lần chạy này, được ghi
+trong `runtime_summary.json` khi dùng `--report-dir`, và không sửa config gốc.
+Ngưỡng cần kiểm tra cả khi nói lẫn khi im lặng; `0.005` là mức thử cho mic thu
+nhỏ, không phải giá trị đã được xác nhận phù hợp cho mọi thiết bị.
+
+```powershell
+conda activate onevoice
+$Repo = "D:\code\.vscode\OneVoice\onevoice-edge"
+$OneVoicePython = "D:\MINICONDA\envs\onevoice\python.exe"
+$env:PYTHONPATH = "$Repo\src"
+Set-Location "D:\OneVoiceDesktop\onevoice-v2-rc1\vi2en"
+& $OneVoicePython -u "$Repo\src\pipeline.py" --config runtime_config.yaml --direction vi2en --profile edge --offline --vad-energy-threshold 0.005 --report-dir reports\live_mic_vi2en
+```
+
+Đợi `OneVoice V2 LIVE`, nói một câu tiếng Việt rõ rồi nghỉ khoảng một giây
+để xác nhận hết câu. Dừng bằng `Ctrl+C` để lưu báo cáo. Xác nhận thêm bằng
+nghe đầu ra và so sánh câu nhận dạng với lời nói; chỉ có log nạp model chưa
+đủ để kết luận live microphone chạy đúng.
+
 ## Measure the actual PC (P5)
 
 P5 measures the **whole chain**—audio, ASR, translation, safety/context, TTS

@@ -33,7 +33,10 @@ class AudioCapture:
             print(f"[AudioCapture] Warning: {status}")
         self._sequence += 1
         frame = AudioFrame(
-            samples=np.ascontiguousarray(indata[:, 0], dtype=np.float32),
+            # PortAudio owns indata and may reuse it after this callback.
+            # ascontiguousarray() can return a view for mono float32 input;
+            # workers and VAD must retain an independent snapshot instead.
+            samples=np.array(indata[:, 0], dtype=np.float32, copy=True, order="C"),
             sample_rate=self.sample_rate,
             sequence=self._sequence,
             captured_at=time.perf_counter(),

@@ -53,10 +53,16 @@ class OneVoicePipeline:
         site_pack_path: str | None = None,
         offline: bool = False,
         report_dir: str | None = None,
+        vad_energy_threshold: float | None = None,
     ):
         if direction not in {"vi2en", "en2vi"}:
             raise ValueError("direction must be 'vi2en' or 'en2vi'")
         self.cfg = load_config(config_path)
+        if vad_energy_threshold is not None:
+            if not 0 < vad_energy_threshold <= 1:
+                raise ValueError("vad_energy_threshold must be greater than 0 and at most 1")
+            self.cfg["audio"]["vad_energy_threshold"] = float(vad_energy_threshold)
+            print(f"[VAD] Energy threshold override: {vad_energy_threshold:g}")
         self.direction = direction
         self.profile = profile or self.cfg["pipeline"].get("profile", "development")
         if self.profile not in self.cfg.get("profiles", {}):
@@ -868,6 +874,9 @@ class OneVoicePipeline:
                         "direction": self.direction,
                         "profile": self.profile,
                         "offline": self.offline,
+                        "vad_energy_threshold": self.cfg["audio"].get(
+                            "vad_energy_threshold", 0.015
+                        ),
                         "dropped_audio_frames": self.capture.dropped_frames,
                         "fatal_error": repr(self._fatal_error) if self._fatal_error else None,
                     },
@@ -907,10 +916,17 @@ def main() -> None:
     )
     parser.add_argument("--output-file")
     parser.add_argument("--report-dir")
+    parser.add_argument(
+        "--vad-energy-threshold",
+        type=float,
+        help="Override the normalized RMS speech threshold for this run (0 < value <= 1)",
+    )
     args = parser.parse_args()
 
     if args.input_file and args.stream_file:
         parser.error("--input-file and --stream-file are mutually exclusive")
+    if args.vad_energy_threshold is not None and not 0 < args.vad_energy_threshold <= 1:
+        parser.error("--vad-energy-threshold must be greater than 0 and at most 1")
 
     pipeline = OneVoicePipeline(
         config_path=args.config,
@@ -919,6 +935,7 @@ def main() -> None:
         site_pack_path=args.site_pack,
         offline=args.offline,
         report_dir=args.report_dir,
+        vad_energy_threshold=args.vad_energy_threshold,
     )
     if args.stream_file:
         result = pipeline.stream_file(args.stream_file, realtime=args.realtime)
