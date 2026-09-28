@@ -66,6 +66,18 @@ class OneVoicePipeline:
         self.stop_event = threading.Event()
         self._fatal_error: BaseException | None = None
 
+        # GIPFormer loads sherpa-onnx before the edge translator is initialized.
+        # On some Windows Conda installations, importing ONNX Runtime afterwards
+        # (through Optimum) can terminate Python with 0xC0000005 while loading
+        # onnxruntime's native extension. Prime the shared ONNX Runtime first.
+        if self.profile == "edge" and self.direction == "vi2en":
+            try:
+                import onnxruntime  # noqa: F401
+            except ImportError as exc:
+                raise RuntimeError(
+                    "The vi2en edge runtime requires the onnxruntime package"
+                ) from exc
+
         # Heavy model/audio dependencies are imported only when a pipeline is
         # instantiated, so CLI help and static tooling work in minimal envs.
         from asr.asr_manager import ASRManager
