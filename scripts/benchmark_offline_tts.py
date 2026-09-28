@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import argparse
 import csv
+import hashlib
 import json
 import os
 import sys
@@ -26,9 +27,11 @@ except ImportError:  # pragma: no cover - Windows has no resource module
     resource = None
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "../src"))
+sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from evaluation.reporting import create_run_manifest
 from tts.tts_engine import TTSEngine
+from profile_release_runtime import NoNetwork
 
 
 def peak_rss_mb() -> float:
@@ -37,15 +40,14 @@ def peak_rss_mb() -> float:
         if resource is None:
             raise ImportError
         value = float(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss)
-        # Linux reports KiB; macOS reports bytes. Colab is Linux.
-        if value > 1024 * 1024:
-            return value / (1024 * 1024)
-        return value / 1024
+        # The unit depends on the OS, not on the amount of memory used.
+        return value / (1024 * 1024) if sys.platform == "darwin" else value / 1024
     except (AttributeError, ImportError):
         try:
             import psutil
 
-            return psutil.Process().memory_info().rss / (1024 * 1024)
+            info = psutil.Process().memory_info()
+            return getattr(info, "peak_wset", info.rss) / (1024 * 1024)
         except Exception:
             return 0.0
 
@@ -53,16 +55,17 @@ def peak_rss_mb() -> float:
 def load_prompts(path: Path, direction: str, limit: int | None) -> list[dict[str, str]]:
     with path.open("r", encoding="utf-8-sig", newline="") as handle:
         rows = list(csv.DictReader(handle))
-    source_column = "en" if direction == "en2vi" else "vi"
+    # The TTS router speaks the translated/output language, not the ASR input.
+    target_column = "en" if direction == "vi2en" else "vi"
     prompts = []
     for index, row in enumerate(rows, start=1):
-        text = str(row.get(source_column, "")).strip()
+        text = str(row.get(target_column, "")).strip()
         if text:
             prompts.append({"prompt_id": str(row.get("id") or row.get("utterance_id") or index), "text": text})
     if limit is not None:
         prompts = prompts[:limit]
     if not prompts:
-        raise ValueError(f"No {source_column!r} prompts found in {path}")
+        raise ValueError(f"No {target_column!r} prompts found in {path}")
     return prompts
 
 
@@ -98,14 +101,15 @@ def main() -> None:
     parser.add_argument("--prompt-csv", type=Path)
     parser.add_argument("--config", type=Path, default=Path("config/config.yaml"))
     parser.add_argument("--profile", choices=("development", "edge"), default="edge")
-    parser.add_argument("--max-samples", type=int, default=200)
+    parser.add_argument("--max-samples", type=int, help="Optional smoke limit; omitted means all prompts.")
+    parser.add_argument("--tts-backend", choices=("auto", "sapi", "espeak"))
     parser.add_argument("--progress-every", type=int, default=25)
     parser.add_argument("--save-every", type=int, default=10)
     parser.add_argument("--report-dir", type=Path, required=True)
     parser.add_argument("--resume", action="store_true")
     parser.add_argument("--keep-audio", action="store_true", help="Keep validated WAVs under report-dir/audio")
     args = parser.parse_args()
-    if args.max_samples <= 0 or args.progress_every < 0 or args.save_every < 0:
+    if (args.max_samples is not None and args.max_samples <= 0) or args.progress_every < 0 or args.save_every < 0:
         parser.error("max-samples must be positive; progress/save intervals must be non-negative")
 
     config = yaml.safe_load(args.config.read_text(encoding="utf-8"))
@@ -116,6 +120,22 @@ def main() -> None:
     output = args.report_dir
     output.mkdir(parents=True, exist_ok=True)
     partial_path = output / "predictions.partial.jsonl"
+    contract = {
+        "schema_version": 2,
+        "direction": args.direction,
+        "target_language": "en" if args.direction == "vi2en" else "vi",
+        "profile": args.profile,
+        "backend": args.tts_backend or config.get("tts", {}).get("backend", "auto"),
+        "config_sha256": hashlib.sha256(args.config.read_bytes()).hexdigest(),
+        "prompt_csv_sha256": hashlib.sha256(prompt_csv.read_bytes()).hexdigest(),
+        "tts_code_sha256": hashlib.sha256((Path(__file__).resolve().parents[1] / "src/tts/tts_engine.py").read_bytes()).hexdigest(),
+        "prompts": prompts,
+    }
+    contract_path = output / "benchmark_contract.json"
+    if args.resume and partial_path.is_file():
+        if not contract_path.is_file() or json.loads(contract_path.read_text(encoding="utf-8")) != contract:
+            raise RuntimeError("Refusing TTS resume: language/backend/config/code/prompts changed; use a new report directory")
+    contract_path.write_text(json.dumps(contract, ensure_ascii=False, indent=2), encoding="utf-8")
     predictions = load_partial(partial_path) if args.resume else []
     completed = {str(row["prompt_id"]) for row in predictions}
     if len(completed) != len(predictions):
@@ -126,7 +146,7 @@ def main() -> None:
 
     # Offline is mandatory here: development is only a profile label, not permission
     # to use gTTS. The engine may still select a local system voice/eSpeak fallback.
-    tts = TTSEngine(config, profile=args.profile, offline=True)
+    tts = TTSEngine(config, profile=args.profile, offline=True, backend=args.tts_backend)
     tts.load(direction=args.direction)
     engine_name = tts.engine_name(args.direction)
     if engine_name in {"gtts", "gtts-development", "unavailable", "None"}:
@@ -189,8 +209,10 @@ def main() -> None:
     failures = [row for row in predictions if row.get("status") != "pass"]
     percentile = lambda p: latencies[min(round((len(latencies) - 1) * p), len(latencies) - 1)] if latencies else None
     aggregate = {
-        "schema_version": 1, "direction": args.direction, "profile": args.profile,
+        "schema_version": 2, "direction": args.direction, "profile": args.profile,
+        "target_language": contract["target_language"], "full_prompt_csv": args.max_samples is None,
         "offline": True, "prompt_csv": str(prompt_csv.resolve()),
+        "network_blocked_in_python": True,
         "samples": len(predictions), "passed_samples": passes, "failed_samples": len(failures),
         "engine": tts.engine_name(args.direction),
         "sample_rates": dict(sorted((str(rate), sum(row.get("sample_rate") == rate for row in predictions)) for rate in {row.get("sample_rate") for row in predictions if row.get("sample_rate")})),
@@ -215,4 +237,5 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    main()
+    with NoNetwork():
+        main()

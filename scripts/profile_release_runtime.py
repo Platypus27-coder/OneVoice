@@ -259,6 +259,10 @@ def main() -> None:
                         "commits": result.get("commits", 0),
                     })
         report.update({
+            "normal_commit_policy": pipeline.committer.normal_commit_policy,
+            "tts_backend_requested": pipeline.tts.backend,
+            "tts_engine": pipeline.tts.engine_name(args.direction),
+            "sapi_voice": pipeline.tts._sapi_voice_name,
             "load_time_ms": round(load_ms, 3),
             "peak_rss_mb": round(rss.peak_mb, 3),
             "routes": {route: summarize(rows) for route, rows in route_rows.items()},

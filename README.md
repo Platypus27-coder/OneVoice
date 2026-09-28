@@ -343,6 +343,12 @@ So sánh passthrough với DeepFilterNet trên noisy dev cho thấy lọc nhiễ
 
 ### P5: đo toàn pipeline trên laptop Windows
 
+Các số liệu P5 trong bảng dưới là **bản đo trước các thay đổi desktop ngày
+28/09/2026** (normal commit chờ endpoint, giọng EN ưu tiên Windows SAPI).
+Giữ chúng để truy vết; chưa dùng làm số đo của runtime đã sửa. Bộ đo lại
+full noisy test và toàn bộ safety canonical nằm trong
+[hướng dẫn benchmark desktop](docs/PC_DESKTOP_RELEASE.md#đo-lại-sau-các-bản-sửa-desktop).
+
 P5 phát lại audio qua ASR → MT/context/safety → TTS, mỗi loại route lặp 5 lần. `commit→audio p95` là thời gian từ lúc hệ thống chốt một đoạn đến audio đầu tiên; `toàn lượt p95` bao gồm cả lượt streaming. RAM là peak RSS của process. Cả hai hướng qua budget desktop đã khai báo (3.000 ms commit→audio lượt thường, 300 ms safety commit→audio, 8 GB RSS); điều này không có nghĩa là toàn bộ safety turn hoàn tất dưới 300 ms.
 
 | Hướng | Lượt thường: commit→audio p95 | Lượt thường: toàn lượt p95 | Safety: commit→audio p95 | Safety: toàn lượt p95 | Peak RSS | Gate |

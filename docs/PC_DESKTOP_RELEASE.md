@@ -309,6 +309,46 @@ mic có thể thu lại giọng máy, vì chưa có nghiệm thu chống vọng 
 
 ## Measure the actual PC (P5)
 
+### Đo lại sau các bản sửa desktop
+
+Sau khi đổi normal commit policy sang endpoint hoặc đổi tiếng Anh từ eSpeak
+sang SAPI, số liệu P5 cũ chỉ mô tả phiên bản trước đó. Chạy lại bản đang dùng
+bằng bộ benchmark đầy đủ dưới đây. Script gọi giọng Windows SAPI cho VI→EN
+ở backend `auto`, eSpeak tiếng Việt cho EN→VI và WAV duyệt sẵn cho safety.
+
+```powershell
+$Repo = "D:\code\.vscode\OneVoice\onevoice-edge"
+& "$Repo\scripts\run_desktop_benchmarks.ps1"
+```
+
+Mặc định không giới hạn số mẫu: 1.958 noisy test VI và 2.546 noisy test EN
+trong manifest local, cộng toàn bộ 126 mục safety canonical mỗi chiều.
+Mỗi WAV đi qua 32 ms streaming → VAD/ASR → context/MT → TTS. Script tiếp tục
+qua các lỗi để thống kê đầy đủ, giữ từng kết quả dưới `cases/`, ghi
+`runtime.log`, `progress.json`, `summary.json` và hash code/config/model/data.
+Độ trễ tổng hợp TTS và commit→audio được đo lại với engine thực tế.
+
+Sau streaming full, bộ chạy đo TTS trên toàn bộ 979 cặp trong `test.csv`
+và P5 clean/safety lặp 5 lần mỗi chiều. Benchmark TTS dùng đúng **ngôn ngữ
+đầu ra**: EN cho VI→EN, VI cho EN→VI. Script cũ trước bản sửa chọn nhầm cột
+nguồn; báo cáo TTS đó không chứng minh đã sinh đúng ngôn ngữ đầu ra.
+
+Output mặc định: `reports/pc_pipeline_afterfix_v2`. Có thể chạy lại để resume
+các case đã lưu cùng code, backend và dữ liệu. Khi thay đổi chúng, dùng
+`-OutputRoot` mới; không ghép các latency của hai runtime vào cùng báo cáo.
+Case lỗi vẫn nằm trong mẫu số chất lượng; p50/p95 audio chỉ tính các lượt
+có đầu ra. Reference critical-field validator so với văn bản gốc phát hiện
+cả mất thuật ngữ/phủ định do ASR, thay vì chỉ đối chiếu với bản nhận dạng.
+
+Bộ full dùng replay tăng tốc (`realtime=false`) để kiểm tra toàn bộ corpus.
+Đây là thời gian tạo buffer audio trên PC; chưa đo thời gian âm thanh qua
+driver/tai nghe và chưa kiểm tra mic thực. Các WAV clean đầy đủ chưa có ở
+local, nên không ghi nhận full clean test từ bộ chạy này. Có thể kiểm tra
+kế hoạch mà chưa nạp model với `-PrepareOnly`; `-SmokeTestCases 3` chỉ là
+smoke và được ghi `full_selected_corpus=false`.
+
+### P5 với input cố định
+
 P5 measures the **whole chain**—audio, ASR, translation, safety/context, TTS
 and generated audio—not only a model benchmark. It should be run after the
 offline smokes, from each bundle directory.
