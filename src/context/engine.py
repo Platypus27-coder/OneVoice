@@ -71,8 +71,30 @@ _TERM_VALIDATION_ALIASES: dict[str, tuple[str, ...]] = {
     "C0115": ("grounded", "earthing", "earthed"),
     "C0122": ("máy phát",),
     "C0140": ("leaking oil", "oil leakage"),
+    "C0142": ("két nước",),
+    "C0188": ("material store",),
     "C0200": ("trục",),
 }
+
+_UNIT_FORMS = {
+    "mm": ("mm", "millimeter", "millimeters", "millimetre", "millimetres", "mi li mét"),
+    "cm": ("cm", "centimeter", "centimeters", "centimetre", "centimetres", "xen ti mét"),
+    "m": ("m", "meter", "meters", "metre", "metres", "mét"),
+    "km": ("km", "kilometer", "kilometers", "kilometre", "kilometres", "ki lô mét"),
+    "kg": ("kg", "kilogram", "kilograms", "ki lô gam"),
+    "t": ("t", "ton", "tons", "tonne", "tonnes", "tấn"),
+    "bar": ("bar", "bars"), "psi": ("psi", "p s i"),
+    "mpa": ("mpa", "megapascal", "megapascals", "mê ga pa scan"),
+    "kw": ("kw", "kilowatt", "kilowatts", "ki lô oát"),
+    "kwh": ("kwh", "kilowatt hour", "kilowatt hours", "ki lô oát giờ"),
+    "v": ("v", "volt", "volts", "vôn"),
+    "a": ("a", "amp", "amps", "ampere", "amperes", "am pe"),
+    "hz": ("hz", "hertz", "héc"),
+    "rpm": ("rpm", "revolutions per minute", "vòng mỗi phút"),
+    "độ c": ("độ c", "degree celsius", "degrees celsius"),
+}
+_UNIT_FORMS["ton"] = _UNIT_FORMS["t"]
+_UNIT_FORMS["degree celsius"] = _UNIT_FORMS["degrees celsius"] = _UNIT_FORMS["độ c"]
 
 
 def _normal(text: str) -> str:
@@ -306,7 +328,7 @@ class ConstructionContextEngine:
             unit = match.group(0)
             # In English, “a” is usually an article. It is an ampere only
             # when attached to a numeric value (for example, “25 A”).
-            if unit.casefold() == "a" and not re.search(
+            if unit.casefold() in {"a", "m", "t", "v"} and not re.search(
                 r"\d+(?:[.,]\d+)?\s*$", text[: match.start()]
             ):
                 continue
@@ -434,7 +456,14 @@ class ConstructionContextEngine:
                 errors.append(f"missing_number:{value}")
         for value in context.entities.get("units", []):
             unit = _normal(str(value))
-            if unit and unit not in normalized:
+            forms = _UNIT_FORMS.get(unit, (unit,))
+            if unit and not any(
+                re.search(
+                    (r"(?<!\w)\d+(?:[.,]\d+)?\s*" if form in {"a", "m", "t", "v"} else r"(?<!\w)")
+                    + re.escape(form) + r"(?!\w)", normalized,
+                )
+                for form in forms
+            ):
                 errors.append(f"missing_unit:{value}")
         for value in context.entities.get("directions", []):
             source = _normal(str(value))

@@ -31,7 +31,7 @@ class SystemTTSTests(unittest.TestCase):
         broken_pyttsx3 = SimpleNamespace(init=mock.Mock(side_effect=AssertionError("must not enter SAPI loop")))
         with mock.patch("sys.platform", "win32"), mock.patch.object(TTSEngine, "_find_espeak_executable", return_value="espeak-ng.exe"), \
              mock.patch.dict(sys.modules, {"pyttsx3": broken_pyttsx3}), contextlib.redirect_stdout(io.StringIO()):
-            engine = TTSEngine(config(), profile="edge", offline=True)
+            engine = TTSEngine(config(), profile="edge", offline=True, backend="espeak")
             engine.load()
         broken_pyttsx3.init.assert_not_called()
         self.assertEqual(engine.engine_name("vi2en"), "espeak-ng-offline-demo")
@@ -39,10 +39,11 @@ class SystemTTSTests(unittest.TestCase):
 
     def test_windows_fails_at_startup_without_native_tts(self):
         with mock.patch("sys.platform", "win32"), mock.patch.object(TTSEngine, "_find_espeak_executable", return_value=None), \
+             mock.patch.object(TTSEngine, "_run_windows_sapi", side_effect=RuntimeError("No SAPI voice")), \
              contextlib.redirect_stdout(io.StringIO()):
             for direction in ("vi2en", "en2vi"):
                 engine = TTSEngine(config(), profile="edge", offline=True)
-                with self.assertRaisesRegex(RuntimeError, "Windows system TTS requires local"):
+                with self.assertRaisesRegex(RuntimeError, "Windows offline TTS has no usable"):
                     engine.load(direction)
 
     def test_explicit_conda_python_discovers_local_espeak_without_path_hook(self):
@@ -73,6 +74,7 @@ class SystemTTSTests(unittest.TestCase):
             self.assertEqual(kwargs["timeout"], 15.0)
             self.assertIn("env", kwargs)
             self.assertIn("--stdin", command)
+            self.assertEqual(command[command.index("-a") + 1], "80")
             destination = command[command.index("-w") + 1]
             created.append(Path(destination))
             with wave.open(destination, "wb") as handle:

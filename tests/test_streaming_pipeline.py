@@ -37,6 +37,28 @@ class _SoundFileStub:
 
 
 class StreamingPipelineTests(unittest.TestCase):
+    def test_suppressed_translation_keeps_the_reason_without_emitting_audio(self):
+        pipeline = OneVoicePipeline.__new__(OneVoicePipeline)
+        pipeline.stop_event = threading.Event()
+        pipeline.q_text_src = queue.Queue()
+        pipeline.q_text_tgt = queue.Queue()
+        pipeline._translation_log = []
+        context = SimpleNamespace(translation_memory=None, risk_level="critical")
+        def reject(*args):
+            pipeline.stop_event.set()
+            return ["missing_negation"]
+        pipeline.context = SimpleNamespace(canonicalize_source=lambda text, *_: text,
+                                           validate_translation=reject)
+        pipeline.translator = SimpleNamespace(translate=lambda *_: "Raise the load.")
+        pipeline.q_text_src.put({"text": "Do not raise the load.", "direction": "en2vi",
+                                 "context": context, "decision": SimpleNamespace(kind=CommitKind.NORMAL)})
+        with contextlib.redirect_stdout(io.StringIO()):
+            pipeline._mt_worker()
+        self.assertTrue(pipeline.q_text_tgt.empty())
+        self.assertTrue(pipeline._translation_log[0]["suppressed"])
+        self.assertEqual(pipeline._translation_log[0]["validation_errors"], ["missing_negation"])
+        self.assertEqual(pipeline.q_text_src.unfinished_tasks, 0)
+
     def test_cli_forwards_explicit_laptop_microphone_and_headphones(self):
         with mock.patch.object(sys, "argv", ["pipeline.py", "--direction", "vi2en",
                               "--input-device", "Microphone Array Realtek MME",

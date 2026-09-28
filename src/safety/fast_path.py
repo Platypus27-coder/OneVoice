@@ -20,6 +20,25 @@ def normalize_match_text(text: str) -> str:
     return " ".join(value.split())
 
 
+def _english_safety_key(text: str) -> str:
+    """Limited grammatical equivalents that preserve a reviewed instruction."""
+    text = re.sub(r"\bwear (?:your|the)\b", "wear the", text)
+    return re.sub(r"\bclimb (?:on|onto)\b", "climb on", text)
+
+
+_PROTECTED_TOKENS = {
+    "no", "not", "never", "don", "t", "safe", "unsafe", "on", "off",
+    "left", "right", "up", "down", "forward", "backward",
+    "không", "đừng", "chưa", "trái", "phải", "lên", "xuống",
+}
+_ACTION_TOKENS = {
+    "stop", "start", "raise", "lower", "connect", "disconnect", "energize",
+    "deenergize", "dừng", "bật", "tắt", "nâng", "hạ", "ngắt",
+    "wear", "tear", "leave", "enter", "move", "stay", "pull", "push",
+    "lock", "unlock",
+}
+
+
 def _edit_distance_at_most(left: str, right: str, limit: int) -> bool:
     """Return whether two tokens have Levenshtein distance within ``limit``."""
     if left == right:
@@ -53,6 +72,10 @@ def _conservative_asr_match(normalized: str, candidate: str) -> bool:
     for actual, wanted in zip(observed, expected):
         if actual == wanted:
             continue
+        if (actual in _PROTECTED_TOKENS or wanted in _PROTECTED_TOKENS
+                or any(char.isdigit() for char in actual + wanted)
+                or (actual in _ACTION_TOKENS and wanted in _ACTION_TOKENS)):
+            return False
         # Longer words can lose a syllable and still be recognizable (for
         # example, SenseVoice produced ``disconck`` for ``disconnect``).
         limit = max(1, min(3, len(wanted) // 3))
@@ -155,12 +178,22 @@ class SafetyFastPath:
         exact = table.get(normalized)
         if exact is not None:
             return exact
+        if direction == "en2vi":
+            key = _english_safety_key(normalized)
+            equivalents = [match for phrase, match in table.items()
+                           if _english_safety_key(phrase) == key]
+            if equivalents:
+                return self._unambiguous(equivalents)
         # ASR can make a single-character slip in a critical phrase (for
         # example, "disconck the power immediately").  Fuzzy matching is
         # deliberately limited to equal-length phrases with at most one
         # boundedly-corrupted token, preventing ordinary sentences from
         # entering safety path.
-        for candidate, safety_match in table.items():
-            if _conservative_asr_match(normalized, candidate):
-                return safety_match
-        return None
+        matches = [safety_match for candidate, safety_match in table.items()
+                   if _conservative_asr_match(normalized, candidate)]
+        return self._unambiguous(matches)
+
+    @staticmethod
+    def _unambiguous(matches: list[SafetyMatch]) -> SafetyMatch | None:
+        meanings = {(item.intent, normalize_match_text(item.translated_text)) for item in matches}
+        return matches[0] if matches and len(meanings) == 1 else None

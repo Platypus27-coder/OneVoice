@@ -6,6 +6,7 @@ import re
 import time
 
 from contracts import ASRHypothesis, CommitDecision, CommitKind, ContextResult
+from safety.fast_path import normalize_match_text
 
 
 _OPEN_TAILS = {
@@ -80,6 +81,7 @@ class SemanticCommitController:
         self._last_safety_id: str | None = None
         self._safety_streak = 0
         self._committed_safety_id: str | None = None
+        self._committed_safety_keys: set[tuple[str, str]] = set()
 
     def decide(
         self, hypothesis: ASRHypothesis, context: ContextResult
@@ -87,12 +89,19 @@ class SemanticCommitController:
         now = time.perf_counter()
         safety = context.safety_candidates[0] if context.safety_candidates else None
         if safety:
+            # Reviewed variants may have different IDs but the same spoken
+            # action. An ASR revision adding "Ê" must not repeat that action.
+            safety_key = (
+                str(getattr(safety, "intent", "")),
+                normalize_match_text(getattr(safety, "translated_text", safety.safety_id)),
+            )
             if safety.safety_id == self._last_safety_id:
                 self._safety_streak += 1
             else:
                 self._last_safety_id = safety.safety_id
                 self._safety_streak = 1
-            if safety.safety_id == self._committed_safety_id:
+            if safety_key in self._committed_safety_keys:
+                self._emitted_words = max(self._emitted_words, len(hypothesis.text.split()))
                 return CommitDecision(
                     CommitKind.WAIT,
                     reason="safety_already_committed",
@@ -100,6 +109,7 @@ class SemanticCommitController:
                 )
             if hypothesis.endpoint or self._safety_streak >= self.safety_confirmations:
                 self._committed_safety_id = safety.safety_id
+                self._committed_safety_keys.add(safety_key)
                 self._emitted_words = len(hypothesis.text.split())
                 return CommitDecision(
                     kind=CommitKind.SAFETY,
@@ -116,7 +126,6 @@ class SemanticCommitController:
         else:
             self._last_safety_id = None
             self._safety_streak = 0
-            self._committed_safety_id = None
 
         # Translating stable word prefixes independently can change the meaning
         # of a phrase (e.g. "safety helmet"). Desktop normal speech therefore
@@ -160,3 +169,4 @@ class SemanticCommitController:
         self._last_safety_id = None
         self._safety_streak = 0
         self._committed_safety_id = None
+        self._committed_safety_keys.clear()

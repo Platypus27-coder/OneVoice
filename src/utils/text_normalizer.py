@@ -38,7 +38,7 @@ _UNIT_EXPAND_VI = {
     r"\b°c\b":   "độ xê",
     r"\b%\b":    "phần trăm",
     r"\bv\b":    "vôn",
-    r"\ba\b":    "am-pe",
+    r"(?<=\d)\s*a\b": " am-pe",
     r"\bhz\b":   "héc",
 }
 _UNIT_EXPAND_EN = {
@@ -52,7 +52,7 @@ _UNIT_EXPAND_EN = {
     r"\b°c\b":   "degrees Celsius",
     r"\b%\b":    "percent",
     r"\bv\b":    "volts",
-    r"\ba\b":    "amperes",
+    r"(?<=\d)\s*a\b": " amperes",
     r"\bhz\b":   "hertz",
 }
 
@@ -179,6 +179,26 @@ def normalize(text: str, lang: str = "vi") -> str:
     elif lang == "en":
         return normalize_en(text)
     return text.strip()
+
+
+def normalize_asr(text: str, lang: str = "vi") -> str:
+    """Clean an ASR hypothesis without rewriting its technical meaning.
+
+    Safety lookup and the fine-tuned translator consume the spoken wording.
+    TTS expansions such as ``giàn giáo -> hệ thống giàn giáo`` or equipment
+    code spelling must not run before those stages. In particular, preserve
+    numbers, units, negation, punctuation and equipment-code suffixes.
+    """
+    text = " ".join(unicodedata.normalize("NFC", text).split())
+    if text.isupper():
+        # GIPFormer emits uppercase Vietnamese. Case conversion happens before
+        # any downstream terminology lookup, avoiding mixed-case MT inputs.
+        text = text[:1].upper() + text[1:].lower()
+        text = re.sub(
+            _INDUSTRIAL_CODE.pattern, lambda match: match.group(0).upper(),
+            text, flags=re.IGNORECASE,
+        )
+    return text
 
 
 if __name__ == "__main__":

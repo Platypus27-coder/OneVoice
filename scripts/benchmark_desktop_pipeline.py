@@ -109,6 +109,10 @@ def measure_case(pipeline, case: dict, case_dir: Path, realtime: bool) -> dict:
     try:
         report = pipeline.stream_file(case["input_path"], realtime=realtime)
         result.update(report)
+        suppressed = [error for item in report.get("translations", [])
+                      if item.get("suppressed") for error in item.get("validation_errors", [])]
+        if suppressed:
+            raise RuntimeError("Translation suppressed: " + ", ".join(suppressed))
         result["latency"] = read_latency(case_dir)
         validate_stream_result(case, report, result["latency"])
         # Validate the actual generated arrays as well as their report metadata.

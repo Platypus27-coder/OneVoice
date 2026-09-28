@@ -626,7 +626,9 @@ try {
         try:
             with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as tmp:
                 tmp_path = tmp.name
-            command = [executable, "-v", voice, "-s", str(rate), "-b", "1", "-w", tmp_path, "--stdin"]
+            # Leave headroom in the synthesizer itself. Scaling a WAV after
+            # synthesis would hide, rather than prevent, saturated PCM samples.
+            command = [executable, "-v", voice, "-s", str(rate), "-a", "80", "-b", "1", "-w", tmp_path, "--stdin"]
             runtime_dir = Path(executable).resolve().parent
             if (runtime_dir / "espeak-ng-data").is_dir():
                 command.append(f"--path={runtime_dir}")

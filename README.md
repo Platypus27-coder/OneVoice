@@ -390,6 +390,14 @@ câu/người nói độc lập. Số liệu raw ASR/model Colab và P5 lịch s
 [JSON và provenance](docs/desktop_runtime_rebenchmark/summary.json) ·
 [Lỗi còn lại và hướng xử lý](docs/desktop_runtime_rebenchmark/review_findings.md)
 
+Đã sửa mất thông tin khi normalize ASR, commit safety lặp, một số false
+positive của validator và clipping TTS VI. Kiểm tra hồi quy 557 lượt khôi
+phục 51 ca FAIL sang PASS gate chức năng, chưa có regression trên các ca
+từng đạt được replay; TTS VI đạt 979/979 gate WAV. Đây chưa phải full
+benchmark mới hoặc xác nhận mọi câu đúng nghĩa. Xem
+[bản sửa, bằng chứng và bước tiếp theo](docs/PIPELINE_INPUT_INTEGRITY.md).
+Số liệu full benchmark và biểu đồ phía trên được giữ nguyên để đối chiếu.
+
 Fixed streaming suite 4/4 và soak offline 30 phút 325/325 lượt đã chạy trên Colab, không được tính là soak trên laptop Windows. Safety WAV là âm thanh tổng hợp demo từ 126 câu duyệt nội bộ; nhóm dự án chưa có WAV công trường thực tế.
 
 Trong biểu đồ benchmark thành phần: `C` = âm thanh sạch, `N` = âm thanh có nhiễu,

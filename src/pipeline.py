@@ -37,7 +37,7 @@ from streaming.semantic_commit import (
 )
 from streaming.session import RollingUtteranceSession
 from utils.srt_generator import SRTGenerator
-from utils.text_normalizer import normalize
+from utils.text_normalizer import normalize_asr
 
 
 def load_config(path: str = "config/config.yaml") -> dict:
@@ -173,6 +173,7 @@ class OneVoicePipeline:
         )
         self.srt = SRTGenerator(bilingual=True)
         self._latency_log: list[dict] = []
+        self._translation_log: list[dict] = []
         self._playback_log: list[dict] = []
         self.last_file_result: dict | None = None
         self._preflight_complete = False
@@ -245,7 +246,7 @@ class OneVoicePipeline:
                         self.hypothesis_assembler.reset()
                         self.committer.reset()
                     continue
-                window_text = normalize(result["text"], lang=result["lang"])
+                window_text = normalize_asr(result["text"], lang=result["lang"])
                 text = self.hypothesis_assembler.update(
                     window_text, endpoint=event.endpoint
                 )
@@ -272,6 +273,7 @@ class OneVoicePipeline:
                         "event_updated_at": event.updated_at,
                         "endpoint": event.endpoint,
                         "hypothesis": hypothesis.text,
+                        "raw_asr_text": result["text"],
                         "stable_prefix": hypothesis.stable_prefix,
                         "unstable_tail": hypothesis.unstable_tail,
                         "decision": decision.kind.value,
@@ -347,6 +349,11 @@ class OneVoicePipeline:
                     mt_ms=(time.perf_counter() - started) * 1000,
                 )
                 unsafe_validation = errors and context.risk_level in {"high", "critical"}
+                self._translation_log.append({
+                    "source": item["text"], "translation": translated,
+                    "route": route, "validation_errors": errors,
+                    "suppressed": bool(unsafe_validation),
+                })
                 if unsafe_validation:
                     print(
                         "[Safety Validator] Translation suppressed: " + ", ".join(errors)
@@ -583,6 +590,7 @@ class OneVoicePipeline:
         self._stream_chunks = []
         self._stream_trace = []
         self._latency_log = []
+        self._translation_log = []
         self._playback_log = []
         self.srt = SRTGenerator(bilingual=True)
         self.streaming_session.reset(clear_sequence=True)
@@ -677,6 +685,7 @@ class OneVoicePipeline:
             "commits": len(self._stream_chunks),
             "commit_ids": commit_ids,
             "hypothesis_trace": self._stream_trace,
+            "translations": self._translation_log,
             "chunks": [
                 {
                     "commit_id": chunk.commit_id,
@@ -738,7 +747,7 @@ class OneVoicePipeline:
         asr_ms = (time.perf_counter() - asr_started) * 1000
         if not result.get("text"):
             raise RuntimeError("ASR returned an empty transcript")
-        text = normalize(result["text"], result["lang"])
+        text = normalize_asr(result["text"], result["lang"])
         context = self.context.analyze(text, self.direction)
         safety = context.safety_candidates[0] if context.safety_candidates else None
         canonical_source = text
