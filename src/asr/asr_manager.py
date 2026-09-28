@@ -189,3 +189,10 @@ class ASRManager:
                 "lang": "en", 
                 "direction": "en2vi"
             }
+
+    def transcribe_without_itn(self, audio: np.ndarray, direction: str) -> dict:
+        """A second model inference, not a text correction or remote fallback."""
+        if direction != "en2vi" or direction not in self._loaded_directions:
+            raise RuntimeError("SenseVoice EN direction must be loaded for a no-ITN retry")
+        result = self._en_asr.transcribe(audio, sample_rate=16000, textnorm="woitn")
+        return {**result, "lang": "en", "direction": direction}

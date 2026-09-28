@@ -7,11 +7,12 @@ import re
 import unicodedata
 from collections import Counter
 from dataclasses import dataclass
+from decimal import Decimal
 from pathlib import Path
 from typing import Iterable
 
 from contracts import CanonicalMention, ContextResult
-from safety.fast_path import SafetyFastPath, normalize_match_text
+from safety.fast_path import SafetyFastPath, normalize_match_text, _ACTION_TOKENS
 
 from .site_pack import SitePack
 
@@ -39,6 +40,7 @@ _INTENT_RULES: tuple[tuple[str, tuple[str, ...]], ...] = (
 )
 
 _NUMBER_RE = re.compile(r"(?<!\w)[+-]?(?:\d+(?:[.,]\d+)?)(?!\w)")
+_EQUIPMENT_CODE_RE = re.compile(r"\b[A-Za-z]{1,6}[-_]?\d+[A-Za-z0-9]*\b")
 _UNIT_RE = re.compile(
     r"\b(mm|cm|m|km|kg|t|ton|bar|psi|mpa|kw|kwh|v|a|hz|rpm|%|độ c|degrees? celsius)\b",
     re.IGNORECASE,
@@ -399,6 +401,32 @@ class ConstructionContextEngine:
         values = [str(level).casefold() for level in levels]
         return max(values, key=lambda item: ranks.get(item, 0), default="normal")
 
+    def accept_safety_alternative(self, primary: str, alternative: str, direction: str) -> bool:
+        """Permit a second ASR decode only for an unambiguous reviewed phrase.
+
+        Do not replace explicit negation, actions, quantities, directions,
+        equipment codes or recognized construction concepts in the primary.
+        Neither string is a benchmark reference.
+        """
+        if self.safety.match_reviewed(alternative, direction) is None:
+            return False
+        before, after = self.analyze(primary, direction), self.analyze(alternative, direction)
+        if bool(before.entities.get("negations")) != bool(after.entities.get("negations")):
+            return False
+        for key in ("numbers", "units", "directions"):
+            if not {_normal(str(v)) for v in before.entities.get(key, [])} <= {
+                _normal(str(v)) for v in after.entities.get(key, [])
+            }:
+                return False
+        concepts = {m.canonical_id for m in before.canonical_mentions}
+        if not concepts <= {m.canonical_id for m in after.canonical_mentions}:
+            return False
+        actions = set(before.normalized_text.split()) & _ACTION_TOKENS
+        if not actions <= (set(after.normalized_text.split()) & _ACTION_TOKENS):
+            return False
+        codes = {code.casefold() for code in _EQUIPMENT_CODE_RE.findall(primary)}
+        return codes <= {code.casefold() for code in _EQUIPMENT_CODE_RE.findall(alternative)}
+
     @staticmethod
     def canonicalize_source(text: str, context: ContextResult, direction: str) -> str:
         result = text
@@ -428,6 +456,11 @@ class ConstructionContextEngine:
             for candidate in context.safety_candidates
         ):
             return []
+        if context.safety_candidates:
+            # This lane has a reviewed fixed translation. An unrelated output
+            # such as "Smoke! -> Hàn." must not pass merely because no glossary
+            # term or number happened to be extracted from the source.
+            return ["unverified_safety_translation"]
         errors: list[str] = []
         for mention in context.canonical_mentions:
             expected = mention.en_standard if direction == "vi2en" else mention.vi_standard
@@ -446,13 +479,19 @@ class ConstructionContextEngine:
                 and "khoảng cách" in context.normalized_text
                 and "keep clear" in normalized
             )
-            if expected and not keep_clear_equivalent and not any(
+            barricade_verb_equivalent = (
+                mention.canonical_id == "C0012" and direction == "en2vi"
+                and bool(re.search(r"(?:^|\bplease\s+)barricade\s+(?:the\s+)?(?:edge|area|equipment)\b", context.normalized_text))
+                and bool(re.search(r"\brào\s+(?:mép|quanh|khu)\b", normalized))
+            )
+            if expected and not keep_clear_equivalent and not barricade_verb_equivalent and not any(
                 form in normalized for form in accepted_forms
             ):
                 errors.append(f"missing_term:{mention.canonical_id}:{expected}")
+        target_numbers = {Decimal(value.replace(",", ".")) for value in _NUMBER_RE.findall(translated)}
         for value in context.entities.get("numbers", []):
-            canonical = str(value).replace(",", ".")
-            if canonical not in translated.replace(",", "."):
+            canonical = Decimal(str(value).replace(",", "."))
+            if canonical not in target_numbers:
                 errors.append(f"missing_number:{value}")
         for value in context.entities.get("units", []):
             unit = _normal(str(value))
@@ -476,8 +515,16 @@ class ConstructionContextEngine:
                 if direction == "vi2en"
                 else ("không", "đừng", "chưa", "không được")
             )
-            source_unsafe = direction == "vi2en" and "không an toàn" in context.normalized_text
-            semantic_unsafe = source_unsafe and "unsafe" in normalized
-            if not semantic_unsafe and not any(marker in normalized for marker in target_negations):
+            remaining = context.normalized_text
+            semantic_negative = False
+            if direction == "vi2en":
+                equivalents = {"không an toàn": r"\bunsafe\b", "không ổn định": r"\bunstabl(?:e|y)\b"}
+                for source_form, target_pattern in equivalents.items():
+                    if source_form in remaining and re.search(target_pattern, normalized):
+                        remaining = remaining.replace(source_form, "")
+                        semantic_negative = True
+            # An antonym covers only its own predicate, not a second prohibition.
+            covered = semantic_negative and not _NEGATION_RE.search(remaining)
+            if not covered and not any(marker in normalized for marker in target_negations):
                 errors.append("missing_negation")
         return errors

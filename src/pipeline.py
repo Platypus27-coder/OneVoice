@@ -239,6 +239,8 @@ class OneVoicePipeline:
                     continue
                 started = time.perf_counter()
                 result = self.asr.transcribe(event.audio, direction=self.direction)
+                if event.endpoint:
+                    result = self._refine_safety_asr(event.audio, result)
                 asr_ms = (time.perf_counter() - started) * 1000
                 if not result.get("text"):
                     if event.endpoint:
@@ -273,7 +275,10 @@ class OneVoicePipeline:
                         "event_updated_at": event.updated_at,
                         "endpoint": event.endpoint,
                         "hypothesis": hypothesis.text,
-                        "raw_asr_text": result["text"],
+                        "raw_asr_text": result.get("primary_text", result["text"]),
+                        "decoded_asr_text": result["text"],
+                        "primary_asr_text": result.get("primary_text", result["text"]),
+                        "asr_retry": result.get("safety_retry"),
                         "stable_prefix": hypothesis.stable_prefix,
                         "unstable_tail": hypothesis.unstable_tail,
                         "decision": decision.kind.value,
@@ -318,6 +323,39 @@ class OneVoicePipeline:
             finally:
                 self.q_audio_clean.task_done()
 
+    def _refine_safety_asr(self, audio, result: dict) -> dict:
+        primary = result.get("text", "")
+        retry = getattr(self.asr, "transcribe_without_itn", None)
+        if (self.direction != "en2vi" or not primary or not callable(retry)
+                or self.context.analyze(primary, self.direction).safety_candidates):
+            return result
+        alternate = retry(audio, self.direction)
+        accepted = self.context.accept_safety_alternative(
+            primary, alternate.get("text", ""), self.direction
+        )
+        selected = {**(alternate if accepted else result)}
+        selected.update(primary_text=primary, safety_retry={
+            "textnorm": "woitn", "text": alternate.get("text", ""), "accepted": accepted,
+        })
+        return selected
+
+    def _translate_validated(self, source: str, context, direction: str) -> tuple[str, list[str], list[dict]]:
+        """Keep top one when valid; otherwise select the first valid model beam."""
+        generate = getattr(self.translator, "translate_candidates", None)
+        candidates = (generate(source, direction) if callable(generate)
+                      else [self.translator.translate(source, direction)])
+        checked = []
+        for rank, candidate in enumerate(candidates, 1):
+            errors = self.context.validate_translation(candidate, context, direction)
+            if not candidate.strip():
+                errors = [*errors, "empty_translation"]
+            checked.append({"rank": rank, "translation": candidate, "validation_errors": errors})
+            if not errors:
+                return candidate, [], checked
+        if checked:
+            return candidates[0], checked[0]["validation_errors"], checked
+        return "", ["empty_translation"], []
+
     def _mt_worker(self) -> None:
         print("[MT Worker] ✅ Started (VI↔EN + Context/Safety)")
         while not self.stop_event.is_set():
@@ -329,6 +367,8 @@ class OneVoicePipeline:
                 started = time.perf_counter()
                 decision = item["decision"]
                 context = item["context"]
+                candidate_trace = []
+                errors = None
                 if decision.kind == CommitKind.SAFETY:
                     translated = decision.safety_match.translated_text
                     route = "safety_fast_path"
@@ -339,9 +379,12 @@ class OneVoicePipeline:
                     canonical_source = self.context.canonicalize_source(
                         item["text"], context, item["direction"]
                     )
-                    translated = self.translator.translate(canonical_source, item["direction"])
+                    translated, errors, candidate_trace = self._translate_validated(
+                        canonical_source, context, item["direction"]
+                    )
                     route = "mt"
-                errors = self.context.validate_translation(translated, context, item["direction"])
+                if errors is None:
+                    errors = self.context.validate_translation(translated, context, item["direction"])
                 item.update(
                     translated=translated,
                     translation_route=route,
@@ -352,6 +395,7 @@ class OneVoicePipeline:
                 self._translation_log.append({
                     "source": item["text"], "translation": translated,
                     "route": route, "validation_errors": errors,
+                    "candidate_trace": candidate_trace,
                     "suppressed": bool(unsafe_validation),
                 })
                 if unsafe_validation:
@@ -744,6 +788,7 @@ class OneVoicePipeline:
         denoise_ms = (time.perf_counter() - denoise_started) * 1000
         asr_started = time.perf_counter()
         result = self.asr.transcribe(clean, self.direction)
+        result = self._refine_safety_asr(clean, result)
         asr_ms = (time.perf_counter() - asr_started) * 1000
         if not result.get("text"):
             raise RuntimeError("ASR returned an empty transcript")
@@ -752,6 +797,7 @@ class OneVoicePipeline:
         safety = context.safety_candidates[0] if context.safety_candidates else None
         canonical_source = text
         mt_started = time.perf_counter()
+        candidate_trace = []
         if safety:
             translated = safety.translated_text
             pre_generated = (
@@ -773,7 +819,9 @@ class OneVoicePipeline:
                 translation_route = "translation_memory"
             else:
                 self.load_models(load_translation=True, load_tts=False)
-                translated = self.translator.translate(canonical_source, self.direction)
+                translated, _, candidate_trace = self._translate_validated(
+                    canonical_source, context, self.direction
+                )
                 translation_route = "mt"
             pre_generated = None
             pre_generated_path = None
@@ -819,8 +867,11 @@ class OneVoicePipeline:
             "output_sample_rate": int(sample_rate),
             "output_samples": int(len(output_audio)),
             "asr_text": text,
+            "primary_asr_text": result.get("primary_text", result["text"]),
+            "asr_retry": result.get("safety_retry"),
             "canonical_source": canonical_source,
             "translation": translated,
+            "translation_candidates": candidate_trace,
             "route": route,
             "safety_id": None if safety is None else safety.safety_id,
             "domain": context.domain,

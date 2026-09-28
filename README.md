@@ -398,6 +398,14 @@ benchmark mới hoặc xác nhận mọi câu đúng nghĩa. Xem
 [bản sửa, bằng chứng và bước tiếp theo](docs/PIPELINE_INPUT_INTEGRITY.md).
 Số liệu full benchmark và biểu đồ phía trên được giữ nguyên để đối chiếu.
 
+Bản sửa tiếp theo giữ nguyên các model và bổ sung chọn beam MT có validation,
+retry SenseVoice có guard tại endpoint, cùng kiểm tra phủ định/số chính xác
+hơn. Trên cùng bộ hồi quy 557 WAV, khôi phục thêm 50 ca; còn 82 ca FAIL
+chức năng cần xử lý, chưa thấy regression ở các ca đã đạt được replay.
+178 unit test đạt. Đây **không phải tỷ lệ chính xác full test mới** và
+không phải nghiệm thu production. Xem
+[bằng chứng và giới hạn của validated decoding](docs/VALIDATED_DECODING.md).
+
 Fixed streaming suite 4/4 và soak offline 30 phút 325/325 lượt đã chạy trên Colab, không được tính là soak trên laptop Windows. Safety WAV là âm thanh tổng hợp demo từ 126 câu duyệt nội bộ; nhóm dự án chưa có WAV công trường thực tế.
 
 Trong biểu đồ benchmark thành phần: `C` = âm thanh sạch, `N` = âm thanh có nhiễu,

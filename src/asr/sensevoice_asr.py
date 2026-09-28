@@ -144,7 +144,9 @@ class SenseVoiceASR:
             "raw": raw_text,
         }
 
-    def transcribe(self, audio: np.ndarray, sample_rate: int) -> dict:
+    def transcribe(self, audio: np.ndarray, sample_rate: int, *, textnorm: str = "withitn") -> dict:
+        if textnorm not in {"withitn", "woitn"}:
+            raise ValueError("textnorm must be 'withitn' or 'woitn'")
         if self.model is None:
             raise RuntimeError("SenseVoice not loaded. Call .load() first.")
         if len(audio) == 0:
@@ -162,7 +164,7 @@ class SenseVoiceASR:
             # ``np.array`` into the rank-1 tensors required by the ONNX graph.
             kwargs = {
                 "language": self._prompt_tag(4),
-                "textnorm": self._prompt_tag(14),
+                "textnorm": self._prompt_tag(14 if textnorm == "withitn" else 15),
             }
             if self._tokenizer is not None:
                 kwargs["tokenizer"] = self._tokenizer
@@ -172,7 +174,7 @@ class SenseVoiceASR:
             )
             result = self.model(audio_f32, **kwargs)
         else:
-            result = self.model(audio_f32, language="en", textnorm="withitn")
+            result = self.model(audio_f32, language="en", textnorm=textnorm)
         if not result:
             return {"text": "", "emotion": "neutral", "event": "speech"}
         return self._parse_output(str(result[0]))

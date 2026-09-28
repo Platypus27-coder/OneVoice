@@ -175,6 +175,21 @@ class SafetyFastPath:
     def match(self, text: str, direction: str) -> SafetyMatch | None:
         normalized = normalize_match_text(text)
         table = self._vi if direction == "vi2en" else self._en
+        reviewed = self.match_reviewed(text, direction)
+        if reviewed is not None:
+            return reviewed
+        # ASR can make a single-character slip in a critical phrase (for
+        # example, "disconck the power immediately"). Fuzzy matching is
+        # deliberately limited to equal-length phrases with at most one
+        # boundedly-corrupted token.
+        matches = [safety_match for candidate, safety_match in table.items()
+                   if _conservative_asr_match(normalized, candidate)]
+        return self._unambiguous(matches)
+
+    def match_reviewed(self, text: str, direction: str) -> SafetyMatch | None:
+        """Exact/grammatical reviewed phrases only; never edit-distance repair."""
+        normalized = normalize_match_text(text)
+        table = self._vi if direction == "vi2en" else self._en
         exact = table.get(normalized)
         if exact is not None:
             return exact
@@ -184,14 +199,7 @@ class SafetyFastPath:
                            if _english_safety_key(phrase) == key]
             if equivalents:
                 return self._unambiguous(equivalents)
-        # ASR can make a single-character slip in a critical phrase (for
-        # example, "disconck the power immediately").  Fuzzy matching is
-        # deliberately limited to equal-length phrases with at most one
-        # boundedly-corrupted token, preventing ordinary sentences from
-        # entering safety path.
-        matches = [safety_match for candidate, safety_match in table.items()
-                   if _conservative_asr_match(normalized, candidate)]
-        return self._unambiguous(matches)
+        return None
 
     @staticmethod
     def _unambiguous(matches: list[SafetyMatch]) -> SafetyMatch | None:

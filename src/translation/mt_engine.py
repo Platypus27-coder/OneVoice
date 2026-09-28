@@ -164,35 +164,55 @@ class Translator:
         return result
 
     def _translate_transformers(self, prompt: str) -> str:
-        inputs = self._tokenizer(
-            prompt,
-            return_tensors="pt",
-            truncation=True,
-            max_length=self.max_length,
-        ).to(self._device)
-        with self._torch.inference_mode():
-            output = self._model.generate(
-                **inputs,
-                max_length=self.max_length,
-                num_beams=5,
-                early_stopping=True,
-            )
-        return self._tokenizer.decode(output[0], skip_special_tokens=True)
+        return self._generate_candidates(prompt, 1)[0]
 
     def _translate_ort_seq2seq(self, prompt: str) -> str:
+        return self._generate_candidates(prompt, 1)[0]
+
+    def translate_candidates(
+        self, text: str, direction: str = "vi2en", num_candidates: int = 5
+    ) -> list[str]:
+        """Return ranked deterministic beams; validation is owned by context.
+
+        The normal model benchmark still uses ``translate`` (top one). Runtime
+        may pick a lower-ranked beam only when the first fails field validation.
+        No benchmark reference or corrected test sentence enters generation.
+        """
+        if direction not in self.PREFIX or direction != self.direction:
+            raise ValueError(f"Translator direction mismatch: {direction}")
+        if not 1 <= num_candidates <= 5:
+            raise ValueError("num_candidates must be between 1 and 5")
+        if not text.strip():
+            return []
+        if self._backend is None:
+            raise RuntimeError("Translator not loaded. Call .load() first.")
+        prompt = self.PREFIX[direction] + " ".join(text.split())
+        started = time.perf_counter()
+        texts = self._generate_candidates(prompt, num_candidates)
+        texts = [re.sub(r"^(en|vi):\s*", "", item, flags=re.I).strip() for item in texts]
+        print(f"[MT] {direction} backend={self._backend} candidates={num_candidates} "
+              f"latency_ms={(time.perf_counter() - started) * 1000:.0f}")
+        return list(dict.fromkeys(texts))
+
+    def _generate_candidates(self, prompt: str, num_candidates: int) -> list[str]:
         inputs = self._tokenizer(
             prompt,
             return_tensors="pt",
             truncation=True,
             max_length=self.max_length,
         )
-        output = self._model.generate(
-            **inputs,
-            max_length=self.max_length,
-            num_beams=5,
-            early_stopping=True,
-        )
-        return self._tokenizer.decode(output[0], skip_special_tokens=True)
+        kwargs = dict(max_length=self.max_length, num_beams=5, early_stopping=True)
+        if num_candidates > 1:
+            kwargs["num_return_sequences"] = num_candidates
+        if self._backend == "transformers":
+            inputs = inputs.to(self._device)
+            with self._torch.inference_mode():
+                output = self._model.generate(**inputs, **kwargs)
+        else:
+            output = self._model.generate(
+                **inputs, **kwargs,
+            )
+        return [self._tokenizer.decode(sequence, skip_special_tokens=True) for sequence in output]
 
     def run(self, text_in_queue: queue.Queue, text_out_queue: queue.Queue) -> None:
         while True:
