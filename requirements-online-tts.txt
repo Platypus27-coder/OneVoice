@@ -1,0 +1,6 @@
+# Optional online voice mode only. The selected text is sent to Google's
+# Translate TTS service. This file is deliberately separate from edge runtime
+# requirements, which remain usable without a network connection.
+gTTS
+pydub
+imageio-ffmpeg

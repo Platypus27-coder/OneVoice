@@ -57,6 +57,8 @@ class OneVoicePipeline:
         vad_energy_threshold: float | None = None,
         output_device: int | str | None = None,
         input_device: int | str | None = None,
+        tts_backend: str | None = None,
+        allow_online_tts: bool = False,
     ):
         if direction not in {"vi2en", "en2vi"}:
             raise ValueError("direction must be 'vi2en' or 'en2vi'")
@@ -75,6 +77,12 @@ class OneVoicePipeline:
         if self.profile not in self.cfg.get("profiles", {}):
             raise ValueError(f"Unknown runtime profile: {self.profile}")
         self.offline = bool(offline or self.cfg["pipeline"].get("offline") or self.profile == "edge")
+        self.tts_backend = tts_backend
+        self.allow_online_tts = bool(allow_online_tts)
+        if self.tts_backend == "gtts" and not self.allow_online_tts:
+            raise ValueError("gTTS sends translated text to Google; add --allow-online-tts explicitly")
+        if self.allow_online_tts and self.tts_backend != "gtts":
+            raise ValueError("--allow-online-tts is only valid together with --tts-backend gtts")
         self.report_dir = Path(report_dir) if report_dir else None
         self.stop_event = threading.Event()
         self._fatal_error: BaseException | None = None
@@ -156,7 +164,13 @@ class OneVoicePipeline:
             profile=self.profile,
             direction=self.direction,
         )
-        self.tts = TTSEngine(self.cfg, profile=self.profile, offline=self.offline)
+        self.tts = TTSEngine(
+            self.cfg,
+            profile=self.profile,
+            offline=self.offline,
+            backend=self.tts_backend,
+            allow_online_tts=self.allow_online_tts,
+        )
         self.srt = SRTGenerator(bilingual=True)
         self._latency_log: list[dict] = []
         self._playback_log: list[dict] = []
@@ -895,6 +909,8 @@ class OneVoicePipeline:
                         "normal_commit_policy": self.committer.normal_commit_policy,
                         "output_device": self.cfg["audio"].get("output_device"),
                         "input_device": self.cfg["audio"].get("input_device"),
+                        "tts_engine": self.tts.engine_name(self.direction),
+                        "tts_online_network_enabled": self.tts.allow_online_tts and self.tts.backend == "gtts",
                         "device_playback_completed": len(self._playback_log),
                         "listener_confirmation": "not_recorded",
                         "vad_energy_threshold": self.cfg["audio"].get(
@@ -944,6 +960,14 @@ def main() -> None:
     parser.add_argument("--input-device", type=parse_input_device,
                         help="Microphone index or name/host API, e.g. 'Microphone Array Realtek MME'")
     parser.add_argument(
+        "--tts-backend", choices=["auto", "sapi", "espeak", "gtts"],
+        help="TTS voice backend; Windows auto prefers its installed offline English voice",
+    )
+    parser.add_argument(
+        "--allow-online-tts", action="store_true",
+        help="Allow gTTS network requests for translated text (requires --tts-backend gtts)",
+    )
+    parser.add_argument(
         "--vad-energy-threshold",
         type=float,
         help="Override the normalized RMS speech threshold for this run (0 < value <= 1)",
@@ -954,6 +978,10 @@ def main() -> None:
         parser.error("--input-file and --stream-file are mutually exclusive")
     if args.vad_energy_threshold is not None and not 0 < args.vad_energy_threshold <= 1:
         parser.error("--vad-energy-threshold must be greater than 0 and at most 1")
+    if args.tts_backend == "gtts" and not args.allow_online_tts:
+        parser.error("--tts-backend gtts sends translated text online; also pass --allow-online-tts")
+    if args.allow_online_tts and args.tts_backend != "gtts":
+        parser.error("--allow-online-tts requires --tts-backend gtts")
 
     pipeline = OneVoicePipeline(
         config_path=args.config,
@@ -965,6 +993,8 @@ def main() -> None:
         vad_energy_threshold=args.vad_energy_threshold,
         output_device=args.output_device,
         input_device=args.input_device,
+        tts_backend=args.tts_backend,
+        allow_online_tts=args.allow_online_tts,
     )
     if args.stream_file:
         result = pipeline.stream_file(args.stream_file, realtime=args.realtime)

@@ -1,4 +1,4 @@
-"""Check repeated offline TTS, optionally playing to a selected PC output.
+"""Check repeated TTS, optionally online and/or playing to a selected PC output.
 
 This does not record a microphone or load ASR/MT models. Device playback
 completion is not proof that a listener heard the correct speech.
@@ -35,12 +35,21 @@ PROMPTS = {
 }
 
 
-def run_check(config: dict, direction: str, repeats: int, play: bool) -> dict:
-    engine = TTSEngine(config, profile="edge", offline=True)
+def run_check(config: dict, direction: str, repeats: int, play: bool,
+              backend: str = "auto", allow_online_tts: bool = False) -> dict:
+    engine = TTSEngine(
+        config,
+        profile="edge",
+        offline=not allow_online_tts,
+        backend=backend,
+        allow_online_tts=allow_online_tts,
+    )
     report = {
         "schema_version": 1,
         "direction": direction,
-        "offline": True,
+        "offline": not allow_online_tts,
+        "tts_backend_requested": backend,
+        "online_tts_enabled": allow_online_tts,
         "requested_calls": repeats,
         "playback_requested": play,
         "output_device": config["audio"].get("output_device"),
@@ -89,14 +98,31 @@ def main() -> None:
     parser.add_argument("--repeats", type=int, default=5)
     parser.add_argument("--play", action="store_true", help="Actually play each synthesized sentence; no microphone recording")
     parser.add_argument("--output-device", type=parse_output_device)
+    parser.add_argument("--tts-backend", choices=("auto", "sapi", "espeak", "gtts"), default="auto")
+    parser.add_argument(
+        "--allow-online-tts",
+        action="store_true",
+        help="Allow gTTS to send each prompt to Google Translate TTS; pair with --tts-backend gtts",
+    )
     parser.add_argument("--report-dir", type=Path, required=True)
     args = parser.parse_args()
     if args.repeats <= 0:
         parser.error("--repeats must be positive")
+    if args.tts_backend == "gtts" and not args.allow_online_tts:
+        parser.error("gTTS sends prompt text online; also pass --allow-online-tts")
+    if args.allow_online_tts and args.tts_backend != "gtts":
+        parser.error("--allow-online-tts requires --tts-backend gtts")
     config = yaml.safe_load(args.config.read_text(encoding="utf-8"))
     if args.output_device is not None:
         config["audio"]["output_device"] = args.output_device
-    report = run_check(config, args.direction, args.repeats, args.play)
+    report = run_check(
+        config,
+        args.direction,
+        args.repeats,
+        args.play,
+        backend=args.tts_backend,
+        allow_online_tts=args.allow_online_tts,
+    )
     args.report_dir.mkdir(parents=True, exist_ok=True)
     destination = args.report_dir / "desktop_audio_check.json"
     destination.write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")

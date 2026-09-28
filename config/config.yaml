@@ -63,6 +63,9 @@ translation:
 # ─────────────────────────────────────────────
 tts:
   default_engine: "betterbox"
+  backend: "auto"                 # Windows English auto prefers installed SAPI; local fallback uses eSpeak
+  windows_en_voice: ""            # Empty prefers Microsoft David/Zira, then first installed en-US voice
+  windows_en_rate: -1              # Windows SAPI rate range: -10 (slow) to 10 (fast)
   en_speed: 0.85                  # Tốc độ đọc (0.7=rất chậm, 0.85=chậm chắc, 1.0=bình thường, 1.2=nhanh)
 
   # ── Giọng mẫu tiếng Anh (Voice Preset) ─────────────────────────────

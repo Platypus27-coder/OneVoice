@@ -147,14 +147,12 @@ nghe đầu ra và so sánh câu nhận dạng với lời nói; chỉ có log n
 
 ## Kiểm tra TTS lặp và tai nghe Bluetooth trên Windows
 
-Windows system-voice TTS dùng eSpeak NG cục bộ, với `vi` cho đầu ra tiếng
-Việt và `en-us` cho đầu ra tiếng Anh. Không dùng lại vòng lặp
-`pyttsx3/SAPI save_to_file + runAndWait` vốn bị kẹt ở lần tổng hợp thứ hai
-trên môi trường PC đã kiểm tra. Runtime nhận executable từ PATH hoặc từ
-`espeak-ng-runtime/eSpeak NG` dưới môi trường Python đang chạy, không tải
-backend khi chạy. Nếu thiếu executable, startup báo lỗi rõ thay vì tiếp
-tục với backend đã biết bị kẹt. Mỗi lần gọi native TTS có timeout mặc định
-15 giây (có thể đặt `tts.synthesis_timeout_s` trong config).
+Windows English TTS ở chế độ `auto` ưu tiên giọng Microsoft SAPI đã cài sẵn,
+chạy trong tiến trình PowerShell riêng để tránh vòng lặp COM `pyttsx3` bị kẹt.
+Nếu Windows không có giọng tiếng Anh dùng được, OneVoice mới chuyển sang
+eSpeak NG cục bộ. Tiếng Việt tiếp tục dùng giọng cục bộ hiện có. Không tải
+model TTS trong edge profile. Mỗi lần tổng hợp có timeout mặc định 15 giây
+(có thể đặt `tts.synthesis_timeout_s` trong config).
 
 Với runtime eSpeak portable trên Windows, tiến trình con nhận
 `ESPEAK_DATA_PATH` trỏ vào `espeak-ng-data` đi cùng executable; không sửa biến
@@ -163,10 +161,30 @@ môi trường của máy. Thiếu đường dẫn này đã tái hiện lỗi n
 Đặt đúng đường dẫn đã kiểm tra các lệnh đó trả mã 0. CLI `--path` riêng
 không sửa được nhánh in phiên bản của eSpeak 1.52.0.
 
-Native TTS gửi văn bản UTF-8 và ghi WAV trước khi phát, theo
+eSpeak nhận văn bản UTF-8 và ghi WAV trước khi phát, theo
 [giao diện eSpeak NG chính thức](https://github.com/espeak-ng/espeak-ng/blob/master/src/espeak-ng.1.ronn).
 Đây là giọng hệ thống cho demo, **không phải giọng Nobita**. Không thay đổi
 model ASR/MT hay nội dung safety WAV đã duyệt.
+
+Để nghe gTTS đọc câu mới qua tai nghe trên PC, cài backend online tùy chọn
+rồi chạy bài kiểm tra TTS độc lập:
+
+```powershell
+$Repo = "D:\code\.vscode\OneVoice\onevoice-edge"
+$OneVoicePython = "D:\MINICONDA\envs\onevoice\python.exe"
+$Bundle = "D:\OneVoiceDesktop\onevoice-v2-rc1\vi2en"
+$OneVoicePython -m pip install -r "$Repo\requirements-online-tts.txt"
+$OneVoicePython -u "$Repo\scripts\check_desktop_audio.py" `
+  --config "$Bundle\runtime_config.yaml" --direction vi2en `
+  --tts-backend gtts --allow-online-tts --play --repeats 3 `
+  --output-device "Headphones Realtek WASAPI" `
+  --report-dir "$Repo\reports\desktop_tts_gtts_online"
+```
+
+Bài kiểm tra này không bật mic và không chạy ASR/MT. Mỗi câu sẽ được gửi tới
+Google Translate TTS để tạo giọng. Dùng `--tts-backend gtts` đồng thời với
+`--allow-online-tts` là lựa chọn tường minh; chế độ edge/offline không tự gọi
+mạng. Các gói online nằm riêng trong `requirements-online-tts.txt`.
 
 **Chất lượng nghe tiếng Việt chưa được chấp nhận:** người dùng nghe được
 âm thanh từ GZUT-MUSIC nhưng báo khó hiểu ở bài thử ba câu eSpeak. Không dùng
@@ -241,10 +259,11 @@ và một đường phát**, không phải nghiệm thu TTS sinh câu mới, mic
 Bluetooth. Các lượt phát nhầm vào loa không được dùng làm bằng chứng tai nghe.
 
 Bài nghe tiếp theo gồm ba câu tiếng Anh sinh bằng eSpeak qua cùng tai nghe:
-API phát đủ ba câu nhưng người dùng vẫn báo giọng khó hiểu. Vì vậy TTS tiếng
-Anh eSpeak **chưa được nghiệm thu**, dù smoke kỹ thuật trả PASS. Giọng trong
-WAV safety tiếng Anh là gTTS tạo sẵn (manifest ghi `engine: gtts`), không phải
-backend eSpeak đang sinh các câu normal. Không thay kết quả giữa hai loại này.
+API phát đủ ba câu nhưng người dùng vẫn báo giọng khó hiểu. Vì vậy eSpeak
+tiếng Anh chưa được nghiệm thu. Windows `auto` nay ưu tiên giọng SAPI có sẵn;
+gTTS có thể tạo câu mới khi người dùng bật tùy chọn online. WAV safety tiếng
+Anh tạo sẵn bằng gTTS, nhưng phát WAV đó offline không đồng nghĩa việc tạo
+câu dịch mới bằng gTTS cũng chạy offline.
 
 Runtime phát theo tần số mặc định mà thiết bị khai báo và resample waveform
 tương ứng bằng [SciPy resample_poly](https://docs.scipy.org/doc/scipy/reference/generated/scipy.signal.resample_poly.html).

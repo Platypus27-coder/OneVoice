@@ -22,6 +22,8 @@ import sys
 import os
 import shutil
 import subprocess
+import base64
+import json
 import wave
 from pathlib import Path
 import numpy as np
@@ -41,10 +43,22 @@ class TTSEngine:
       "en2vi" direction → output is Vietnamese → OmniVoice/BetterBox
     """
 
-    def __init__(self, config: dict, profile: str = "development", offline: bool = False):
+    def __init__(self, config: dict, profile: str = "development", offline: bool = False,
+                 backend: str | None = None, allow_online_tts: bool = False):
         self.cfg = config["tts"]
         self.profile = profile
         self.offline = offline
+        self.backend = str(backend or self.cfg.get("backend", "auto")).lower()
+        if self.backend not in {"auto", "espeak", "sapi", "gtts"}:
+            raise ValueError("TTS backend must be auto, espeak, sapi, or gtts")
+        # Non-offline development already supports its historical online
+        # fallback. Edge/offline calls require the explicit CLI opt-in.
+        self.allow_online_tts = bool(allow_online_tts or not offline)
+        if self.backend == "gtts" and not self.allow_online_tts:
+            raise ValueError(
+                "gTTS sends translated text to Google. Use --allow-online-tts "
+                "to enable this network request explicitly."
+            )
         self.tts_tier = config.get("profiles", {}).get(profile, {}).get("tts_tier", "premium")
         self.sample_rate = config["audio"]["sample_rate"]
         self.default_engine = self.cfg.get("default_engine", "betterbox")
@@ -58,10 +72,16 @@ class TTSEngine:
         self._vallex = None        # VALL-E X (Premium Mode)
         self._vi_tts_engine = None
         self._vi_tts_engine_name = None
+        self._sapi_voice_name = None
+        self._gtts_class = None
+        self._audio_segment_class = None
         self.output_device = config["audio"].get("output_device")
         self.synthesis_timeout_s = float(self.cfg.get("synthesis_timeout_s", 15.0))
         if not 0 < self.synthesis_timeout_s < float("inf"):
             raise ValueError("tts.synthesis_timeout_s must be positive and finite")
+        windows_rate = int(self.cfg.get("windows_en_rate", -1))
+        if not -10 <= windows_rate <= 10:
+            raise ValueError("tts.windows_en_rate must be between -10 and 10")
 
     @staticmethod
     def _find_espeak_executable() -> str | None:
@@ -79,11 +99,10 @@ class TTSEngine:
     def _require_windows_espeak(self, executable: str | None) -> None:
         if sys.platform == "win32" and not executable:
             raise RuntimeError(
-                "Windows system TTS requires local espeak-ng/espeak. "
+                "Windows offline TTS has no usable SAPI English voice and no local eSpeak fallback. "
                 "Activate the onevoice environment with its eSpeak NG hook, "
                 "or install the local runtime under the environment's "
-                "espeak-ng-runtime/eSpeak NG directory. "
-                "The repeated-call pyttsx3/SAPI loop is not used on Windows."
+                "espeak-ng-runtime/eSpeak NG directory."
             )
 
     @staticmethod
@@ -97,13 +116,172 @@ class TTSEngine:
             child_env["ESPEAK_DATA_PATH"] = str(data_dir)
         return child_env
 
+    @staticmethod
+    def _powershell_executable() -> str | None:
+        executable = shutil.which("powershell.exe") or shutil.which("powershell")
+        if executable:
+            return executable
+        if sys.platform == "win32":
+            system_root = Path(os.environ.get("SystemRoot", r"C:\Windows"))
+            candidate = system_root / "System32" / "WindowsPowerShell" / "v1.0" / "powershell.exe"
+            if candidate.is_file():
+                return str(candidate)
+        return None
+
+    def _run_windows_sapi(self, request: dict) -> dict:
+        """Use an isolated PowerShell/.NET process for Windows offline speech."""
+        if sys.platform != "win32":
+            raise RuntimeError("Windows SAPI is available only on Windows")
+        executable = self._powershell_executable()
+        if not executable:
+            raise RuntimeError("Windows PowerShell was not found; cannot use the local SAPI voice")
+
+        script = r"""
+$ErrorActionPreference = 'Stop'
+[Console]::InputEncoding = [System.Text.UTF8Encoding]::new($false)
+$synth = $null
+try {
+    $request = [Console]::In.ReadToEnd() | ConvertFrom-Json
+    Add-Type -AssemblyName System.Speech
+    $synth = New-Object System.Speech.Synthesis.SpeechSynthesizer
+    $voices = @($synth.GetInstalledVoices() | Where-Object {
+        $_.Enabled -and ($_.VoiceInfo.Culture.Name -eq 'en' -or $_.VoiceInfo.Culture.Name -like 'en-*')
+    })
+    if ($voices.Count -eq 0) { throw 'No enabled English Windows speech voice is installed.' }
+    $voice = $null
+    if (-not [string]::IsNullOrWhiteSpace([string]$request.voice)) {
+        $voice = $voices | Where-Object { $_.VoiceInfo.Name -eq [string]$request.voice } | Select-Object -First 1
+        if (-not $voice) { throw "Requested English voice '$($request.voice)' is not installed or enabled." }
+    } else {
+        $voice = $voices | Where-Object { $_.VoiceInfo.Name -match 'David|Zira' } | Select-Object -First 1
+        if (-not $voice) { $voice = $voices | Where-Object { $_.VoiceInfo.Culture.Name -eq 'en-US' } | Select-Object -First 1 }
+        if (-not $voice) { $voice = $voices | Select-Object -First 1 }
+    }
+    $synth.SelectVoice($voice.VoiceInfo.Name)
+    if ($request.probe) {
+        $result = @{ voice = $voice.VoiceInfo.Name; culture = $voice.VoiceInfo.Culture.Name }
+    } else {
+        $synth.Rate = [int]$request.rate
+        $synth.SetOutputToWaveFile([string]$request.path)
+        $synth.Speak([string]$request.text)
+        $synth.SetOutputToNull()
+        $result = @{ voice = $voice.VoiceInfo.Name; culture = $voice.VoiceInfo.Culture.Name; written = $true }
+    }
+    [Console]::Out.WriteLine(($result | ConvertTo-Json -Compress))
+} catch {
+    [Console]::Error.WriteLine($_.Exception.Message)
+    exit 1
+} finally {
+    if ($synth) { $synth.Dispose() }
+}
+"""
+        encoded_script = base64.b64encode(script.encode("utf-16le")).decode("ascii")
+        try:
+            result = subprocess.run(
+                [executable, "-NoLogo", "-NoProfile", "-NonInteractive", "-EncodedCommand", encoded_script],
+                input=json.dumps(request, ensure_ascii=True),
+                check=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True,
+                encoding="utf-8",
+                errors="replace",
+                timeout=self.synthesis_timeout_s,
+                **({"creationflags": subprocess.CREATE_NO_WINDOW} if sys.platform == "win32" else {}),
+            )
+        except subprocess.TimeoutExpired as exc:
+            raise RuntimeError(f"Windows SAPI exceeded {self.synthesis_timeout_s:g}s") from exc
+        except subprocess.CalledProcessError as exc:
+            detail = str(exc.stderr or exc.stdout or "").strip()[:500]
+            raise RuntimeError(f"Windows SAPI failed: {detail or exc.returncode}") from exc
+        try:
+            return json.loads(result.stdout.strip().splitlines()[-1])
+        except (json.JSONDecodeError, IndexError) as exc:
+            raise RuntimeError("Windows SAPI returned an invalid status response") from exc
+
+    def _load_online_gtts(self) -> None:
+        if not self.allow_online_tts:
+            raise RuntimeError(
+                "Online gTTS is disabled. Pass --allow-online-tts; synthesized text is sent to Google."
+            )
+        if self._gtts_class is not None and self._audio_segment_class is not None:
+            return
+        try:
+            from gtts import gTTS
+            from pydub import AudioSegment
+            import imageio_ffmpeg
+        except ImportError as exc:
+            raise RuntimeError(
+                "Online gTTS needs optional packages. Install requirements-online-tts.txt first."
+            ) from exc
+        AudioSegment.converter = imageio_ffmpeg.get_ffmpeg_exe()
+        self._gtts_class = gTTS
+        self._audio_segment_class = AudioSegment
+        print(
+            "[TTS] ⚠ Online gTTS enabled: translated speech text will be sent to Google Translate TTS."
+        )
+
+    def _synthesize_sapi_en(self, text: str) -> tuple[np.ndarray, int]:
+        import tempfile
+
+        tmp_path = None
+        try:
+            with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as handle:
+                tmp_path = handle.name
+            self._run_windows_sapi({
+                "probe": False,
+                "voice": self._sapi_voice_name or "",
+                "rate": int(self.cfg.get("windows_en_rate", -1)),
+                "text": text,
+                "path": tmp_path,
+            })
+            with wave.open(tmp_path, "rb") as handle:
+                channels = handle.getnchannels()
+                sample_width = handle.getsampwidth()
+                sample_rate = handle.getframerate()
+                frames = handle.readframes(handle.getnframes())
+            if sample_width != 2:
+                raise RuntimeError(f"Windows SAPI produced {sample_width * 8}-bit audio; expected 16-bit PCM")
+            audio = np.frombuffer(frames, dtype="<i2").astype(np.float32) / 32768.0
+            if channels > 1:
+                audio = audio.reshape(-1, channels).mean(axis=1)
+            if self.is_silence(audio):
+                raise RuntimeError("Windows SAPI produced an empty or silent WAV")
+            return audio.astype(np.float32), int(sample_rate)
+        finally:
+            if tmp_path and os.path.exists(tmp_path):
+                os.unlink(tmp_path)
+
+    def _synthesize_gtts(self, text: str, language: str) -> tuple[np.ndarray, int]:
+        """Generate a new utterance online; never used without explicit opt-in."""
+        if not self.allow_online_tts:
+            raise RuntimeError("gTTS is unavailable without the explicit online TTS opt-in")
+        if self._gtts_class is None or self._audio_segment_class is None:
+            self._load_online_gtts()
+        import tempfile
+
+        mp3_path = None
+        try:
+            with tempfile.NamedTemporaryFile(suffix=".mp3", delete=False) as handle:
+                mp3_path = handle.name
+            self._gtts_class(text=text, lang=language, slow=False,
+                             timeout=self.synthesis_timeout_s).save(mp3_path)
+            segment = self._audio_segment_class.from_mp3(mp3_path).set_channels(1).set_frame_rate(self.sample_rate).set_sample_width(2)
+            samples = np.asarray(segment.get_array_of_samples(), dtype="<i2").astype(np.float32) / 32768.0
+            return samples, int(segment.frame_rate)
+        finally:
+            if mp3_path and os.path.exists(mp3_path):
+                os.unlink(mp3_path)
+
     def load(self, direction: str | None = None):
         """Initialize all TTS backends."""
         print(f"[TTS] Initializing engines...")
         if direction in (None, "en2vi"):
             # Explicit offline/demo mode uses a real local system voice and
             # avoids OmniVoice's large optional dependency stack.
-            if self.offline and self.cfg.get("offline_engine") == "pyttsx3":
+            if self.backend == "gtts":
+                self._load_edge_vi_tts()
+            elif self.offline and self.cfg.get("offline_engine") == "pyttsx3":
                 self._load_edge_vi_tts()
             elif self.tts_tier == "premium":
                 self._load_omnivoice()
@@ -287,18 +465,41 @@ class TTSEngine:
     def _load_english_tts(self):
         """
         Load English TTS.
-        Priority: F5-TTS (premium) → native eSpeak on Windows, or pyttsx3
-        on other systems → development-only gTTS.
+        Priority: explicit backend → F5-TTS (premium) → Windows SAPI/eSpeak,
+        or pyttsx3 on other systems → development-only gTTS.
 
         A bare VITS ONNX graph is deliberately not accepted: text phonemization,
         speaker/language metadata and output scaling are part of the deployable
         artifact contract. Loading a graph without its adapter previously caused
         the runtime to claim VITS while actually falling through to pyttsx3.
         """
+        if self.backend == "gtts":
+            self._load_online_gtts()
+            self._en_tts_engine = "gtts-online"
+            return
+
         # Keep the native eSpeak CLI available as a deterministic local escape
         # hatch. On headless Colab, pyttsx3 can occasionally return a valid WAV
         # container containing only zeros after many repeated calls.
         self._en_tts_executable = self._find_espeak_executable()
+
+        if self.backend == "espeak":
+            if not self._en_tts_executable:
+                raise RuntimeError("The requested eSpeak backend is not installed")
+            self._en_tts_engine = "espeak-ng-offline-demo"
+            print("[TTS] ✅ Explicit local eSpeak backend selected (English voice=en-us).")
+            return
+        if self.backend == "sapi":
+            if sys.platform != "win32":
+                raise RuntimeError("Windows SAPI backend is available only on Windows")
+            voice = self._run_windows_sapi({
+                "probe": True,
+                "voice": str(self.cfg.get("windows_en_voice", "")),
+            })
+            self._sapi_voice_name = voice["voice"]
+            self._en_tts_engine = "windows-sapi-offline"
+            print(f"[TTS] ✅ Windows offline English voice loaded: {self._sapi_voice_name}")
+            return
 
         # Priority 1: F5-TTS — premium profile only
         try:
@@ -323,9 +524,20 @@ class TTSEngine:
             print(f"[TTS] ⚠ F5-TTS not available ({e})")
 
         if sys.platform == "win32":
-            self._require_windows_espeak(self._en_tts_executable)
-            self._en_tts_engine = "espeak-ng-offline-demo"
-            print("[TTS] ✅ Native local English TTS loaded (voice=en-us).")
+            try:
+                voice = self._run_windows_sapi({
+                    "probe": True,
+                    "voice": str(self.cfg.get("windows_en_voice", "")),
+                })
+            except Exception as exc:
+                print(f"[TTS] ⚠ Windows SAPI unavailable ({exc}); trying local eSpeak.")
+                self._require_windows_espeak(self._en_tts_executable)
+                self._en_tts_engine = "espeak-ng-offline-demo"
+                print("[TTS] ✅ Native local English TTS loaded (voice=en-us).")
+                return
+            self._sapi_voice_name = voice["voice"]
+            self._en_tts_engine = "windows-sapi-offline"
+            print(f"[TTS] ✅ Windows offline English voice loaded: {self._sapi_voice_name}")
             return
 
         # Priority 2: pyttsx3 (offline, no voice clone)
@@ -359,11 +571,22 @@ class TTSEngine:
 
     def _load_edge_vi_tts(self):
         """Load a lightweight local VI fallback without remote model access."""
+        if self.backend == "gtts":
+            self._load_online_gtts()
+            self._vi_tts_engine_name = "gtts-online"
+            return
+        if self.backend == "sapi":
+            raise RuntimeError("Windows SAPI selection is for English output; use auto/espeak/gtts for Vietnamese")
         # Linux Colab's pyttsx3/espeak driver can acknowledge save_to_file()
         # while leaving a non-RIFF placeholder behind.  Keep pyttsx3 as the
         # configured backend, but remember the native executable as a reliable
         # local fallback for writing a real PCM WAV.
         self._vi_tts_executable = self._find_espeak_executable()
+        if self.backend == "espeak":
+            if not self._vi_tts_executable:
+                raise RuntimeError("The requested eSpeak backend is not installed")
+            self._vi_tts_engine_name = "espeak-ng-offline-demo"
+            return
         if sys.platform == "win32":
             self._require_windows_espeak(self._vi_tts_executable)
             self._vi_tts_engine_name = "espeak-ng-offline-demo"
@@ -448,27 +671,6 @@ class TTSEngine:
             if tmp_path and os.path.exists(tmp_path):
                 os.unlink(tmp_path)
 
-    def _synthesize_gtts(self, text: str, language: str) -> tuple[np.ndarray, int]:
-        """Development-only online synthesis for pre-generated, reviewed WAVs."""
-        if self.offline:
-            raise RuntimeError("gTTS is unavailable in offline runtime")
-        from gtts import gTTS
-        from pydub import AudioSegment
-        import tempfile
-
-        mp3_path = None
-        try:
-            with tempfile.NamedTemporaryFile(suffix=".mp3", delete=False) as handle:
-                mp3_path = handle.name
-            gTTS(text=text, lang=language, slow=False).save(mp3_path)
-            segment = AudioSegment.from_mp3(mp3_path).set_channels(1)
-            samples = np.asarray(segment.get_array_of_samples(), dtype=np.float32)
-            scale = float(1 << (8 * segment.sample_width - 1))
-            return samples / scale, int(segment.frame_rate)
-        finally:
-            if mp3_path and os.path.exists(mp3_path):
-                os.unlink(mp3_path)
-
     def synthesize_vi(self, text: str, emotion: str = "neutral") -> tuple[np.ndarray, int]:
         """
         Synthesize Vietnamese speech using OmniVoice (BetterBox-TTS).
@@ -488,6 +690,12 @@ class TTSEngine:
         instruct = emotion_map.get(emotion.lower(), "")
         if instruct:
             print(f"[TTS VI] 🎭 Applied emotion routing: {emotion.upper()}")
+
+        if self._vi_tts_engine_name == "gtts-online":
+            started = time.perf_counter()
+            audio, sample_rate = self._synthesize_gtts(text, "vi")
+            print(f"[TTS VI] {(time.perf_counter() - started) * 1000:.0f}ms | gTTS online")
+            return audio, sample_rate
 
         if self._vi_tts_engine_name == "espeak-ng-offline-demo":
             started = time.perf_counter()
@@ -615,11 +823,21 @@ class TTSEngine:
 
         Fallback chain:
           1. F5-TTS (voice cloning, high quality) — primary engine
-          2. native eSpeak (Windows) or pyttsx3 (other systems)
+          2. Windows SAPI, then native eSpeak (Windows) or pyttsx3 (other systems)
           3. Silence stub — last resort
         """
         t0 = time.perf_counter()
         engine = getattr(self, "_en_tts_engine", None)
+
+        if engine == "windows-sapi-offline":
+            audio, sample_rate = self._synthesize_sapi_en(text)
+            print(f"[TTS EN] Windows SAPI voice={self._sapi_voice_name} | {(time.perf_counter() - t0) * 1000:.0f}ms")
+            return audio, sample_rate
+
+        if engine == "gtts-online":
+            audio, sample_rate = self._synthesize_gtts(text, "en")
+            print(f"[TTS EN] {(time.perf_counter() - t0) * 1000:.0f}ms | gTTS online")
+            return audio, sample_rate
 
         if engine == "espeak-ng-offline-demo":
             audio, sample_rate = self._synthesize_espeak_en(text)
