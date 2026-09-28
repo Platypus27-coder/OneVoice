@@ -232,6 +232,62 @@ cũ, không dùng kết quả đó làm tuyên bố chất lượng của bản 
 Thay đổi policy/backend cần đo lại latency của bản đang chạy, không gán
 các số đo cũ cho bản mới.
 
+## Mic laptop → tai nghe Realtek (VI→EN)
+
+Ngày 28/09/2026, người dùng xác nhận nghe rõ một WAV tiếng Việt có sẵn qua
+`Headphones (Realtek(R) Audio)` với Windows WASAPI, resample đúng từ 24 kHz
+sang 48 kHz. Độ dài câu giữ nguyên 2,952 giây. Đây là xác nhận cho **một WAV
+và một đường phát**, không phải nghiệm thu TTS sinh câu mới, mic live hay
+Bluetooth. Các lượt phát nhầm vào loa không được dùng làm bằng chứng tai nghe.
+
+Bài nghe tiếp theo gồm ba câu tiếng Anh sinh bằng eSpeak qua cùng tai nghe:
+API phát đủ ba câu nhưng người dùng vẫn báo giọng khó hiểu. Vì vậy TTS tiếng
+Anh eSpeak **chưa được nghiệm thu**, dù smoke kỹ thuật trả PASS. Giọng trong
+WAV safety tiếng Anh là gTTS tạo sẵn (manifest ghi `engine: gtts`), không phải
+backend eSpeak đang sinh các câu normal. Không thay kết quả giữa hai loại này.
+
+Runtime phát theo tần số mặc định mà thiết bị khai báo và resample waveform
+tương ứng bằng [SciPy resample_poly](https://docs.scipy.org/doc/scipy/reference/generated/scipy.signal.resample_poly.html).
+Không chỉ đổi nhãn sample rate: cách đó sẽ làm sai tốc độ/độ cao giọng.
+`playback_events.json` ghi tần số nguồn/phát, số mẫu, host API và độ dài
+nguồn/phát để kiểm tra. Sample rate nguồn của ASR/TTS không bị thay đổi.
+
+Chọn mic và tai nghe riêng bằng tên + host API. `--input-device` tránh việc
+Windows đang mặc định chọn mic tai nghe thay cho mic laptop. Thiết bị không
+có/không duy nhất hoặc định dạng không hỗ trợ thì báo lỗi; không tự đổi mic
+hay chuyển ra loa. Tùy chọn không sửa thiết lập âm thanh Windows hoặc config
+của bundle.
+
+Sau khi giọng tiếng Anh trong kiểm tra TTS đã nghe rõ, chạy toàn bộ luồng
+VI→EN. Block dưới đây dùng array để tránh lỗi xuống dòng PowerShell:
+
+```powershell
+conda activate onevoice
+$Repo = "D:\code\.vscode\OneVoice\onevoice-edge"
+$OneVoicePython = "D:\MINICONDA\envs\onevoice\python.exe"
+$env:PYTHONPATH = "$Repo\src"
+$env:PYTHONIOENCODING = "utf-8"
+Set-Location "D:\OneVoiceDesktop\onevoice-v2-rc1\vi2en"
+$oneVoiceLiveArgs = @(
+  "-u", "$Repo\src\pipeline.py",
+  "--config", "runtime_config.yaml",
+  "--direction", "vi2en",
+  "--profile", "edge", "--offline",
+  "--input-device", "Microphone Array Realtek MME",
+  "--output-device", "Headphones Realtek WASAPI",
+  "--vad-energy-threshold", "0.005",
+  "--report-dir", "$Repo\reports\live_mic_vi2en_realtek"
+)
+& $OneVoicePython @oneVoiceLiveArgs
+```
+
+Chờ `OneVoice V2 LIVE` và log `Input=Microphone Array` rồi nói rõ một câu
+tiếng Việt, nghỉ một giây để kết thúc câu. Tai nghe phải phát tiếng Anh.
+Thử ít nhất ba câu khác nhau rồi `Ctrl+C`, giữ SRT, `runtime_summary.json`
+và `playback_events.json`. Ngưỡng mic `0.005` vẫn là mức thử cần kiểm tra.
+Nếu chuyển sang loa laptop, phải đổi `--output-device` sang loa đã kiểm tra;
+mic có thể thu lại giọng máy, vì chưa có nghiệm thu chống vọng cho chế độ đó.
+
 ## Measure the actual PC (P5)
 
 P5 measures the **whole chain**—audio, ASR, translation, safety/context, TTS

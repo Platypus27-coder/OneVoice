@@ -21,6 +21,7 @@ class AudioCapture:
         self.q = audio_queue
         self.sample_rate = int(config["audio"]["sample_rate"])
         self.chunk_size = int(config["audio"].get("chunk_size", 512))
+        self.input_device = config["audio"].get("input_device")
         self._running = False
         self._thread: threading.Thread | None = None
         self._sequence = 0
@@ -56,18 +57,23 @@ class AudioCapture:
         self._thread = threading.Thread(target=self._stream_loop, daemon=True)
         self._thread.start()
         print(
-            f"[AudioCapture] Started ({self.chunk_size * 1000 / self.sample_rate:.0f} ms frames)"
+            f"[AudioCapture] Starting ({self.chunk_size * 1000 / self.sample_rate:.0f} ms frames)"
         )
 
     def _stream_loop(self) -> None:
         try:
+            info = sd.query_devices(self.input_device, kind="input")
+            sd.check_input_settings(device=info["index"], samplerate=self.sample_rate,
+                                    channels=1, dtype="float32")
             with sd.InputStream(
                 samplerate=self.sample_rate,
                 channels=1,
                 dtype="float32",
                 blocksize=self.chunk_size,
                 callback=self._callback,
+                device=info["index"],
             ):
+                print(f"[AudioCapture] Input={info['name']} | sample_rate={self.sample_rate}")
                 while self._running:
                     sd.sleep(50)
         except BaseException as exc:

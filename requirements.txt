@@ -28,6 +28,7 @@ torchvision
 # ── Audio Processing ──────────────────────────────────────────────────────────
 soundfile                          # Đọc/ghi WAV
 sounddevice                        # Phát audio real-time
+scipy                              # Resample đúng tần số thiết bị, giữ tốc độ giọng
 librosa                            # Phân tích audio, time-stretch (speed control)
 pydub                              # Chuyển đổi định dạng audio (mp3→wav)
 pedalboard                         # Audio effects

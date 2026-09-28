@@ -25,6 +25,7 @@ import subprocess
 import wave
 from pathlib import Path
 import numpy as np
+from audio.playback import prepare_playback_audio
 try:
     import sounddevice as sd
 except ImportError:
@@ -731,16 +732,30 @@ class TTSEngine:
         sr = sample_rate or self.sample_rate
         try:
             info = sd.query_devices(self.output_device, kind="output")
-            print(f"[Playback] Started | output={info['name']} | sample_rate={sr}")
+            output_rate = float(info.get("default_samplerate", sr))
+            played_audio = prepare_playback_audio(audio, sr, output_rate)
+            output_rate = int(output_rate)
+            host_api = (sd.query_hostapis(info["hostapi"])["name"]
+                        if "hostapi" in info else None)
+            channels = 1 if played_audio.ndim == 1 else played_audio.shape[1]
+            sd.check_output_settings(device=info["index"], samplerate=output_rate,
+                                     channels=channels, dtype="float32")
+            print(f"[Playback] Started | output={info['name']} | api={host_api} | "
+                  f"source_rate={sr} | playback_rate={output_rate}")
             # Resolve a name in this process and keep that exact device for
             # playback; never fall back to speakers if the headset is missing.
-            sd.play(audio, samplerate=sr, device=info["index"])
+            sd.play(played_audio, samplerate=output_rate, device=info["index"])
             status = sd.wait(ignore_errors=False)
             if status:
                 raise RuntimeError(f"Audio device reported an underrun/overflow: {status}")
             print(f"[Playback] Finished | output={info['name']}")
             return {"output_device": info["name"], "output_device_index": info["index"],
-                    "sample_rate": int(sr), "samples": len(audio), "device_playback_completed": True}
+                    "output_host_api": host_api, "source_sample_rate": int(sr),
+                    "source_samples": len(audio), "sample_rate": output_rate,
+                    "samples": len(played_audio), "resampled": int(sr) != output_rate,
+                    "source_duration_seconds": len(audio) / sr,
+                    "playback_duration_seconds": len(played_audio) / output_rate,
+                    "device_playback_completed": True}
         except Exception as e:
             raise RuntimeError(f"Audio playback failed: {e}") from e
 

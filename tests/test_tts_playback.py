@@ -127,6 +127,24 @@ class SystemTTSTests(unittest.TestCase):
 
 
 class PlaybackTests(unittest.TestCase):
+    def test_playback_resamples_to_native_device_rate_without_speedup(self):
+        device = mock.Mock()
+        device.query_devices.return_value = {"name": "Headphones", "index": 13,
+                                             "hostapi": 2, "default_samplerate": 48000.0}
+        device.query_hostapis.return_value = {"name": "Windows WASAPI"}
+        device.wait.return_value = None
+        engine = TTSEngine(config(), profile="edge", offline=True)
+        audio = (0.1 * np.sin(2 * np.pi * 440 * np.arange(2205) / 22050)).astype(np.float32)
+        with mock.patch("tts.tts_engine.sd", device), contextlib.redirect_stdout(io.StringIO()):
+            result = engine.play(audio, 22050)
+        played = device.play.call_args.args[0]
+        self.assertEqual(len(played), 4800)
+        self.assertEqual(device.play.call_args.kwargs["samplerate"], 48000)
+        self.assertEqual(device.play.call_args.kwargs["device"], 13)
+        self.assertEqual(result["source_duration_seconds"], result["playback_duration_seconds"])
+        self.assertEqual(result["source_sample_rate"], 22050)
+        self.assertTrue(result["resampled"])
+
     def test_device_selector_accepts_indices_and_names_without_silent_fallback(self):
         self.assertEqual(parse_output_device("3"), 3)
         self.assertEqual(parse_output_device(" GZUT-MUSIC MME "), "GZUT-MUSIC MME")

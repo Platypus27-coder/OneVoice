@@ -37,6 +37,16 @@ class _SoundFileStub:
 
 
 class StreamingPipelineTests(unittest.TestCase):
+    def test_cli_forwards_explicit_laptop_microphone_and_headphones(self):
+        with mock.patch.object(sys, "argv", ["pipeline.py", "--direction", "vi2en",
+                              "--input-device", "Microphone Array Realtek MME",
+                              "--output-device", "Headphones Realtek WASAPI"]):
+            with mock.patch("pipeline.OneVoicePipeline") as factory:
+                pipeline_main()
+        self.assertEqual(factory.call_args.kwargs["input_device"], "Microphone Array Realtek MME")
+        self.assertEqual(factory.call_args.kwargs["output_device"], "Headphones Realtek WASAPI")
+        self.assertEqual(factory.call_args.kwargs["direction"], "vi2en")
+
     def test_cli_forwards_output_device(self):
         with mock.patch.object(sys, "argv", ["pipeline.py", "--output-device", "3"]):
             with mock.patch("pipeline.OneVoicePipeline") as factory:

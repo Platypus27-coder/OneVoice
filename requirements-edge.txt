@@ -3,6 +3,7 @@ numpy
 PyYAML
 soundfile
 sounddevice
+scipy                             # Resample to the output device rate without changing speech speed
 pyttsx3
 psutil
 sherpa-onnx

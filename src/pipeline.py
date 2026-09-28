@@ -25,7 +25,7 @@ import yaml
 sys.path.insert(0, os.path.dirname(__file__))
 
 from context.engine import ConstructionContextEngine
-from audio.devices import parse_output_device
+from audio.devices import parse_input_device, parse_output_device
 from context.site_pack import SitePackLoader
 from contracts import ASRHypothesis, AudioFrame, CommitKind, SynthesizedChunk
 from runtime.preflight import verify_artifacts
@@ -56,6 +56,7 @@ class OneVoicePipeline:
         report_dir: str | None = None,
         vad_energy_threshold: float | None = None,
         output_device: int | str | None = None,
+        input_device: int | str | None = None,
     ):
         if direction not in {"vi2en", "en2vi"}:
             raise ValueError("direction must be 'vi2en' or 'en2vi'")
@@ -67,6 +68,8 @@ class OneVoicePipeline:
             print(f"[VAD] Energy threshold override: {vad_energy_threshold:g}")
         if output_device is not None:
             self.cfg["audio"]["output_device"] = parse_output_device(str(output_device))
+        if input_device is not None:
+            self.cfg["audio"]["input_device"] = parse_input_device(str(input_device))
         self.direction = direction
         self.profile = profile or self.cfg["pipeline"].get("profile", "development")
         if self.profile not in self.cfg.get("profiles", {}):
@@ -891,6 +894,7 @@ class OneVoicePipeline:
                         "offline": self.offline,
                         "normal_commit_policy": self.committer.normal_commit_policy,
                         "output_device": self.cfg["audio"].get("output_device"),
+                        "input_device": self.cfg["audio"].get("input_device"),
                         "device_playback_completed": len(self._playback_log),
                         "listener_confirmation": "not_recorded",
                         "vad_energy_threshold": self.cfg["audio"].get(
@@ -937,6 +941,8 @@ def main() -> None:
     parser.add_argument("--report-dir")
     parser.add_argument("--output-device", type=parse_output_device,
                         help="Output index or name/host API, e.g. 'GZUT-MUSIC MME', from python -m sounddevice")
+    parser.add_argument("--input-device", type=parse_input_device,
+                        help="Microphone index or name/host API, e.g. 'Microphone Array Realtek MME'")
     parser.add_argument(
         "--vad-energy-threshold",
         type=float,
@@ -958,6 +964,7 @@ def main() -> None:
         report_dir=args.report_dir,
         vad_energy_threshold=args.vad_energy_threshold,
         output_device=args.output_device,
+        input_device=args.input_device,
     )
     if args.stream_file:
         result = pipeline.stream_file(args.stream_file, realtime=args.realtime)
