@@ -23,6 +23,7 @@ import os
 import shutil
 import subprocess
 import wave
+from pathlib import Path
 import numpy as np
 try:
     import sounddevice as sd
@@ -56,6 +57,44 @@ class TTSEngine:
         self._vallex = None        # VALL-E X (Premium Mode)
         self._vi_tts_engine = None
         self._vi_tts_engine_name = None
+        self.output_device = config["audio"].get("output_device")
+        self.synthesis_timeout_s = float(self.cfg.get("synthesis_timeout_s", 15.0))
+        if not 0 < self.synthesis_timeout_s < float("inf"):
+            raise ValueError("tts.synthesis_timeout_s must be positive and finite")
+
+    @staticmethod
+    def _find_espeak_executable() -> str | None:
+        executable = shutil.which("espeak-ng") or shutil.which("espeak")
+        if executable:
+            return executable
+        # Explicit Python paths do not necessarily execute Conda's PATH hooks.
+        # Use the existing local runtime; never download a backend here.
+        if sys.platform == "win32":
+            candidate = Path(sys.prefix) / "espeak-ng-runtime" / "eSpeak NG" / "espeak-ng.exe"
+            if candidate.is_file():
+                return str(candidate)
+        return None
+
+    def _require_windows_espeak(self, executable: str | None) -> None:
+        if sys.platform == "win32" and not executable:
+            raise RuntimeError(
+                "Windows system TTS requires local espeak-ng/espeak. "
+                "Activate the onevoice environment with its eSpeak NG hook, "
+                "or install the local runtime under the environment's "
+                "espeak-ng-runtime/eSpeak NG directory. "
+                "The repeated-call pyttsx3/SAPI loop is not used on Windows."
+            )
+
+    @staticmethod
+    def _espeak_environment(executable: str) -> dict[str, str]:
+        """Give a portable runtime its data path without mutating parent env."""
+        child_env = os.environ.copy()
+        data_dir = Path(executable).resolve().parent / "espeak-ng-data"
+        if data_dir.is_dir():
+            # eSpeak's --version/--help initialize without the CLI --path.
+            # Missing Windows registry data can otherwise cause a native crash.
+            child_env["ESPEAK_DATA_PATH"] = str(data_dir)
+        return child_env
 
     def load(self, direction: str | None = None):
         """Initialize all TTS backends."""
@@ -247,7 +286,8 @@ class TTSEngine:
     def _load_english_tts(self):
         """
         Load English TTS.
-        Priority: F5-TTS (premium) → local pyttsx3 → development-only gTTS.
+        Priority: F5-TTS (premium) → native eSpeak on Windows, or pyttsx3
+        on other systems → development-only gTTS.
 
         A bare VITS ONNX graph is deliberately not accepted: text phonemization,
         speaker/language metadata and output scaling are part of the deployable
@@ -257,7 +297,7 @@ class TTSEngine:
         # Keep the native eSpeak CLI available as a deterministic local escape
         # hatch. On headless Colab, pyttsx3 can occasionally return a valid WAV
         # container containing only zeros after many repeated calls.
-        self._en_tts_executable = shutil.which("espeak-ng") or shutil.which("espeak")
+        self._en_tts_executable = self._find_espeak_executable()
 
         # Priority 1: F5-TTS — premium profile only
         try:
@@ -280,6 +320,12 @@ class TTSEngine:
             return
         except Exception as e:
             print(f"[TTS] ⚠ F5-TTS not available ({e})")
+
+        if sys.platform == "win32":
+            self._require_windows_espeak(self._en_tts_executable)
+            self._en_tts_engine = "espeak-ng-offline-demo"
+            print("[TTS] ✅ Native local English TTS loaded (voice=en-us).")
+            return
 
         # Priority 2: pyttsx3 (offline, no voice clone)
         try:
@@ -316,7 +362,12 @@ class TTSEngine:
         # while leaving a non-RIFF placeholder behind.  Keep pyttsx3 as the
         # configured backend, but remember the native executable as a reliable
         # local fallback for writing a real PCM WAV.
-        self._vi_tts_executable = shutil.which("espeak-ng") or shutil.which("espeak")
+        self._vi_tts_executable = self._find_espeak_executable()
+        if sys.platform == "win32":
+            self._require_windows_espeak(self._vi_tts_executable)
+            self._vi_tts_engine_name = "espeak-ng-offline-demo"
+            print("[TTS] ✅ Native local Vietnamese TTS loaded (voice=vi).")
+            return
         try:
             import pyttsx3
             engine = pyttsx3.init()
@@ -334,44 +385,15 @@ class TTSEngine:
     def _synthesize_espeak_vi(self, text: str) -> tuple[np.ndarray, int]:
         """Synthesize a standards-compliant PCM WAV with the local eSpeak CLI."""
         executable = getattr(self, "_vi_tts_executable", None)
-        if not executable:
-            raise RuntimeError("espeak/espeak-ng executable is not installed")
-        import tempfile
-
-        tmp_path = None
-        try:
-            with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as tmp:
-                tmp_path = tmp.name
-            subprocess.run(
-                [executable, "-v", "vi", "-s", "165", "-w", tmp_path, text],
-                check=True,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                text=True,
-            )
-            with wave.open(tmp_path, "rb") as handle:
-                channels = handle.getnchannels()
-                sample_width = handle.getsampwidth()
-                sample_rate = handle.getframerate()
-                frames = handle.readframes(handle.getnframes())
-            if sample_width == 2:
-                audio = np.frombuffer(frames, dtype="<i2").astype(np.float32) / 32768.0
-            elif sample_width == 1:
-                audio = (np.frombuffer(frames, dtype=np.uint8).astype(np.float32) - 128.0) / 128.0
-            else:
-                raise RuntimeError(f"Unsupported eSpeak sample width: {sample_width}")
-            if channels > 1:
-                audio = audio.reshape(-1, channels).mean(axis=1)
-            if audio.size == 0:
-                raise RuntimeError("eSpeak produced an empty WAV")
-            return audio.astype(np.float32), int(sample_rate)
-        finally:
-            if tmp_path and os.path.exists(tmp_path):
-                os.unlink(tmp_path)
+        return self._synthesize_espeak(text, executable, "vi", 165)
 
     def _synthesize_espeak_en(self, text: str) -> tuple[np.ndarray, int]:
         """Synthesize a non-silent English WAV via the native eSpeak CLI."""
         executable = getattr(self, "_en_tts_executable", None)
+        return self._synthesize_espeak(text, executable, "en-us", max(80, int(160 * self.en_speed)))
+
+    def _synthesize_espeak(self, text: str, executable: str | None,
+                           voice: str, rate: int) -> tuple[np.ndarray, int]:
         if not executable:
             raise RuntimeError("espeak/espeak-ng executable is not installed")
         import tempfile
@@ -380,21 +402,21 @@ class TTSEngine:
         try:
             with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as tmp:
                 tmp_path = tmp.name
+            command = [executable, "-v", voice, "-s", str(rate), "-b", "1", "-w", tmp_path, "--stdin"]
+            runtime_dir = Path(executable).resolve().parent
+            if (runtime_dir / "espeak-ng-data").is_dir():
+                command.append(f"--path={runtime_dir}")
             subprocess.run(
-                [
-                    executable,
-                    "-v",
-                    "en-us",
-                    "-s",
-                    str(max(80, int(160 * self.en_speed))),
-                    "-w",
-                    tmp_path,
-                    text,
-                ],
+                command,
+                input=text,
                 check=True,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
                 text=True,
+                encoding="utf-8",
+                timeout=self.synthesis_timeout_s,
+                env=self._espeak_environment(executable),
+                **({"creationflags": subprocess.CREATE_NO_WINDOW} if sys.platform == "win32" else {}),
             )
             with wave.open(tmp_path, "rb") as handle:
                 channels = handle.getnchannels()
@@ -412,6 +434,15 @@ class TTSEngine:
             if self.is_silence(audio):
                 raise RuntimeError("eSpeak produced an empty or silent WAV")
             return audio.astype(np.float32), int(sample_rate)
+        except subprocess.TimeoutExpired as exc:
+            raise RuntimeError(f"Local TTS exceeded {self.synthesis_timeout_s:g}s; no audio was played") from exc
+        except subprocess.CalledProcessError as exc:
+            detail = str(exc.stderr or "").strip()[:500]
+            exit_hex = f"0x{exc.returncode & 0xffffffff:08X}"
+            raise RuntimeError(
+                f"Native eSpeak failed (exit={exc.returncode}, {exit_hex}); no audio was played. "
+                f"Check the local runtime and espeak-ng-data path. {detail}"
+            ) from exc
         finally:
             if tmp_path and os.path.exists(tmp_path):
                 os.unlink(tmp_path)
@@ -437,7 +468,7 @@ class TTSEngine:
             if mp3_path and os.path.exists(mp3_path):
                 os.unlink(mp3_path)
 
-    def synthesize_vi(self, text: str, emotion: str = "neutral") -> np.ndarray:
+    def synthesize_vi(self, text: str, emotion: str = "neutral") -> tuple[np.ndarray, int]:
         """
         Synthesize Vietnamese speech using OmniVoice (BetterBox-TTS).
         Called for EN→VI direction (speaker heard Vietnamese output).
@@ -456,6 +487,12 @@ class TTSEngine:
         instruct = emotion_map.get(emotion.lower(), "")
         if instruct:
             print(f"[TTS VI] 🎭 Applied emotion routing: {emotion.upper()}")
+
+        if self._vi_tts_engine_name == "espeak-ng-offline-demo":
+            started = time.perf_counter()
+            audio, sample_rate = self._synthesize_espeak_vi(text)
+            print(f"[TTS VI] Audio ready | native espeak voice=vi | {(time.perf_counter() - started) * 1000:.0f}ms")
+            return audio, sample_rate
 
         if self._omni is not None:
             try:
@@ -566,13 +603,9 @@ class TTSEngine:
         return None, ""
 
     # ── English TTS Synthesis ─────────────────────────────────────────────────
-    # Fallback chain (ưu tiên từ trên xuống):
-    #   1. F5-TTS   — Voice cloning chất lượng cao (CHÍNH, hoạt động trên Colab/Linux)
-    #   2. pyttsx3  — Microsoft SAPI5 (DỰ PHÒNG, chỉ dùng khi F5-TTS lỗi trên Windows)
-    #   3. Silence  — Không có engine nào khả dụng
-    #
-    # Trên Colab/Linux: F5-TTS luôn thành công → KHÔNG BAO GIỜ fallback
-    # Trên Windows:     F5-TTS lỗi torchcodec → tự động chuyển sang pyttsx3
+    # Premium profiles may load F5-TTS. Windows system-voice mode uses native
+    # eSpeak, while other systems retain pyttsx3 with a native eSpeak fallback.
+    # None of these functional backend checks establishes voice intelligibility.
     # ─────────────────────────────────────────────────────────────────────────
 
     def synthesize_en(self, text: str, reference_wav: str = None, original_text: str = None) -> tuple[np.ndarray, int]:
@@ -581,11 +614,16 @@ class TTSEngine:
 
         Fallback chain:
           1. F5-TTS (voice cloning, high quality) — primary engine
-          2. pyttsx3 (Microsoft SAPI5) — Windows fallback only
+          2. native eSpeak (Windows) or pyttsx3 (other systems)
           3. Silence stub — last resort
         """
         t0 = time.perf_counter()
         engine = getattr(self, "_en_tts_engine", None)
+
+        if engine == "espeak-ng-offline-demo":
+            audio, sample_rate = self._synthesize_espeak_en(text)
+            print(f"[TTS EN] Audio ready | native espeak voice=en-us | {(time.perf_counter() - t0) * 1000:.0f}ms")
+            return audio, sample_rate
 
         if engine == "gtts":
             try:
@@ -684,16 +722,27 @@ class TTSEngine:
         else:
             return self.synthesize_en(text, reference_wav=reference_wav, original_text=original_text)
 
-    def play(self, audio: np.ndarray, sample_rate: int = None):
-        """Play synthesized audio through the speaker."""
+    def play(self, audio: np.ndarray, sample_rate: int = None) -> dict:
+        """Play to the selected output; raise on failure, not silent success."""
         if sd is None:
             raise RuntimeError("sounddevice is required for speaker playback")
+        if self.is_silence(audio) or not np.isfinite(audio).all():
+            raise RuntimeError("Cannot play silent or non-finite audio")
         sr = sample_rate or self.sample_rate
         try:
-            sd.play(audio, samplerate=sr)
-            sd.wait()
+            info = sd.query_devices(self.output_device, kind="output")
+            print(f"[Playback] Started | output={info['name']} | sample_rate={sr}")
+            # Resolve a name in this process and keep that exact device for
+            # playback; never fall back to speakers if the headset is missing.
+            sd.play(audio, samplerate=sr, device=info["index"])
+            status = sd.wait(ignore_errors=False)
+            if status:
+                raise RuntimeError(f"Audio device reported an underrun/overflow: {status}")
+            print(f"[Playback] Finished | output={info['name']}")
+            return {"output_device": info["name"], "output_device_index": info["index"],
+                    "sample_rate": int(sr), "samples": len(audio), "device_playback_completed": True}
         except Exception as e:
-            print(f"[TTS] ⚠ Playback error: {e}")
+            raise RuntimeError(f"Audio playback failed: {e}") from e
 
     @staticmethod
     def is_silence(audio: np.ndarray, threshold: float = 1e-5) -> bool:

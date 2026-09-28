@@ -71,8 +71,11 @@ class RollingHypothesisAssembler:
 
 
 class SemanticCommitController:
-    def __init__(self, safety_confirmations: int = 2):
+    def __init__(self, safety_confirmations: int = 2, normal_commit_policy: str = "progressive"):
+        if normal_commit_policy not in {"endpoint", "progressive"}:
+            raise ValueError("normal_commit_policy must be 'endpoint' or 'progressive'")
         self.safety_confirmations = safety_confirmations
+        self.normal_commit_policy = normal_commit_policy
         self._emitted_words = 0
         self._last_safety_id: str | None = None
         self._safety_streak = 0
@@ -114,6 +117,13 @@ class SemanticCommitController:
             self._last_safety_id = None
             self._safety_streak = 0
             self._committed_safety_id = None
+
+        # Translating stable word prefixes independently can change the meaning
+        # of a phrase (e.g. "safety helmet"). Desktop normal speech therefore
+        # waits for the full utterance; confirmed safety phrases still bypass
+        # this gate above. Progressive mode remains explicit/experimental.
+        if self.normal_commit_policy == "endpoint" and not hypothesis.endpoint:
+            return CommitDecision(CommitKind.WAIT, reason="normal_waiting_for_endpoint", decided_at=now)
 
         candidate = hypothesis.text if hypothesis.endpoint else hypothesis.stable_prefix
         words = candidate.split()

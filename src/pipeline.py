@@ -25,6 +25,7 @@ import yaml
 sys.path.insert(0, os.path.dirname(__file__))
 
 from context.engine import ConstructionContextEngine
+from audio.devices import parse_output_device
 from context.site_pack import SitePackLoader
 from contracts import ASRHypothesis, AudioFrame, CommitKind, SynthesizedChunk
 from runtime.preflight import verify_artifacts
@@ -54,6 +55,7 @@ class OneVoicePipeline:
         offline: bool = False,
         report_dir: str | None = None,
         vad_energy_threshold: float | None = None,
+        output_device: int | str | None = None,
     ):
         if direction not in {"vi2en", "en2vi"}:
             raise ValueError("direction must be 'vi2en' or 'en2vi'")
@@ -63,6 +65,8 @@ class OneVoicePipeline:
                 raise ValueError("vad_energy_threshold must be greater than 0 and at most 1")
             self.cfg["audio"]["vad_energy_threshold"] = float(vad_energy_threshold)
             print(f"[VAD] Energy threshold override: {vad_energy_threshold:g}")
+        if output_device is not None:
+            self.cfg["audio"]["output_device"] = parse_output_device(str(output_device))
         self.direction = direction
         self.profile = profile or self.cfg["pipeline"].get("profile", "development")
         if self.profile not in self.cfg.get("profiles", {}):
@@ -112,7 +116,10 @@ class OneVoicePipeline:
             required_safety_review_status="approved" if self.profile == "edge" else None,
             safety_path=safety_source_csv,
         )
-        self.committer = SemanticCommitController(safety_confirmations=2)
+        self.committer = SemanticCommitController(
+            safety_confirmations=2,
+            normal_commit_policy=self.cfg["pipeline"].get("normal_commit_policy", "endpoint"),
+        )
         self.aligner = StablePrefixAligner()
         self.hypothesis_assembler = RollingHypothesisAssembler()
         self.streaming_session = RollingUtteranceSession(
@@ -149,6 +156,7 @@ class OneVoicePipeline:
         self.tts = TTSEngine(self.cfg, profile=self.profile, offline=self.offline)
         self.srt = SRTGenerator(bilingual=True)
         self._latency_log: list[dict] = []
+        self._playback_log: list[dict] = []
         self.last_file_result: dict | None = None
         self._preflight_complete = False
         self._denoiser_loaded = False
@@ -356,6 +364,7 @@ class OneVoicePipeline:
                         f"Missing pre-generated edge safety audio: {safety_match.safety_id}"
                     )
                 else:
+                    print(f"[TTS Worker] Synthesizing | direction={item['direction']} | text={item['translated']!r}")
                     audio, sample_rate = self.tts.synthesize(
                         item["translated"],
                         direction=item["direction"],
@@ -391,7 +400,8 @@ class OneVoicePipeline:
                 if self.tts.is_silence(audio):
                     raise RuntimeError("TTS returned silence; commit was not played")
                 if self._stream_playback_enabled:
-                    self.tts.play(audio, sample_rate=sample_rate)
+                    playback = self.tts.play(audio, sample_rate=sample_rate)
+                    self._playback_log.append({"commit_id": commit_id, **playback})
                 self.srt.add_entry(
                     item["text"], item["translated"], len(audio) / sample_rate
                 )
@@ -556,6 +566,7 @@ class OneVoicePipeline:
         self._stream_chunks = []
         self._stream_trace = []
         self._latency_log = []
+        self._playback_log = []
         self.srt = SRTGenerator(bilingual=True)
         self.streaming_session.reset(clear_sequence=True)
         self.aligner.reset()
@@ -638,6 +649,7 @@ class OneVoicePipeline:
             "direction": self.direction,
             "profile": self.profile,
             "offline": self.offline,
+            "normal_commit_policy": self.committer.normal_commit_policy,
             "input_path": str(Path(input_path).resolve()),
             "frame_samples": frame_samples,
             "frame_ms": frame_ms,
@@ -868,12 +880,19 @@ class OneVoicePipeline:
             (self.report_dir / "latency_summary.json").write_text(
                 json.dumps(latency_summary, indent=2), encoding="utf-8"
             )
+            (self.report_dir / "playback_events.json").write_text(
+                json.dumps(self._playback_log, ensure_ascii=False, indent=2), encoding="utf-8"
+            )
             (self.report_dir / "runtime_summary.json").write_text(
                 json.dumps(
                     {
                         "direction": self.direction,
                         "profile": self.profile,
                         "offline": self.offline,
+                        "normal_commit_policy": self.committer.normal_commit_policy,
+                        "output_device": self.cfg["audio"].get("output_device"),
+                        "device_playback_completed": len(self._playback_log),
+                        "listener_confirmation": "not_recorded",
                         "vad_energy_threshold": self.cfg["audio"].get(
                             "vad_energy_threshold", 0.015
                         ),
@@ -916,6 +935,8 @@ def main() -> None:
     )
     parser.add_argument("--output-file")
     parser.add_argument("--report-dir")
+    parser.add_argument("--output-device", type=parse_output_device,
+                        help="Output index or name/host API, e.g. 'GZUT-MUSIC MME', from python -m sounddevice")
     parser.add_argument(
         "--vad-energy-threshold",
         type=float,
@@ -936,6 +957,7 @@ def main() -> None:
         offline=args.offline,
         report_dir=args.report_dir,
         vad_energy_threshold=args.vad_energy_threshold,
+        output_device=args.output_device,
     )
     if args.stream_file:
         result = pipeline.stream_file(args.stream_file, realtime=args.realtime)

@@ -3,8 +3,9 @@
 ## Scope
 
 The current delivery target is a **Windows PC offline demo** for a portfolio
-and CV. Android, Snapdragon acceleration and Bluetooth headset integration are
-future work; they are not prerequisites for this desktop release candidate.
+and CV. A single headset selected as the Windows output is a local playback
+acceptance step. Android, Snapdragon acceleration and two-participant headset
+routing remain future work.
 
 Reference machine for the first acceptance run:
 
@@ -143,6 +144,93 @@ Set-Location "D:\OneVoiceDesktop\onevoice-v2-rc1\vi2en"
 để xác nhận hết câu. Dừng bằng `Ctrl+C` để lưu báo cáo. Xác nhận thêm bằng
 nghe đầu ra và so sánh câu nhận dạng với lời nói; chỉ có log nạp model chưa
 đủ để kết luận live microphone chạy đúng.
+
+## Kiểm tra TTS lặp và tai nghe Bluetooth trên Windows
+
+Windows system-voice TTS dùng eSpeak NG cục bộ, với `vi` cho đầu ra tiếng
+Việt và `en-us` cho đầu ra tiếng Anh. Không dùng lại vòng lặp
+`pyttsx3/SAPI save_to_file + runAndWait` vốn bị kẹt ở lần tổng hợp thứ hai
+trên môi trường PC đã kiểm tra. Runtime nhận executable từ PATH hoặc từ
+`espeak-ng-runtime/eSpeak NG` dưới môi trường Python đang chạy, không tải
+backend khi chạy. Nếu thiếu executable, startup báo lỗi rõ thay vì tiếp
+tục với backend đã biết bị kẹt. Mỗi lần gọi native TTS có timeout mặc định
+15 giây (có thể đặt `tts.synthesis_timeout_s` trong config).
+
+Với runtime eSpeak portable trên Windows, tiến trình con nhận
+`ESPEAK_DATA_PATH` trỏ vào `espeak-ng-data` đi cùng executable; không sửa biến
+môi trường của máy. Thiếu đường dẫn này đã tái hiện lỗi native `0xC0000005`
+ở `--version`/`--help` khi gọi Python trực tiếp mà chưa chạy hook Conda.
+Đặt đúng đường dẫn đã kiểm tra các lệnh đó trả mã 0. CLI `--path` riêng
+không sửa được nhánh in phiên bản của eSpeak 1.52.0.
+
+Native TTS gửi văn bản UTF-8 và ghi WAV trước khi phát, theo
+[giao diện eSpeak NG chính thức](https://github.com/espeak-ng/espeak-ng/blob/master/src/espeak-ng.1.ronn).
+Đây là giọng hệ thống cho demo, **không phải giọng Nobita**. Không thay đổi
+model ASR/MT hay nội dung safety WAV đã duyệt.
+
+**Chất lượng nghe tiếng Việt chưa được chấp nhận:** người dùng nghe được
+âm thanh từ GZUT-MUSIC nhưng báo khó hiểu ở bài thử ba câu eSpeak. Không dùng
+PASS kỹ thuật (WAV không im lặng, API phát xong) làm bằng chứng giọng rõ hoặc
+chất lượng TTS đạt production. `intelligibility_passed: null` trong smoke
+report nghĩa là script không tự đánh giá khả năng nghe hiểu; cần kiểm thử
+người nghe riêng trước khi nghiệm thu luồng live Bluetooth.
+
+Sau khi dừng phiên live cũ bằng `Ctrl+C`, kiểm tra thiết bị:
+
+```powershell
+conda activate onevoice
+$Repo = "D:\code\.vscode\OneVoice\onevoice-edge"
+$OneVoicePython = "D:\MINICONDA\envs\onevoice\python.exe"
+& $OneVoicePython -m sounddevice
+```
+
+Chọn theo tên tai nghe và host API, ví dụ `GZUT-MUSIC MME`. Nếu dùng index
+như `3`, cần kiểm tra lại vì index có thể thay đổi sau khi kết nối lại.
+Khi chỉ định tên mà tai nghe không có/không duy nhất, runtime báo lỗi,
+không tự chuyển về loa mặc định. Chạy kiểm tra 5 câu tiếng Việt liên tiếp:
+
+```powershell
+Set-Location "D:\OneVoiceDesktop\onevoice-v2-rc1\en2vi"
+& $OneVoicePython "$Repo\scripts\check_desktop_audio.py" --config runtime_config.yaml --direction en2vi --repeats 5 --play --output-device "GZUT-MUSIC MME" --report-dir reports\desktop_audio_check_en2vi
+```
+
+Script này **không thu mic và không chạy ASR/MT**. Nếu không dùng `--play`,
+nó chỉ kiểm tra tạo WAV, không được dùng làm bằng chứng đã phát ra tai nghe.
+Report `desktop_audio_check.json` phân biệt hai trường hợp. Khi có `--play`,
+`[Playback] Started/Finished` ghi tên thiết bị và chờ phát xong; lỗi thiết bị
+hoặc underrun làm kiểm tra FAIL thay vì bị bỏ qua. Cách chọn thiết bị và
+chờ phát được mô tả trong
+[API sounddevice](https://python-sounddevice.readthedocs.io/en/0.5.3/api/convenience-functions.html).
+
+Sau khi nghe đủ 5 câu, mới kiểm tra chuỗi live đầy đủ:
+
+```powershell
+$env:PYTHONPATH = "$Repo\src"
+$env:PYTHONIOENCODING = "utf-8"
+& $OneVoicePython -u "$Repo\src\pipeline.py" --config runtime_config.yaml --direction en2vi --profile edge --offline --vad-energy-threshold 0.005 --output-device "GZUT-MUSIC MME" --report-dir reports\live_mic_en2vi
+```
+
+Nói ít nhất 3 câu tiếng Anh khác nhau, nghỉ khoảng một giây giữa các câu,
+nghe và đối chiếu đầu ra tiếng Việt. Sau `Ctrl+C`, giữ
+`playback_events.json`, `runtime_summary.json` và SRT. Với VI→EN, chạy
+từ bundle `vi2en`, dùng `--direction vi2en` và nói tiếng Việt.
+
+Log phát xong chỉ chứng minh API output đã hoàn tất, không chứng minh người
+nghe thực sự nghe đúng; report để `listener_confirmation: not_recorded`.
+Cần xác nhận của người dùng hoặc video demo cho tuyên bố “mic laptop →
+tai nghe Bluetooth”. Các mốc `commit→audio` hiện tại là thời điểm buffer
+đã được tạo, **không phải latency âm thanh tới tai người nghe qua Bluetooth**.
+Benchmark model, replay WAV và soak không thay thế bước xác nhận này.
+
+Luồng normal mặc định chờ endpoint rồi dịch **nguyên câu**, vì dịch từng
+stable prefix ngắn riêng lẻ có thể làm sai ngữ cảnh hoặc lặp ý. ASR vẫn nhận
+frame và cập nhật hypothesis trong khi nói. Safety fast path vẫn được phép
+commit sớm sau xác nhận; không bị buộc chờ endpoint bởi policy normal.
+Report ghi `normal_commit_policy: endpoint`. Đặt
+`pipeline.normal_commit_policy: progressive` chỉ để thử nghiệm thuật toán
+cũ, không dùng kết quả đó làm tuyên bố chất lượng của bản desktop hiện tại.
+Thay đổi policy/backend cần đo lại latency của bản đang chạy, không gán
+các số đo cũ cho bản mới.
 
 ## Measure the actual PC (P5)
 

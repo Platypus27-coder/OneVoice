@@ -8,6 +8,8 @@ import contextlib
 import io
 from pathlib import Path
 import sys
+import time
+from types import SimpleNamespace
 from unittest import mock
 
 import numpy as np
@@ -16,6 +18,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from pipeline import OneVoicePipeline, main as pipeline_main
 from streaming.session import RollingUtteranceSession
+from contracts import CommitKind
 
 
 class _CaptureStub:
@@ -34,6 +37,45 @@ class _SoundFileStub:
 
 
 class StreamingPipelineTests(unittest.TestCase):
+    def test_cli_forwards_output_device(self):
+        with mock.patch.object(sys, "argv", ["pipeline.py", "--output-device", "3"]):
+            with mock.patch("pipeline.OneVoicePipeline") as factory:
+                pipeline_main()
+        self.assertEqual(factory.call_args.kwargs["output_device"], 3)
+
+    def test_tts_worker_records_repeated_device_playbacks(self):
+        pipeline = OneVoicePipeline.__new__(OneVoicePipeline)
+        pipeline.stop_event = threading.Event()
+        pipeline.q_text_tgt = queue.Queue()
+        pipeline.cfg = {"pipeline": {}}
+        pipeline._stream_chunks = []
+        pipeline._playback_log = []
+        pipeline._latency_log = []
+        pipeline._stream_playback_enabled = True
+        pipeline.srt = SimpleNamespace(add_entry=mock.Mock())
+        pipeline.tts = mock.Mock()
+        pipeline.tts.synthesize.return_value = (np.asarray([0.1, -0.1], np.float32), 22050)
+        pipeline.tts.is_silence.return_value = False
+        pipeline.tts.engine_name.return_value = "espeak-ng-offline-demo"
+
+        def play(*args, **kwargs):
+            if pipeline.tts.play.call_count == 3:
+                pipeline.stop_event.set()
+            return {"output_device": "Headphones", "device_playback_completed": True}
+
+        pipeline.tts.play.side_effect = play
+        for _ in range(3):
+            pipeline.q_text_tgt.put({
+                "decision": SimpleNamespace(kind=CommitKind.NORMAL, safety_match=None, decided_at=time.perf_counter()),
+                "direction": "en2vi", "text": "Hello", "translated": "Xin chào",
+                "translation_route": "mt",
+            })
+        with contextlib.redirect_stdout(io.StringIO()):
+            pipeline._tts_worker()
+        self.assertEqual([row["commit_id"] for row in pipeline._playback_log], [1, 2, 3])
+        self.assertEqual(pipeline.q_text_tgt.unfinished_tasks, 0)
+        self.assertEqual(pipeline.srt.add_entry.call_count, 3)
+
     def test_cli_forwards_vad_override_to_live_pipeline(self):
         with mock.patch.object(sys, "argv", ["pipeline.py", "--vad-energy-threshold", "0.005"]):
             with mock.patch("pipeline.OneVoicePipeline") as factory:
