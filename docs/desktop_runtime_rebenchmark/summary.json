@@ -1,0 +1,2941 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-09-28T12:57:27.899339+00:00",
+  "directions": {
+    "vi2en": {
+      "pipeline": {
+        "schema_version": 1,
+        "direction": "vi2en",
+        "profile": "edge",
+        "git_revision": "a34118afeaad4124f59c5f95ca567f7040dd905f",
+        "offline": true,
+        "network_blocked_in_python": true,
+        "full_selected_corpus": true,
+        "available_cases": {
+          "test_noisy": 1958,
+          "approved_safety": 126
+        },
+        "requested_cases": 2084,
+        "completed_cases": 2084,
+        "passed_cases": 1987,
+        "failed_cases": 97,
+        "measurement_completed": true,
+        "load_time_ms": 59344.849100045394,
+        "peak_process_rss_mb": 2843.9609375,
+        "memory_scope": "Python process RSS; child PowerShell SAPI memory excluded",
+        "elapsed_seconds": 3139.103663099988,
+        "realtime": false,
+        "normal_commit_policy": "endpoint",
+        "tts_backend_requested": "auto",
+        "tts_engine": "windows-sapi-offline",
+        "sapi_voice": "Microsoft David Desktop",
+        "suites": {
+          "test_noisy": {
+            "samples": 1958,
+            "passed": 1879,
+            "failed": 79,
+            "asr_wer": 0.11805458362491253,
+            "asr_cer": 0.08273037258815702,
+            "translation_reference_wer": 0.1633280869938475,
+            "reference_critical_field_preservation": 0.6736465781409602,
+            "translation_exact_match": 0.5623084780388151,
+            "empty_outputs": 39,
+            "tts_engines": {
+              "windows-sapi-offline": 1918,
+              "safety_audio": 1
+            },
+            "commit_to_first_audio_p50_ms": 971.5608000406064,
+            "commit_to_first_audio_p95_ms": 1390.6069999793544,
+            "speech_to_commit_p50_ms": 304.56390004837885,
+            "speech_to_commit_p95_ms": 454.4863000046462,
+            "asr_p50_ms": 72.36180000472814,
+            "asr_p95_ms": 108.17730001872405,
+            "mt_p50_ms": 489.47720002615824,
+            "mt_p95_ms": 781.3396999845281,
+            "tts_p50_ms": 471.5561999473721,
+            "tts_p95_ms": 647.7613999741152,
+            "complete_turn_p50_ms": 1500.8530000341125,
+            "complete_turn_p95_ms": 2034.8453000187874
+          },
+          "approved_safety": {
+            "samples": 126,
+            "passed": 108,
+            "failed": 18,
+            "asr_wer": 0.057291666666666664,
+            "asr_cer": 0.03743589743589744,
+            "translation_reference_wer": 0.11023622047244094,
+            "reference_critical_field_preservation": 0.9126984126984127,
+            "translation_exact_match": 0.8650793650793651,
+            "empty_outputs": 2,
+            "tts_engines": {
+              "safety_audio": 109,
+              "windows-sapi-offline": 15
+            },
+            "commit_to_first_audio_p50_ms": 2.8247999725863338,
+            "commit_to_first_audio_p95_ms": 3.9790000300854445,
+            "speech_to_commit_p50_ms": 129.15090000024065,
+            "speech_to_commit_p95_ms": 210.90429998002946,
+            "asr_p50_ms": 42.46860003331676,
+            "asr_p95_ms": 54.79369999375194,
+            "mt_p50_ms": 0.025500019546598196,
+            "mt_p95_ms": 0.04449998959898949,
+            "tts_p50_ms": 2.425100014079362,
+            "tts_p95_ms": 3.4968999680131674,
+            "complete_turn_p50_ms": 383.172299945727,
+            "complete_turn_p95_ms": 432.0312000345439
+          }
+        },
+        "routes": {
+          "normal": {
+            "samples": 1958,
+            "passed": 1879,
+            "failed": 79,
+            "asr_wer": 0.11805458362491253,
+            "asr_cer": 0.08273037258815702,
+            "translation_reference_wer": 0.1633280869938475,
+            "reference_critical_field_preservation": 0.6736465781409602,
+            "translation_exact_match": 0.5623084780388151,
+            "empty_outputs": 39,
+            "tts_engines": {
+              "windows-sapi-offline": 1918,
+              "safety_audio": 1
+            },
+            "commit_to_first_audio_p50_ms": 971.5608000406064,
+            "commit_to_first_audio_p95_ms": 1390.6069999793544,
+            "speech_to_commit_p50_ms": 304.56390004837885,
+            "speech_to_commit_p95_ms": 454.4863000046462,
+            "asr_p50_ms": 72.36180000472814,
+            "asr_p95_ms": 108.17730001872405,
+            "mt_p50_ms": 489.47720002615824,
+            "mt_p95_ms": 781.3396999845281,
+            "tts_p50_ms": 471.5561999473721,
+            "tts_p95_ms": 647.7613999741152,
+            "complete_turn_p50_ms": 1500.8530000341125,
+            "complete_turn_p95_ms": 2034.8453000187874
+          },
+          "safety": {
+            "samples": 126,
+            "passed": 108,
+            "failed": 18,
+            "asr_wer": 0.057291666666666664,
+            "asr_cer": 0.03743589743589744,
+            "translation_reference_wer": 0.11023622047244094,
+            "reference_critical_field_preservation": 0.9126984126984127,
+            "translation_exact_match": 0.8650793650793651,
+            "empty_outputs": 2,
+            "tts_engines": {
+              "safety_audio": 109,
+              "windows-sapi-offline": 15
+            },
+            "commit_to_first_audio_p50_ms": 2.8247999725863338,
+            "commit_to_first_audio_p95_ms": 3.9790000300854445,
+            "speech_to_commit_p50_ms": 129.15090000024065,
+            "speech_to_commit_p95_ms": 210.90429998002946,
+            "asr_p50_ms": 42.46860003331676,
+            "asr_p95_ms": 54.79369999375194,
+            "mt_p50_ms": 0.025500019546598196,
+            "mt_p95_ms": 0.04449998959898949,
+            "tts_p50_ms": 2.425100014079362,
+            "tts_p95_ms": 3.4968999680131674,
+            "complete_turn_p50_ms": 383.172299945727,
+            "complete_turn_p95_ms": 432.0312000345439
+          }
+        },
+        "failures": [
+          {
+            "case_id": "vi2en-test-noisy-00167",
+            "error": "RuntimeError: Streaming latency report is empty"
+          },
+          {
+            "case_id": "vi2en-test-noisy-00168",
+            "error": "RuntimeError: Streaming latency report is empty"
+          },
+          {
+            "case_id": "vi2en-test-noisy-00257",
+            "error": "RuntimeError: Translation critical-field validator rejected this stream turn"
+          },
+          {
+            "case_id": "vi2en-test-noisy-00258",
+            "error": "RuntimeError: Translation critical-field validator rejected this stream turn"
+          },
+          {
+            "case_id": "vi2en-test-noisy-00274",
+            "error": "RuntimeError: Streaming latency report is empty"
+          },
+          {
+            "case_id": "vi2en-test-noisy-00315",
+            "error": "RuntimeError: Translation critical-field validator rejected this stream turn"
+          },
+          {
+            "case_id": "vi2en-test-noisy-00316",
+            "error": "RuntimeError: Translation critical-field validator rejected this stream turn"
+          },
+          {
+            "case_id": "vi2en-test-noisy-00342",
+            "error": "RuntimeError: Streaming latency report is empty"
+          },
+          {
+            "case_id": "vi2en-test-noisy-00358",
+            "error": "RuntimeError: Translation critical-field validator rejected this stream turn"
+          },
+          {
+            "case_id": "vi2en-test-noisy-00381",
+            "error": "RuntimeError: Streaming latency report is empty"
+          },
+          {
+            "case_id": "vi2en-test-noisy-00382",
+            "error": "RuntimeError: Streaming latency report is empty"
+          },
+          {
+            "case_id": "vi2en-test-noisy-00419",
+            "error": "RuntimeError: Translation critical-field validator rejected this stream turn"
+          },
+          {
+            "case_id": "vi2en-test-noisy-00420",
+            "error": "RuntimeError: Translation critical-field validator rejected this stream turn"
+          },
+          {
+            "case_id": "vi2en-test-noisy-00561",
+            "error": "RuntimeError: Streaming latency report is empty"
+          },
+          {
+            "case_id": "vi2en-test-noisy-00562",
+            "error": "RuntimeError: Streaming latency report is empty"
+          },
+          {
+            "case_id": "vi2en-test-noisy-00605",
+            "error": "RuntimeError: Translation critical-field validator rejected this stream turn"
+          },
+          {
+            "case_id": "vi2en-test-noisy-00606",
+            "error": "RuntimeError: Translation critical-field validator rejected this stream turn"
+          },
+          {
+            "case_id": "vi2en-test-noisy-00661",
+            "error": "RuntimeError: Streaming latency report is empty"
+          },
+          {
+            "case_id": "vi2en-test-noisy-00737",
+            "error": "RuntimeError: Translation critical-field validator rejected this stream turn"
+          },
+          {
+            "case_id": "vi2en-test-noisy-00738",
+            "error": "RuntimeError: Translation critical-field validator rejected this stream turn"
+          },
+          {
+            "case_id": "vi2en-test-noisy-00747",
+            "error": "RuntimeError: Translation critical-field validator rejected this stream turn"
+          },
+          {
+            "case_id": "vi2en-test-noisy-00771",
+            "error": "RuntimeError: Translation critical-field validator rejected this stream turn"
+          },
+          {
+            "case_id": "vi2en-test-noisy-00772",
+            "error": "RuntimeError: Translation critical-field validator rejected this stream turn"
+          },
+          {
+            "case_id": "vi2en-test-noisy-00775",
+            "error": "RuntimeError: Translation critical-field validator rejected this stream turn"
+          },
+          {
+            "case_id": "vi2en-test-noisy-00863",
+            "error": "RuntimeError: Streaming latency report is empty"
+          },
+          {
+            "case_id": "vi2en-test-noisy-00864",
+            "error": "RuntimeError: Streaming latency report is empty"
+          },
+          {
+            "case_id": "vi2en-test-noisy-00865",
+            "error": "RuntimeError: Translation critical-field validator rejected this stream turn"
+          },
+          {
+            "case_id": "vi2en-test-noisy-00866",
+            "error": "RuntimeError: Translation critical-field validator rejected this stream turn"
+          },
+          {
+            "case_id": "vi2en-test-noisy-00883",
+            "error": "RuntimeError: Translation critical-field validator rejected this stream turn"
+          },
+          {
+            "case_id": "vi2en-test-noisy-00884",
+            "error": "RuntimeError: Translation critical-field validator rejected this stream turn"
+          },
+          {
+            "case_id": "vi2en-test-noisy-00891",
+            "error": "RuntimeError: Streaming latency report is empty"
+          },
+          {
+            "case_id": "vi2en-test-noisy-00902",
+            "error": "RuntimeError: Streaming latency report is empty"
+          },
+          {
+            "case_id": "vi2en-test-noisy-01003",
+            "error": "RuntimeError: Streaming latency report is empty"
+          },
+          {
+            "case_id": "vi2en-test-noisy-01004",
+            "error": "RuntimeError: Streaming latency report is empty"
+          },
+          {
+            "case_id": "vi2en-test-noisy-01021",
+            "error": "RuntimeError: Streaming latency report is empty"
+          },
+          {
+            "case_id": "vi2en-test-noisy-01022",
+            "error": "RuntimeError: Streaming latency report is empty"
+          },
+          {
+            "case_id": "vi2en-test-noisy-01032",
+            "error": "RuntimeError: Streaming latency report is empty"
+          },
+          {
+            "case_id": "vi2en-test-noisy-01056",
+            "error": "RuntimeError: Translation critical-field validator rejected this stream turn"
+          },
+          {
+            "case_id": "vi2en-test-noisy-01083",
+            "error": "RuntimeError: Streaming latency report is empty"
+          },
+          {
+            "case_id": "vi2en-test-noisy-01084",
+            "error": "RuntimeError: Streaming latency report is empty"
+          },
+          {
+            "case_id": "vi2en-test-noisy-01097",
+            "error": "RuntimeError: Streaming latency report is empty"
+          },
+          {
+            "case_id": "vi2en-test-noisy-01098",
+            "error": "RuntimeError: Streaming latency report is empty"
+          },
+          {
+            "case_id": "vi2en-test-noisy-01122",
+            "error": "RuntimeError: Streaming latency report is empty"
+          },
+          {
+            "case_id": "vi2en-test-noisy-01221",
+            "error": "RuntimeError: Translation critical-field validator rejected this stream turn"
+          },
+          {
+            "case_id": "vi2en-test-noisy-01222",
+            "error": "RuntimeError: Translation critical-field validator rejected this stream turn"
+          },
+          {
+            "case_id": "vi2en-test-noisy-01227",
+            "error": "RuntimeError: Translation critical-field validator rejected this stream turn"
+          },
+          {
+            "case_id": "vi2en-test-noisy-01228",
+            "error": "RuntimeError: Translation critical-field validator rejected this stream turn"
+          },
+          {
+            "case_id": "vi2en-test-noisy-01229",
+            "error": "RuntimeError: Translation critical-field validator rejected this stream turn"
+          },
+          {
+            "case_id": "vi2en-test-noisy-01230",
+            "error": "RuntimeError: Translation critical-field validator rejected this stream turn"
+          },
+          {
+            "case_id": "vi2en-test-noisy-01243",
+            "error": "RuntimeError: Translation critical-field validator rejected this stream turn"
+          },
+          {
+            "case_id": "vi2en-test-noisy-01244",
+            "error": "RuntimeError: Translation critical-field validator rejected this stream turn"
+          },
+          {
+            "case_id": "vi2en-test-noisy-01253",
+            "error": "RuntimeError: Normal stream did not produce a normal semantic commit"
+          },
+          {
+            "case_id": "vi2en-test-noisy-01266",
+            "error": "RuntimeError: Translation critical-field validator rejected this stream turn"
+          },
+          {
+            "case_id": "vi2en-test-noisy-01273",
+            "error": "RuntimeError: Streaming latency report is empty"
+          },
+          {
+            "case_id": "vi2en-test-noisy-01274",
+            "error": "RuntimeError: Streaming latency report is empty"
+          },
+          {
+            "case_id": "vi2en-test-noisy-01307",
+            "error": "RuntimeError: Streaming latency report is empty"
+          },
+          {
+            "case_id": "vi2en-test-noisy-01308",
+            "error": "RuntimeError: Streaming latency report is empty"
+          },
+          {
+            "case_id": "vi2en-test-noisy-01343",
+            "error": "RuntimeError: Translation critical-field validator rejected this stream turn"
+          },
+          {
+            "case_id": "vi2en-test-noisy-01344",
+            "error": "RuntimeError: Translation critical-field validator rejected this stream turn"
+          },
+          {
+            "case_id": "vi2en-test-noisy-01370",
+            "error": "RuntimeError: Streaming latency report is empty"
+          },
+          {
+            "case_id": "vi2en-test-noisy-01409",
+            "error": "RuntimeError: Streaming latency report is empty"
+          },
+          {
+            "case_id": "vi2en-test-noisy-01410",
+            "error": "RuntimeError: Streaming latency report is empty"
+          },
+          {
+            "case_id": "vi2en-test-noisy-01433",
+            "error": "RuntimeError: Streaming latency report is empty"
+          },
+          {
+            "case_id": "vi2en-test-noisy-01434",
+            "error": "RuntimeError: Streaming latency report is empty"
+          },
+          {
+            "case_id": "vi2en-test-noisy-01605",
+            "error": "RuntimeError: Translation critical-field validator rejected this stream turn"
+          },
+          {
+            "case_id": "vi2en-test-noisy-01606",
+            "error": "RuntimeError: Streaming latency report is empty"
+          },
+          {
+            "case_id": "vi2en-test-noisy-01621",
+            "error": "RuntimeError: Translation critical-field validator rejected this stream turn"
+          },
+          {
+            "case_id": "vi2en-test-noisy-01622",
+            "error": "RuntimeError: Translation critical-field validator rejected this stream turn"
+          },
+          {
+            "case_id": "vi2en-test-noisy-01623",
+            "error": "RuntimeError: Streaming latency report is empty"
+          },
+          {
+            "case_id": "vi2en-test-noisy-01624",
+            "error": "RuntimeError: Streaming latency report is empty"
+          },
+          {
+            "case_id": "vi2en-test-noisy-01633",
+            "error": "RuntimeError: Translation critical-field validator rejected this stream turn"
+          },
+          {
+            "case_id": "vi2en-test-noisy-01634",
+            "error": "RuntimeError: Translation critical-field validator rejected this stream turn"
+          },
+          {
+            "case_id": "vi2en-test-noisy-01708",
+            "error": "RuntimeError: Streaming latency report is empty"
+          },
+          {
+            "case_id": "vi2en-test-noisy-01758",
+            "error": "RuntimeError: Translation critical-field validator rejected this stream turn"
+          },
+          {
+            "case_id": "vi2en-test-noisy-01763",
+            "error": "RuntimeError: Streaming latency report is empty"
+          },
+          {
+            "case_id": "vi2en-test-noisy-01764",
+            "error": "RuntimeError: Streaming latency report is empty"
+          },
+          {
+            "case_id": "vi2en-test-noisy-01799",
+            "error": "RuntimeError: Translation critical-field validator rejected this stream turn"
+          },
+          {
+            "case_id": "vi2en-test-noisy-01800",
+            "error": "RuntimeError: Translation critical-field validator rejected this stream turn"
+          },
+          {
+            "case_id": "vi2en-test-noisy-01872",
+            "error": "RuntimeError: Streaming latency report is empty"
+          },
+          {
+            "case_id": "vi2en-safety-065",
+            "error": "RuntimeError: Safety stream must create exactly one safety commit"
+          },
+          {
+            "case_id": "vi2en-safety-068",
+            "error": "RuntimeError: Safety stream must create exactly one safety commit"
+          },
+          {
+            "case_id": "vi2en-safety-069",
+            "error": "RuntimeError: Safety stream must create exactly one safety commit"
+          },
+          {
+            "case_id": "vi2en-safety-070",
+            "error": "RuntimeError: Safety stream must create exactly one safety commit"
+          },
+          {
+            "case_id": "vi2en-safety-079",
+            "error": "RuntimeError: Safety stream must create exactly one safety commit"
+          },
+          {
+            "case_id": "vi2en-safety-080",
+            "error": "RuntimeError: Safety stream must create exactly one safety commit"
+          },
+          {
+            "case_id": "vi2en-safety-083",
+            "error": "RuntimeError: Safety stream must create exactly one safety commit"
+          },
+          {
+            "case_id": "vi2en-safety-084",
+            "error": "RuntimeError: Safety stream must create exactly one safety commit"
+          },
+          {
+            "case_id": "vi2en-safety-085",
+            "error": "RuntimeError: Safety stream must create exactly one safety commit"
+          },
+          {
+            "case_id": "vi2en-safety-086",
+            "error": "RuntimeError: Safety stream must create exactly one safety commit"
+          },
+          {
+            "case_id": "vi2en-safety-087",
+            "error": "RuntimeError: Safety stream must create exactly one safety commit"
+          },
+          {
+            "case_id": "vi2en-safety-088",
+            "error": "RuntimeError: Safety stream must create exactly one safety commit"
+          },
+          {
+            "case_id": "vi2en-safety-089",
+            "error": "RuntimeError: Streaming latency report is empty"
+          },
+          {
+            "case_id": "vi2en-safety-090",
+            "error": "RuntimeError: Streaming latency report is empty"
+          },
+          {
+            "case_id": "vi2en-safety-107",
+            "error": "RuntimeError: Safety stream must create exactly one safety commit"
+          },
+          {
+            "case_id": "vi2en-safety-108",
+            "error": "RuntimeError: Safety stream must create exactly one safety commit"
+          },
+          {
+            "case_id": "vi2en-safety-109",
+            "error": "RuntimeError: Safety stream must create exactly one safety commit"
+          },
+          {
+            "case_id": "vi2en-safety-110",
+            "error": "RuntimeError: Safety stream must create exactly one safety commit"
+          }
+        ],
+        "scope": "Full selected synthetic WAV corpus replay; no live microphone, sound-device or Bluetooth latency measurement. Percentiles include successful outputs; quality rates include failures as empty outputs."
+      },
+      "tts": {
+        "schema_version": 2,
+        "direction": "vi2en",
+        "profile": "edge",
+        "target_language": "en",
+        "full_prompt_csv": true,
+        "offline": true,
+        "prompt_csv": "D:\\code\\.vscode\\OneVoice\\onevoice-edge\\data\\onevoice_construction_v2\\test.csv",
+        "network_blocked_in_python": true,
+        "samples": 979,
+        "passed_samples": 979,
+        "failed_samples": 0,
+        "engine": "windows-sapi-offline",
+        "sample_rates": {
+          "22050": 979
+        },
+        "silence_or_validation_failures": 0,
+        "latency_p50_ms": 392.433,
+        "latency_p95_ms": 427.261,
+        "peak_rss_mb": 50.879,
+        "elapsed_seconds": 391.277,
+        "failures": [],
+        "passed": true,
+        "scope": "offline development/edge system voice benchmark; not a production voice-quality claim"
+      },
+      "profile": {
+        "schema_version": 1,
+        "direction": "vi2en",
+        "profile": "edge",
+        "offline": true,
+        "network_blocked": true,
+        "normal_input": "D:\\OneVoiceDesktop\\onevoice-v2-rc1\\test_audio\\OV2_000001_clean.wav",
+        "safety_input": "D:\\OneVoiceDesktop\\onevoice-v2-rc1\\vi2en\\artifacts\\safety_audio\\SAFE2_0001_en2vi.wav",
+        "repeats": 5,
+        "passed": true,
+        "measurement_completed": true,
+        "normal_commit_policy": "endpoint",
+        "tts_backend_requested": "auto",
+        "tts_engine": "windows-sapi-offline",
+        "sapi_voice": "Microsoft David Desktop",
+        "load_time_ms": 13764.318,
+        "peak_rss_mb": 2749.789,
+        "routes": {
+          "normal": {
+            "samples": 5,
+            "commit_to_first_audio_p50_ms": 788.7524999678135,
+            "commit_to_first_audio_p95_ms": 825.6510000210255,
+            "speech_to_commit_p50_ms": 172.4578000139445,
+            "speech_to_commit_p95_ms": 194.25889995181933,
+            "complete_turn_p50_ms": 1185.4059999459423,
+            "complete_turn_p95_ms": 1279.0002999827266
+          },
+          "safety": {
+            "samples": 5,
+            "commit_to_first_audio_p50_ms": 1.721800013910979,
+            "commit_to_first_audio_p95_ms": 2.17810005415231,
+            "speech_to_commit_p50_ms": 78.09729996370152,
+            "speech_to_commit_p95_ms": 83.71809998061508,
+            "complete_turn_p50_ms": 331.5650000004098,
+            "complete_turn_p95_ms": 338.67809997173026
+          }
+        },
+        "hardware_profile": "desktop_tuf_f15_rtx2050",
+        "resource_targets": {
+          "max_rss_mb": 8192.0,
+          "normal_target_ms": 3000.0,
+          "safety_target_ms": 300.0
+        },
+        "target_sources": {
+          "max_rss_mb": "cli",
+          "normal_target_ms": "cli",
+          "safety_target_ms": "cli"
+        },
+        "latency_targets_ms": {
+          "normal": 3000.0,
+          "safety": 300.0
+        },
+        "blockers": []
+      },
+      "diagnostics": {
+        "functional_error_counts": {
+          "RuntimeError: Streaming latency report is empty": 41,
+          "RuntimeError: Translation critical-field validator rejected this stream turn": 39,
+          "RuntimeError: Safety stream must create exactly one safety commit": 16,
+          "RuntimeError: Normal stream did not produce a normal semantic commit": 1
+        },
+        "reference_error_occurrences": {
+          "missing_term": 536,
+          "missing_number": 154,
+          "missing_unit": 34,
+          "missing_negation": 21,
+          "missing_direction": 8
+        },
+        "functional_pass_but_reference_invalid": 560,
+        "canonical_safety_id_agreement": {
+          "samples": 126,
+          "exact_id_agreements": 107
+        },
+        "safety_review": [
+          {
+            "case_id": "vi2en-safety-065",
+            "status": "fail",
+            "safety_id": "SAFE2_0065",
+            "reference_text": "Ê, Dừng xe nâng!",
+            "asr_text": "Ê dừng xe nâng",
+            "translation": "Stop the forklift! Stop the forklift!",
+            "error": "RuntimeError: Safety stream must create exactly one safety commit",
+            "emitted_safety_ids": [
+              "SAFE2_0063",
+              "SAFE2_0065"
+            ]
+          },
+          {
+            "case_id": "vi2en-safety-068",
+            "status": "fail",
+            "safety_id": "SAFE2_0068",
+            "reference_text": "Này, Máy xúc đang lùi!",
+            "asr_text": "Này mày súp đang lùi",
+            "translation": "The soup is reversing.",
+            "error": "RuntimeError: Safety stream must create exactly one safety commit",
+            "emitted_safety_ids": []
+          },
+          {
+            "case_id": "vi2en-safety-069",
+            "status": "fail",
+            "safety_id": "SAFE2_0069",
+            "reference_text": "Ê, Máy xúc đang lùi!",
+            "asr_text": "Ê máy súp đang lùi",
+            "translation": "Check that the soup machine is reversing.",
+            "error": "RuntimeError: Safety stream must create exactly one safety commit",
+            "emitted_safety_ids": []
+          },
+          {
+            "case_id": "vi2en-safety-070",
+            "status": "fail",
+            "safety_id": "SAFE2_0070",
+            "reference_text": "Mọi người, Máy xúc đang lùi!",
+            "asr_text": "Mọi người máy súp đang lùi",
+            "translation": "The soup machine is reversing.",
+            "error": "RuntimeError: Safety stream must create exactly one safety commit",
+            "emitted_safety_ids": []
+          },
+          {
+            "case_id": "vi2en-safety-079",
+            "status": "fail",
+            "safety_id": "SAFE2_0079",
+            "reference_text": "Thành hố đang sạt!",
+            "asr_text": "Thành hố đang xa",
+            "translation": "The excavation face is far.",
+            "error": "RuntimeError: Safety stream must create exactly one safety commit",
+            "emitted_safety_ids": []
+          },
+          {
+            "case_id": "vi2en-safety-080",
+            "status": "fail",
+            "safety_id": "SAFE2_0080",
+            "reference_text": "Này, Thành hố đang sạt!",
+            "asr_text": "Nay thành hố đang xa",
+            "translation": "The excavation face is too far.",
+            "error": "RuntimeError: Safety stream must create exactly one safety commit",
+            "emitted_safety_ids": []
+          },
+          {
+            "case_id": "vi2en-safety-083",
+            "status": "fail",
+            "safety_id": "SAFE2_0083",
+            "reference_text": "Giàn giáo không an toàn!",
+            "asr_text": "Giàn ráo không an toàn",
+            "translation": "The shoring platform is unsafe.",
+            "error": "RuntimeError: Safety stream must create exactly one safety commit",
+            "emitted_safety_ids": []
+          },
+          {
+            "case_id": "vi2en-safety-084",
+            "status": "fail",
+            "safety_id": "SAFE2_0084",
+            "reference_text": "Này, Giàn giáo không an toàn!",
+            "asr_text": "NÀY hệ thống giàn giáo KHÔNG AN TOÀN",
+            "translation": "The scaffold system is unsafe.",
+            "error": "RuntimeError: Safety stream must create exactly one safety commit",
+            "emitted_safety_ids": []
+          },
+          {
+            "case_id": "vi2en-safety-085",
+            "status": "fail",
+            "safety_id": "SAFE2_0085",
+            "reference_text": "Ê, Giàn giáo không an toàn!",
+            "asr_text": "Ê hệ thống giàn giáo KHÔNG AN TOÀN",
+            "translation": "Check the unsafe scaffold system.",
+            "error": "RuntimeError: Safety stream must create exactly one safety commit",
+            "emitted_safety_ids": []
+          },
+          {
+            "case_id": "vi2en-safety-086",
+            "status": "fail",
+            "safety_id": "SAFE2_0086",
+            "reference_text": "Mọi người, Giàn giáo không an toàn!",
+            "asr_text": "Mọi người giàn ráo không an toàn",
+            "translation": "The scaffold is unsafe.",
+            "error": "RuntimeError: Safety stream must create exactly one safety commit",
+            "emitted_safety_ids": []
+          },
+          {
+            "case_id": "vi2en-safety-087",
+            "status": "fail",
+            "safety_id": "SAFE2_0087",
+            "reference_text": "Không lên giàn giáo!",
+            "asr_text": "Không lên giàn gió",
+            "translation": "Do not move up the wind gaff.",
+            "error": "RuntimeError: Safety stream must create exactly one safety commit",
+            "emitted_safety_ids": []
+          },
+          {
+            "case_id": "vi2en-safety-088",
+            "status": "fail",
+            "safety_id": "SAFE2_0088",
+            "reference_text": "Này, Không lên giàn giáo!",
+            "asr_text": "NÀY KHÔNG LÊN hệ thống giàn giáo",
+            "translation": "Do not go up the scaffold system.",
+            "error": "RuntimeError: Safety stream must create exactly one safety commit",
+            "emitted_safety_ids": []
+          },
+          {
+            "case_id": "vi2en-safety-089",
+            "status": "fail",
+            "safety_id": "SAFE2_0089",
+            "reference_text": "Ê, Không lên giàn giáo!",
+            "asr_text": "Ê KHÔNG LÊN hệ thống giàn giáo",
+            "translation": "",
+            "error": "RuntimeError: Streaming latency report is empty",
+            "emitted_safety_ids": []
+          },
+          {
+            "case_id": "vi2en-safety-090",
+            "status": "fail",
+            "safety_id": "SAFE2_0090",
+            "reference_text": "Mọi người, Không lên giàn giáo!",
+            "asr_text": "MỌI NGƯỜI KHÔNG LÊN hệ thống giàn giáo",
+            "translation": "",
+            "error": "RuntimeError: Streaming latency report is empty",
+            "emitted_safety_ids": []
+          },
+          {
+            "case_id": "vi2en-safety-105",
+            "status": "pass",
+            "safety_id": "SAFE2_0105",
+            "reference_text": "Ê, Khóa nguồn trước khi sửa!",
+            "asr_text": "Khóa nguồn trước khi sửa",
+            "translation": "Lock out the energy source before maintenance!",
+            "error": null,
+            "emitted_safety_ids": [
+              "SAFE2_0103"
+            ]
+          },
+          {
+            "case_id": "vi2en-safety-107",
+            "status": "fail",
+            "safety_id": "SAFE2_0107",
+            "reference_text": "Có rò khí!",
+            "asr_text": "Khó giò khí",
+            "translation": "The gas cylinder is difficult to move.",
+            "error": "RuntimeError: Safety stream must create exactly one safety commit",
+            "emitted_safety_ids": []
+          },
+          {
+            "case_id": "vi2en-safety-108",
+            "status": "fail",
+            "safety_id": "SAFE2_0108",
+            "reference_text": "Này, Có rò khí!",
+            "asr_text": "Này có giò khí",
+            "translation": "There is the gas cylinder.",
+            "error": "RuntimeError: Safety stream must create exactly one safety commit",
+            "emitted_safety_ids": []
+          },
+          {
+            "case_id": "vi2en-safety-109",
+            "status": "fail",
+            "safety_id": "SAFE2_0109",
+            "reference_text": "Ê, Có rò khí!",
+            "asr_text": "Ê có giò khí",
+            "translation": "There is a gas cylinder.",
+            "error": "RuntimeError: Safety stream must create exactly one safety commit",
+            "emitted_safety_ids": []
+          },
+          {
+            "case_id": "vi2en-safety-110",
+            "status": "fail",
+            "safety_id": "SAFE2_0110",
+            "reference_text": "Mọi người, Có rò khí!",
+            "asr_text": "Mọi người có giò khí",
+            "translation": "The people have the gas cylinder.",
+            "error": "RuntimeError: Safety stream must create exactly one safety commit",
+            "emitted_safety_ids": []
+          }
+        ],
+        "examples": [
+          {
+            "case_id": "vi2en-safety-065",
+            "status": "fail",
+            "reference_text": "Ê, Dừng xe nâng!",
+            "asr_text": "Ê dừng xe nâng",
+            "translation": "Stop the forklift! Stop the forklift!",
+            "error": "RuntimeError: Safety stream must create exactly one safety commit",
+            "reference_validation_errors": []
+          },
+          {
+            "case_id": "vi2en-safety-068",
+            "status": "fail",
+            "reference_text": "Này, Máy xúc đang lùi!",
+            "asr_text": "Này mày súp đang lùi",
+            "translation": "The soup is reversing.",
+            "error": "RuntimeError: Safety stream must create exactly one safety commit",
+            "reference_validation_errors": [
+              "missing_term:C0091:excavator"
+            ]
+          },
+          {
+            "case_id": "vi2en-safety-069",
+            "status": "fail",
+            "reference_text": "Ê, Máy xúc đang lùi!",
+            "asr_text": "Ê máy súp đang lùi",
+            "translation": "Check that the soup machine is reversing.",
+            "error": "RuntimeError: Safety stream must create exactly one safety commit",
+            "reference_validation_errors": [
+              "missing_term:C0091:excavator"
+            ]
+          },
+          {
+            "case_id": "vi2en-safety-070",
+            "status": "fail",
+            "reference_text": "Mọi người, Máy xúc đang lùi!",
+            "asr_text": "Mọi người máy súp đang lùi",
+            "translation": "The soup machine is reversing.",
+            "error": "RuntimeError: Safety stream must create exactly one safety commit",
+            "reference_validation_errors": [
+              "missing_term:C0091:excavator"
+            ]
+          },
+          {
+            "case_id": "vi2en-safety-079",
+            "status": "fail",
+            "reference_text": "Thành hố đang sạt!",
+            "asr_text": "Thành hố đang xa",
+            "translation": "The excavation face is far.",
+            "error": "RuntimeError: Safety stream must create exactly one safety commit",
+            "reference_validation_errors": []
+          },
+          {
+            "case_id": "vi2en-safety-080",
+            "status": "fail",
+            "reference_text": "Này, Thành hố đang sạt!",
+            "asr_text": "Nay thành hố đang xa",
+            "translation": "The excavation face is too far.",
+            "error": "RuntimeError: Safety stream must create exactly one safety commit",
+            "reference_validation_errors": []
+          },
+          {
+            "case_id": "vi2en-safety-083",
+            "status": "fail",
+            "reference_text": "Giàn giáo không an toàn!",
+            "asr_text": "Giàn ráo không an toàn",
+            "translation": "The shoring platform is unsafe.",
+            "error": "RuntimeError: Safety stream must create exactly one safety commit",
+            "reference_validation_errors": [
+              "missing_term:C0026:scaffold"
+            ]
+          },
+          {
+            "case_id": "vi2en-safety-084",
+            "status": "fail",
+            "reference_text": "Này, Giàn giáo không an toàn!",
+            "asr_text": "NÀY hệ thống giàn giáo KHÔNG AN TOÀN",
+            "translation": "The scaffold system is unsafe.",
+            "error": "RuntimeError: Safety stream must create exactly one safety commit",
+            "reference_validation_errors": []
+          },
+          {
+            "case_id": "vi2en-safety-085",
+            "status": "fail",
+            "reference_text": "Ê, Giàn giáo không an toàn!",
+            "asr_text": "Ê hệ thống giàn giáo KHÔNG AN TOÀN",
+            "translation": "Check the unsafe scaffold system.",
+            "error": "RuntimeError: Safety stream must create exactly one safety commit",
+            "reference_validation_errors": []
+          },
+          {
+            "case_id": "vi2en-safety-086",
+            "status": "fail",
+            "reference_text": "Mọi người, Giàn giáo không an toàn!",
+            "asr_text": "Mọi người giàn ráo không an toàn",
+            "translation": "The scaffold is unsafe.",
+            "error": "RuntimeError: Safety stream must create exactly one safety commit",
+            "reference_validation_errors": []
+          },
+          {
+            "case_id": "vi2en-safety-087",
+            "status": "fail",
+            "reference_text": "Không lên giàn giáo!",
+            "asr_text": "Không lên giàn gió",
+            "translation": "Do not move up the wind gaff.",
+            "error": "RuntimeError: Safety stream must create exactly one safety commit",
+            "reference_validation_errors": [
+              "missing_term:C0026:scaffold"
+            ]
+          },
+          {
+            "case_id": "vi2en-safety-088",
+            "status": "fail",
+            "reference_text": "Này, Không lên giàn giáo!",
+            "asr_text": "NÀY KHÔNG LÊN hệ thống giàn giáo",
+            "translation": "Do not go up the scaffold system.",
+            "error": "RuntimeError: Safety stream must create exactly one safety commit",
+            "reference_validation_errors": []
+          }
+        ],
+        "notes": "Reference errors are rule-based findings, not human semantic labels. Exact safety-ID agreement is stricter than route checks; equivalent approved phrases may have different IDs and require manual review."
+      },
+      "corpus": {
+        "test_noisy": {
+          "entries": 1958,
+          "unique_audio_sha256": 1958,
+          "unique_source_texts": 979,
+          "unique_source_ids": 1958
+        },
+        "approved_safety": {
+          "entries": 126,
+          "unique_audio_sha256": 126,
+          "unique_source_texts": 126,
+          "unique_source_ids": 126
+        }
+      },
+      "provenance": {
+        "pipeline_contract_sha256": "8bb3f4831ceac26d05c4645fb3765d0b230b898ef13aaac994fdf2f26936c0be",
+        "runtime_code_sha256": "b66b3bee9452e708ab9cb862d241a30ab8ecb63011006e0c40b93daffdbad80b",
+        "config_sha256": "1ffa2fbd3472efec55833301680b994343837caa631d2a69852a46bed2fb84df",
+        "manifest_sha256": "0aad37219f83ed3380ecf733b1949cbe47ca6948e276748841fe779b576c63bf",
+        "artifact_manifest_sha256": "7206252579f6ea1f75af61e326a572a0234355f067bf71f042ffdc2a726613eb",
+        "context_data_sha256": {
+          "safety_fast_path_review.csv": "8eff526ae21d61046b2876eaeb508100a0e2b43515f047186499fec59670c3b3",
+          "term_aliases.csv": "a600caf83df49e110be3fa068a65f72cab1a479791de4adb5633b487a565f92f",
+          "terminology_master.csv": "66aa87c2fa5668da5a95d869cb6a69983abeb9f68deb11920421ce9fa62541a3"
+        },
+        "safety_manifest_sha256": "facb1a2558fbfe59682a0dbfd2b7f3942c399e61b06b5c4b5cf7784678551717",
+        "platform": "Windows-10-10.0.26200-SP0",
+        "python": "3.11.8 | packaged by Anaconda, Inc. | (main, Feb 26 2024, 21:34:05) [MSC v.1916 64 bit (AMD64)]",
+        "dependencies": {
+          "numpy": "1.26.4",
+          "onnxruntime": "1.26.0",
+          "optimum-onnx": "0.1.0",
+          "transformers": "4.57.1",
+          "sherpa-onnx": "1.13.2",
+          "funasr-onnx": "0.4.1",
+          "pyttsx3": "2.99"
+        },
+        "tts_contract_sha256": "dfb32fd614223524da3b296d02478543539727668b09c465b42b8b14f33a9ddb"
+      }
+    },
+    "en2vi": {
+      "pipeline": {
+        "schema_version": 1,
+        "direction": "en2vi",
+        "profile": "edge",
+        "git_revision": "a34118afeaad4124f59c5f95ca567f7040dd905f",
+        "offline": true,
+        "network_blocked_in_python": true,
+        "full_selected_corpus": true,
+        "available_cases": {
+          "test_noisy": 2546,
+          "approved_safety": 126
+        },
+        "requested_cases": 2672,
+        "completed_cases": 2672,
+        "passed_cases": 2586,
+        "failed_cases": 86,
+        "measurement_completed": true,
+        "load_time_ms": 14869.474299950525,
+        "peak_process_rss_mb": 3581.8203125,
+        "memory_scope": "Python process RSS; child PowerShell SAPI memory excluded",
+        "elapsed_seconds": 4166.810485699971,
+        "realtime": false,
+        "normal_commit_policy": "endpoint",
+        "tts_backend_requested": "auto",
+        "tts_engine": "espeak-ng-offline-demo",
+        "sapi_voice": null,
+        "suites": {
+          "test_noisy": {
+            "samples": 2546,
+            "passed": 2520,
+            "failed": 26,
+            "asr_wer": 0.012081678956324447,
+            "asr_cer": 0.011043588617171866,
+            "translation_reference_wer": 0.04903011467152502,
+            "reference_critical_field_preservation": 0.983503534956795,
+            "translation_exact_match": 0.7663000785545955,
+            "empty_outputs": 14,
+            "tts_engines": {
+              "espeak-ng-offline-demo": 2532
+            },
+            "commit_to_first_audio_p50_ms": 550.2934000105597,
+            "commit_to_first_audio_p95_ms": 803.918799967505,
+            "speech_to_commit_p50_ms": 754.5404999982566,
+            "speech_to_commit_p95_ms": 1192.1400999999605,
+            "asr_p50_ms": 175.27990002417937,
+            "asr_p95_ms": 250.74739998672158,
+            "mt_p50_ms": 445.08550001773983,
+            "mt_p95_ms": 674.7227000305429,
+            "tts_p50_ms": 103.12260000500828,
+            "tts_p95_ms": 138.91510001849383,
+            "complete_turn_p50_ms": 1533.705000008922,
+            "complete_turn_p95_ms": 2140.708299994003
+          },
+          "approved_safety": {
+            "samples": 126,
+            "passed": 66,
+            "failed": 60,
+            "asr_wer": 0.14763779527559054,
+            "asr_cer": 0.09827044025157233,
+            "translation_reference_wer": 0.4756944444444444,
+            "reference_critical_field_preservation": 1.0,
+            "translation_exact_match": 0.14285714285714285,
+            "empty_outputs": 0,
+            "tts_engines": {
+              "safety_audio": 66,
+              "espeak-ng-offline-demo": 60
+            },
+            "commit_to_first_audio_p50_ms": 2.474200038705021,
+            "commit_to_first_audio_p95_ms": 3.5941999522037804,
+            "speech_to_commit_p50_ms": 374.9958000262268,
+            "speech_to_commit_p95_ms": 675.1698999432847,
+            "asr_p50_ms": 122.50649998895824,
+            "asr_p95_ms": 188.658699975349,
+            "mt_p50_ms": 0.04199997056275606,
+            "mt_p95_ms": 0.06330001633614302,
+            "tts_p50_ms": 2.149999956600368,
+            "tts_p95_ms": 3.0784999835304916,
+            "complete_turn_p50_ms": 683.6954999598674,
+            "complete_turn_p95_ms": 897.5972000043839
+          }
+        },
+        "routes": {
+          "normal": {
+            "samples": 2546,
+            "passed": 2520,
+            "failed": 26,
+            "asr_wer": 0.012081678956324447,
+            "asr_cer": 0.011043588617171866,
+            "translation_reference_wer": 0.04903011467152502,
+            "reference_critical_field_preservation": 0.983503534956795,
+            "translation_exact_match": 0.7663000785545955,
+            "empty_outputs": 14,
+            "tts_engines": {
+              "espeak-ng-offline-demo": 2532
+            },
+            "commit_to_first_audio_p50_ms": 550.2934000105597,
+            "commit_to_first_audio_p95_ms": 803.918799967505,
+            "speech_to_commit_p50_ms": 754.5404999982566,
+            "speech_to_commit_p95_ms": 1192.1400999999605,
+            "asr_p50_ms": 175.27990002417937,
+            "asr_p95_ms": 250.74739998672158,
+            "mt_p50_ms": 445.08550001773983,
+            "mt_p95_ms": 674.7227000305429,
+            "tts_p50_ms": 103.12260000500828,
+            "tts_p95_ms": 138.91510001849383,
+            "complete_turn_p50_ms": 1533.705000008922,
+            "complete_turn_p95_ms": 2140.708299994003
+          },
+          "safety": {
+            "samples": 126,
+            "passed": 66,
+            "failed": 60,
+            "asr_wer": 0.14763779527559054,
+            "asr_cer": 0.09827044025157233,
+            "translation_reference_wer": 0.4756944444444444,
+            "reference_critical_field_preservation": 1.0,
+            "translation_exact_match": 0.14285714285714285,
+            "empty_outputs": 0,
+            "tts_engines": {
+              "safety_audio": 66,
+              "espeak-ng-offline-demo": 60
+            },
+            "commit_to_first_audio_p50_ms": 2.474200038705021,
+            "commit_to_first_audio_p95_ms": 3.5941999522037804,
+            "speech_to_commit_p50_ms": 374.9958000262268,
+            "speech_to_commit_p95_ms": 675.1698999432847,
+            "asr_p50_ms": 122.50649998895824,
+            "asr_p95_ms": 188.658699975349,
+            "mt_p50_ms": 0.04199997056275606,
+            "mt_p95_ms": 0.06330001633614302,
+            "tts_p50_ms": 2.149999956600368,
+            "tts_p95_ms": 3.0784999835304916,
+            "complete_turn_p50_ms": 683.6954999598674,
+            "complete_turn_p95_ms": 897.5972000043839
+          }
+        },
+        "failures": [
+          {
+            "case_id": "en2vi-test-noisy-00297",
+            "error": "RuntimeError: Translation critical-field validator rejected this stream turn"
+          },
+          {
+            "case_id": "en2vi-test-noisy-00298",
+            "error": "RuntimeError: Translation critical-field validator rejected this stream turn"
+          },
+          {
+            "case_id": "en2vi-test-noisy-00541",
+            "error": "RuntimeError: Translation critical-field validator rejected this stream turn"
+          },
+          {
+            "case_id": "en2vi-test-noisy-00542",
+            "error": "RuntimeError: Translation critical-field validator rejected this stream turn"
+          },
+          {
+            "case_id": "en2vi-test-noisy-00661",
+            "error": "RuntimeError: Translation critical-field validator rejected this stream turn"
+          },
+          {
+            "case_id": "en2vi-test-noisy-00662",
+            "error": "RuntimeError: Translation critical-field validator rejected this stream turn"
+          },
+          {
+            "case_id": "en2vi-test-noisy-00729",
+            "error": "RuntimeError: Streaming latency report is empty"
+          },
+          {
+            "case_id": "en2vi-test-noisy-00730",
+            "error": "RuntimeError: Streaming latency report is empty"
+          },
+          {
+            "case_id": "en2vi-test-noisy-01105",
+            "error": "RuntimeError: Translation critical-field validator rejected this stream turn"
+          },
+          {
+            "case_id": "en2vi-test-noisy-01106",
+            "error": "RuntimeError: Translation critical-field validator rejected this stream turn"
+          },
+          {
+            "case_id": "en2vi-test-noisy-01431",
+            "error": "RuntimeError: Streaming latency report is empty"
+          },
+          {
+            "case_id": "en2vi-test-noisy-01432",
+            "error": "RuntimeError: Streaming latency report is empty"
+          },
+          {
+            "case_id": "en2vi-test-noisy-01513",
+            "error": "RuntimeError: Streaming latency report is empty"
+          },
+          {
+            "case_id": "en2vi-test-noisy-01514",
+            "error": "RuntimeError: Streaming latency report is empty"
+          },
+          {
+            "case_id": "en2vi-test-noisy-01569",
+            "error": "RuntimeError: Streaming latency report is empty"
+          },
+          {
+            "case_id": "en2vi-test-noisy-01570",
+            "error": "RuntimeError: Streaming latency report is empty"
+          },
+          {
+            "case_id": "en2vi-test-noisy-01583",
+            "error": "RuntimeError: Translation critical-field validator rejected this stream turn"
+          },
+          {
+            "case_id": "en2vi-test-noisy-01584",
+            "error": "RuntimeError: Translation critical-field validator rejected this stream turn"
+          },
+          {
+            "case_id": "en2vi-test-noisy-01639",
+            "error": "RuntimeError: Streaming latency report is empty"
+          },
+          {
+            "case_id": "en2vi-test-noisy-01640",
+            "error": "RuntimeError: Streaming latency report is empty"
+          },
+          {
+            "case_id": "en2vi-test-noisy-02337",
+            "error": "RuntimeError: Streaming latency report is empty"
+          },
+          {
+            "case_id": "en2vi-test-noisy-02338",
+            "error": "RuntimeError: Streaming latency report is empty"
+          },
+          {
+            "case_id": "en2vi-test-noisy-02461",
+            "error": "RuntimeError: Streaming latency report is empty"
+          },
+          {
+            "case_id": "en2vi-test-noisy-02462",
+            "error": "RuntimeError: Streaming latency report is empty"
+          },
+          {
+            "case_id": "en2vi-test-noisy-02485",
+            "error": "RuntimeError: Translation critical-field validator rejected this stream turn"
+          },
+          {
+            "case_id": "en2vi-test-noisy-02486",
+            "error": "RuntimeError: Translation critical-field validator rejected this stream turn"
+          },
+          {
+            "case_id": "en2vi-safety-021",
+            "error": "RuntimeError: Safety stream must create exactly one safety commit"
+          },
+          {
+            "case_id": "en2vi-safety-022",
+            "error": "RuntimeError: Safety stream must create exactly one safety commit"
+          },
+          {
+            "case_id": "en2vi-safety-023",
+            "error": "RuntimeError: Safety stream must create exactly one safety commit"
+          },
+          {
+            "case_id": "en2vi-safety-024",
+            "error": "RuntimeError: Safety stream must create exactly one safety commit"
+          },
+          {
+            "case_id": "en2vi-safety-025",
+            "error": "RuntimeError: Safety stream must create exactly one safety commit"
+          },
+          {
+            "case_id": "en2vi-safety-026",
+            "error": "RuntimeError: Safety stream must create exactly one safety commit"
+          },
+          {
+            "case_id": "en2vi-safety-027",
+            "error": "RuntimeError: Safety stream must create exactly one safety commit"
+          },
+          {
+            "case_id": "en2vi-safety-028",
+            "error": "RuntimeError: Safety stream must create exactly one safety commit"
+          },
+          {
+            "case_id": "en2vi-safety-029",
+            "error": "RuntimeError: Safety stream must create exactly one safety commit"
+          },
+          {
+            "case_id": "en2vi-safety-030",
+            "error": "RuntimeError: Safety stream must create exactly one safety commit"
+          },
+          {
+            "case_id": "en2vi-safety-031",
+            "error": "RuntimeError: Safety stream must create exactly one safety commit"
+          },
+          {
+            "case_id": "en2vi-safety-032",
+            "error": "RuntimeError: Safety stream must create exactly one safety commit"
+          },
+          {
+            "case_id": "en2vi-safety-037",
+            "error": "RuntimeError: Safety stream must create exactly one safety commit"
+          },
+          {
+            "case_id": "en2vi-safety-038",
+            "error": "RuntimeError: Safety stream must create exactly one safety commit"
+          },
+          {
+            "case_id": "en2vi-safety-039",
+            "error": "RuntimeError: Safety stream must create exactly one safety commit"
+          },
+          {
+            "case_id": "en2vi-safety-040",
+            "error": "RuntimeError: Safety stream must create exactly one safety commit"
+          },
+          {
+            "case_id": "en2vi-safety-043",
+            "error": "RuntimeError: Safety stream must create exactly one safety commit"
+          },
+          {
+            "case_id": "en2vi-safety-044",
+            "error": "RuntimeError: Safety stream must create exactly one safety commit"
+          },
+          {
+            "case_id": "en2vi-safety-045",
+            "error": "RuntimeError: Safety stream must create exactly one safety commit"
+          },
+          {
+            "case_id": "en2vi-safety-046",
+            "error": "RuntimeError: Safety stream must create exactly one safety commit"
+          },
+          {
+            "case_id": "en2vi-safety-047",
+            "error": "RuntimeError: Safety stream must create exactly one safety commit"
+          },
+          {
+            "case_id": "en2vi-safety-048",
+            "error": "RuntimeError: Safety stream must create exactly one safety commit"
+          },
+          {
+            "case_id": "en2vi-safety-049",
+            "error": "RuntimeError: Safety stream must create exactly one safety commit"
+          },
+          {
+            "case_id": "en2vi-safety-050",
+            "error": "RuntimeError: Safety stream must create exactly one safety commit"
+          },
+          {
+            "case_id": "en2vi-safety-055",
+            "error": "RuntimeError: Safety stream must create exactly one safety commit"
+          },
+          {
+            "case_id": "en2vi-safety-056",
+            "error": "RuntimeError: Safety stream must create exactly one safety commit"
+          },
+          {
+            "case_id": "en2vi-safety-057",
+            "error": "RuntimeError: Safety stream must create exactly one safety commit"
+          },
+          {
+            "case_id": "en2vi-safety-058",
+            "error": "RuntimeError: Safety stream must create exactly one safety commit"
+          },
+          {
+            "case_id": "en2vi-safety-071",
+            "error": "RuntimeError: Safety stream must create exactly one safety commit"
+          },
+          {
+            "case_id": "en2vi-safety-072",
+            "error": "RuntimeError: Safety stream must create exactly one safety commit"
+          },
+          {
+            "case_id": "en2vi-safety-073",
+            "error": "RuntimeError: Safety stream must create exactly one safety commit"
+          },
+          {
+            "case_id": "en2vi-safety-074",
+            "error": "RuntimeError: Safety stream must create exactly one safety commit"
+          },
+          {
+            "case_id": "en2vi-safety-087",
+            "error": "RuntimeError: Safety stream must create exactly one safety commit"
+          },
+          {
+            "case_id": "en2vi-safety-088",
+            "error": "RuntimeError: Safety stream must create exactly one safety commit"
+          },
+          {
+            "case_id": "en2vi-safety-089",
+            "error": "RuntimeError: Safety stream must create exactly one safety commit"
+          },
+          {
+            "case_id": "en2vi-safety-090",
+            "error": "RuntimeError: Safety stream must create exactly one safety commit"
+          },
+          {
+            "case_id": "en2vi-safety-091",
+            "error": "RuntimeError: Safety stream must create exactly one safety commit"
+          },
+          {
+            "case_id": "en2vi-safety-092",
+            "error": "RuntimeError: Safety stream must create exactly one safety commit"
+          },
+          {
+            "case_id": "en2vi-safety-093",
+            "error": "RuntimeError: Safety stream must create exactly one safety commit"
+          },
+          {
+            "case_id": "en2vi-safety-094",
+            "error": "RuntimeError: Safety stream must create exactly one safety commit"
+          },
+          {
+            "case_id": "en2vi-safety-095",
+            "error": "RuntimeError: Safety stream must create exactly one safety commit"
+          },
+          {
+            "case_id": "en2vi-safety-096",
+            "error": "RuntimeError: Safety stream must create exactly one safety commit"
+          },
+          {
+            "case_id": "en2vi-safety-097",
+            "error": "RuntimeError: Safety stream must create exactly one safety commit"
+          },
+          {
+            "case_id": "en2vi-safety-098",
+            "error": "RuntimeError: Safety stream must create exactly one safety commit"
+          },
+          {
+            "case_id": "en2vi-safety-099",
+            "error": "RuntimeError: Safety stream must create exactly one safety commit"
+          },
+          {
+            "case_id": "en2vi-safety-100",
+            "error": "RuntimeError: Safety stream must create exactly one safety commit"
+          },
+          {
+            "case_id": "en2vi-safety-101",
+            "error": "RuntimeError: Safety stream must create exactly one safety commit"
+          },
+          {
+            "case_id": "en2vi-safety-102",
+            "error": "RuntimeError: Safety stream must create exactly one safety commit"
+          },
+          {
+            "case_id": "en2vi-safety-103",
+            "error": "RuntimeError: Safety stream must create exactly one safety commit"
+          },
+          {
+            "case_id": "en2vi-safety-104",
+            "error": "RuntimeError: Safety stream must create exactly one safety commit"
+          },
+          {
+            "case_id": "en2vi-safety-105",
+            "error": "RuntimeError: Safety stream must create exactly one safety commit"
+          },
+          {
+            "case_id": "en2vi-safety-106",
+            "error": "RuntimeError: Safety stream must create exactly one safety commit"
+          },
+          {
+            "case_id": "en2vi-safety-107",
+            "error": "RuntimeError: Safety stream must create exactly one safety commit"
+          },
+          {
+            "case_id": "en2vi-safety-108",
+            "error": "RuntimeError: Safety stream must create exactly one safety commit"
+          },
+          {
+            "case_id": "en2vi-safety-109",
+            "error": "RuntimeError: Safety stream must create exactly one safety commit"
+          },
+          {
+            "case_id": "en2vi-safety-110",
+            "error": "RuntimeError: Safety stream must create exactly one safety commit"
+          },
+          {
+            "case_id": "en2vi-safety-119",
+            "error": "RuntimeError: Safety stream must create exactly one safety commit"
+          },
+          {
+            "case_id": "en2vi-safety-120",
+            "error": "RuntimeError: Safety stream must create exactly one safety commit"
+          },
+          {
+            "case_id": "en2vi-safety-121",
+            "error": "RuntimeError: Safety stream must create exactly one safety commit"
+          },
+          {
+            "case_id": "en2vi-safety-122",
+            "error": "RuntimeError: Safety stream must create exactly one safety commit"
+          }
+        ],
+        "scope": "Full selected synthetic WAV corpus replay; no live microphone, sound-device or Bluetooth latency measurement. Percentiles include successful outputs; quality rates include failures as empty outputs."
+      },
+      "tts": {
+        "schema_version": 2,
+        "direction": "en2vi",
+        "profile": "edge",
+        "target_language": "vi",
+        "full_prompt_csv": true,
+        "offline": true,
+        "prompt_csv": "D:\\code\\.vscode\\OneVoice\\onevoice-edge\\data\\onevoice_construction_v2\\test.csv",
+        "network_blocked_in_python": true,
+        "samples": 979,
+        "passed_samples": 976,
+        "failed_samples": 3,
+        "engine": "espeak-ng-offline-demo",
+        "sample_rates": {
+          "22050": 976
+        },
+        "silence_or_validation_failures": 3,
+        "latency_p50_ms": 74.082,
+        "latency_p95_ms": 91.856,
+        "peak_rss_mb": 49.539,
+        "elapsed_seconds": 88.364,
+        "failures": [
+          {
+            "prompt_id": "OV2_002585",
+            "text": "Di chuyển tải sang vào trong khoảng 50 ki-lô-gam.",
+            "status": "fail",
+            "elapsed_ms": 73.156,
+            "engine": "espeak-ng-offline-demo",
+            "error": "RuntimeError: clipping peak=0.999969"
+          },
+          {
+            "prompt_id": "OV2_007251",
+            "text": "giúp tôi kiểm tra chốt an toàn trước.",
+            "status": "fail",
+            "elapsed_ms": 72.294,
+            "engine": "espeak-ng-offline-demo",
+            "error": "RuntimeError: clipping peak=0.999908"
+          },
+          {
+            "prompt_id": "OV2_007330",
+            "text": "Số lượng của đá dăm hiện tại bao nhiêu?",
+            "status": "fail",
+            "elapsed_ms": 76.24,
+            "engine": "espeak-ng-offline-demo",
+            "error": "RuntimeError: clipping peak=0.999908"
+          }
+        ],
+        "passed": false,
+        "scope": "offline development/edge system voice benchmark; not a production voice-quality claim"
+      },
+      "profile": {
+        "schema_version": 1,
+        "direction": "en2vi",
+        "profile": "edge",
+        "offline": true,
+        "network_blocked": true,
+        "normal_input": "D:\\OneVoiceDesktop\\onevoice-v2-rc1\\test_audio\\OV2_000001_en_clean.wav",
+        "safety_input": "D:\\OneVoiceDesktop\\onevoice-v2-rc1\\en2vi\\artifacts\\safety_audio\\SAFE2_0001_vi2en.wav",
+        "repeats": 5,
+        "passed": true,
+        "measurement_completed": true,
+        "normal_commit_policy": "endpoint",
+        "tts_backend_requested": "auto",
+        "tts_engine": "espeak-ng-offline-demo",
+        "sapi_voice": null,
+        "load_time_ms": 14751.173,
+        "peak_rss_mb": 3528.352,
+        "routes": {
+          "normal": {
+            "samples": 5,
+            "commit_to_first_audio_p50_ms": 551.7613000120036,
+            "commit_to_first_audio_p95_ms": 565.9585999674164,
+            "speech_to_commit_p50_ms": 535.2682999800891,
+            "speech_to_commit_p95_ms": 594.4834999972954,
+            "complete_turn_p50_ms": 1302.6260000187904,
+            "complete_turn_p95_ms": 1364.1103999689221
+          },
+          "safety": {
+            "samples": 5,
+            "commit_to_first_audio_p50_ms": 1.0320000001229346,
+            "commit_to_first_audio_p95_ms": 1.0975999757647514,
+            "speech_to_commit_p50_ms": 345.43079999275506,
+            "speech_to_commit_p95_ms": 373.4199999598786,
+            "complete_turn_p50_ms": 562.611699977424,
+            "complete_turn_p95_ms": 588.306299992837
+          }
+        },
+        "hardware_profile": "desktop_tuf_f15_rtx2050",
+        "resource_targets": {
+          "max_rss_mb": 8192.0,
+          "normal_target_ms": 3000.0,
+          "safety_target_ms": 300.0
+        },
+        "target_sources": {
+          "max_rss_mb": "cli",
+          "normal_target_ms": "cli",
+          "safety_target_ms": "cli"
+        },
+        "latency_targets_ms": {
+          "normal": 3000.0,
+          "safety": 300.0
+        },
+        "blockers": []
+      },
+      "diagnostics": {
+        "functional_error_counts": {
+          "RuntimeError: Safety stream must create exactly one safety commit": 60,
+          "RuntimeError: Streaming latency report is empty": 14,
+          "RuntimeError: Translation critical-field validator rejected this stream turn": 12
+        },
+        "reference_error_occurrences": {
+          "missing_term": 52,
+          "missing_number": 4
+        },
+        "functional_pass_but_reference_invalid": 16,
+        "canonical_safety_id_agreement": {
+          "samples": 126,
+          "exact_id_agreements": 17
+        },
+        "safety_review": [
+          {
+            "case_id": "en2vi-safety-001",
+            "status": "pass",
+            "safety_id": "SAFE2_0001",
+            "reference_text": "Stop immediately!",
+            "asr_text": "Stop immediately.",
+            "translation": "Mọi người, Dừng lại ngay!",
+            "error": null,
+            "emitted_safety_ids": [
+              "SAFE2_0004"
+            ]
+          },
+          {
+            "case_id": "en2vi-safety-002",
+            "status": "pass",
+            "safety_id": "SAFE2_0002",
+            "reference_text": "Stop immediately!",
+            "asr_text": "Stop immediately.",
+            "translation": "Mọi người, Dừng lại ngay!",
+            "error": null,
+            "emitted_safety_ids": [
+              "SAFE2_0004"
+            ]
+          },
+          {
+            "case_id": "en2vi-safety-003",
+            "status": "pass",
+            "safety_id": "SAFE2_0003",
+            "reference_text": "Stop immediately!",
+            "asr_text": "Stop immediately.",
+            "translation": "Mọi người, Dừng lại ngay!",
+            "error": null,
+            "emitted_safety_ids": [
+              "SAFE2_0004"
+            ]
+          },
+          {
+            "case_id": "en2vi-safety-005",
+            "status": "pass",
+            "safety_id": "SAFE2_0005",
+            "reference_text": "Stop work immediately!",
+            "asr_text": "Stop work immediately.",
+            "translation": "Mọi người, Dừng công việc ngay!",
+            "error": null,
+            "emitted_safety_ids": [
+              "SAFE2_0008"
+            ]
+          },
+          {
+            "case_id": "en2vi-safety-006",
+            "status": "pass",
+            "safety_id": "SAFE2_0006",
+            "reference_text": "Stop work immediately!",
+            "asr_text": "Stop work immediately.",
+            "translation": "Mọi người, Dừng công việc ngay!",
+            "error": null,
+            "emitted_safety_ids": [
+              "SAFE2_0008"
+            ]
+          },
+          {
+            "case_id": "en2vi-safety-007",
+            "status": "pass",
+            "safety_id": "SAFE2_0007",
+            "reference_text": "Stop work immediately!",
+            "asr_text": "Stop work immediately.",
+            "translation": "Mọi người, Dừng công việc ngay!",
+            "error": null,
+            "emitted_safety_ids": [
+              "SAFE2_0008"
+            ]
+          },
+          {
+            "case_id": "en2vi-safety-009",
+            "status": "pass",
+            "safety_id": "SAFE2_0009",
+            "reference_text": "Stop the machine immediately!",
+            "asr_text": "Stop the machine immediately.",
+            "translation": "Mọi người, Dừng máy ngay!",
+            "error": null,
+            "emitted_safety_ids": [
+              "SAFE2_0012"
+            ]
+          },
+          {
+            "case_id": "en2vi-safety-010",
+            "status": "pass",
+            "safety_id": "SAFE2_0010",
+            "reference_text": "Stop the machine immediately!",
+            "asr_text": "Stop the machine immediately.",
+            "translation": "Mọi người, Dừng máy ngay!",
+            "error": null,
+            "emitted_safety_ids": [
+              "SAFE2_0012"
+            ]
+          },
+          {
+            "case_id": "en2vi-safety-011",
+            "status": "pass",
+            "safety_id": "SAFE2_0011",
+            "reference_text": "Stop the machine immediately!",
+            "asr_text": "Stop the machine immediately.",
+            "translation": "Mọi người, Dừng máy ngay!",
+            "error": null,
+            "emitted_safety_ids": [
+              "SAFE2_0012"
+            ]
+          },
+          {
+            "case_id": "en2vi-safety-013",
+            "status": "pass",
+            "safety_id": "SAFE2_0013",
+            "reference_text": "Disconnect the power immediately!",
+            "asr_text": "disconect the power immediately.",
+            "translation": "Mọi người, Ngắt điện ngay!",
+            "error": null,
+            "emitted_safety_ids": [
+              "SAFE2_0016"
+            ]
+          },
+          {
+            "case_id": "en2vi-safety-014",
+            "status": "pass",
+            "safety_id": "SAFE2_0014",
+            "reference_text": "Disconnect the power immediately!",
+            "asr_text": "disconect the power immediately.",
+            "translation": "Mọi người, Ngắt điện ngay!",
+            "error": null,
+            "emitted_safety_ids": [
+              "SAFE2_0016"
+            ]
+          },
+          {
+            "case_id": "en2vi-safety-015",
+            "status": "pass",
+            "safety_id": "SAFE2_0015",
+            "reference_text": "Disconnect the power immediately!",
+            "asr_text": "disconect the power immediately.",
+            "translation": "Mọi người, Ngắt điện ngay!",
+            "error": null,
+            "emitted_safety_ids": [
+              "SAFE2_0016"
+            ]
+          },
+          {
+            "case_id": "en2vi-safety-017",
+            "status": "pass",
+            "safety_id": "SAFE2_0017",
+            "reference_text": "Do not energize the system!",
+            "asr_text": "Do not energize the system.",
+            "translation": "Mọi người, Không cấp điện!",
+            "error": null,
+            "emitted_safety_ids": [
+              "SAFE2_0020"
+            ]
+          },
+          {
+            "case_id": "en2vi-safety-018",
+            "status": "pass",
+            "safety_id": "SAFE2_0018",
+            "reference_text": "Do not energize the system!",
+            "asr_text": "Do not energize the system.",
+            "translation": "Mọi người, Không cấp điện!",
+            "error": null,
+            "emitted_safety_ids": [
+              "SAFE2_0020"
+            ]
+          },
+          {
+            "case_id": "en2vi-safety-019",
+            "status": "pass",
+            "safety_id": "SAFE2_0019",
+            "reference_text": "Do not energize the system!",
+            "asr_text": "Do not energize the system.",
+            "translation": "Mọi người, Không cấp điện!",
+            "error": null,
+            "emitted_safety_ids": [
+              "SAFE2_0020"
+            ]
+          },
+          {
+            "case_id": "en2vi-safety-021",
+            "status": "fail",
+            "safety_id": "SAFE2_0021",
+            "reference_text": "Do not start the machine!",
+            "asr_text": "Do nott the machine.",
+            "translation": "Không bơm máy.",
+            "error": "RuntimeError: Safety stream must create exactly one safety commit",
+            "emitted_safety_ids": []
+          },
+          {
+            "case_id": "en2vi-safety-022",
+            "status": "fail",
+            "safety_id": "SAFE2_0022",
+            "reference_text": "Do not start the machine!",
+            "asr_text": "Do nott the machine.",
+            "translation": "Không bơm máy.",
+            "error": "RuntimeError: Safety stream must create exactly one safety commit",
+            "emitted_safety_ids": []
+          },
+          {
+            "case_id": "en2vi-safety-023",
+            "status": "fail",
+            "safety_id": "SAFE2_0023",
+            "reference_text": "Do not start the machine!",
+            "asr_text": "Do nott the machine.",
+            "translation": "Không bơm máy.",
+            "error": "RuntimeError: Safety stream must create exactly one safety commit",
+            "emitted_safety_ids": []
+          },
+          {
+            "case_id": "en2vi-safety-024",
+            "status": "fail",
+            "safety_id": "SAFE2_0024",
+            "reference_text": "Do not start the machine!",
+            "asr_text": "Do nott the machine.",
+            "translation": "Không bơm máy.",
+            "error": "RuntimeError: Safety stream must create exactly one safety commit",
+            "emitted_safety_ids": []
+          },
+          {
+            "case_id": "en2vi-safety-025",
+            "status": "fail",
+            "safety_id": "SAFE2_0025",
+            "reference_text": "There is someone below!",
+            "asr_text": "There is amperes below.",
+            "translation": "Có ampe ở bên dưới.",
+            "error": "RuntimeError: Safety stream must create exactly one safety commit",
+            "emitted_safety_ids": []
+          },
+          {
+            "case_id": "en2vi-safety-026",
+            "status": "fail",
+            "safety_id": "SAFE2_0026",
+            "reference_text": "There is someone below!",
+            "asr_text": "There is amperes below.",
+            "translation": "Có ampe ở bên dưới.",
+            "error": "RuntimeError: Safety stream must create exactly one safety commit",
+            "emitted_safety_ids": []
+          },
+          {
+            "case_id": "en2vi-safety-027",
+            "status": "fail",
+            "safety_id": "SAFE2_0027",
+            "reference_text": "There is someone below!",
+            "asr_text": "There is amperes below.",
+            "translation": "Có ampe ở bên dưới.",
+            "error": "RuntimeError: Safety stream must create exactly one safety commit",
+            "emitted_safety_ids": []
+          },
+          {
+            "case_id": "en2vi-safety-028",
+            "status": "fail",
+            "safety_id": "SAFE2_0028",
+            "reference_text": "There is someone below!",
+            "asr_text": "There is amperes below.",
+            "translation": "Có ampe ở bên dưới.",
+            "error": "RuntimeError: Safety stream must create exactly one safety commit",
+            "emitted_safety_ids": []
+          },
+          {
+            "case_id": "en2vi-safety-029",
+            "status": "fail",
+            "safety_id": "SAFE2_0029",
+            "reference_text": "Falling object!",
+            "asr_text": "pling object.",
+            "translation": "Mặt bằng pling.",
+            "error": "RuntimeError: Safety stream must create exactly one safety commit",
+            "emitted_safety_ids": []
+          },
+          {
+            "case_id": "en2vi-safety-030",
+            "status": "fail",
+            "safety_id": "SAFE2_0030",
+            "reference_text": "Falling object!",
+            "asr_text": "pling object.",
+            "translation": "Mặt bằng pling.",
+            "error": "RuntimeError: Safety stream must create exactly one safety commit",
+            "emitted_safety_ids": []
+          },
+          {
+            "case_id": "en2vi-safety-031",
+            "status": "fail",
+            "safety_id": "SAFE2_0031",
+            "reference_text": "Falling object!",
+            "asr_text": "pling object.",
+            "translation": "Mặt bằng pling.",
+            "error": "RuntimeError: Safety stream must create exactly one safety commit",
+            "emitted_safety_ids": []
+          },
+          {
+            "case_id": "en2vi-safety-032",
+            "status": "fail",
+            "safety_id": "SAFE2_0032",
+            "reference_text": "Falling object!",
+            "asr_text": "pling object.",
+            "translation": "Mặt bằng pling.",
+            "error": "RuntimeError: Safety stream must create exactly one safety commit",
+            "emitted_safety_ids": []
+          },
+          {
+            "case_id": "en2vi-safety-033",
+            "status": "pass",
+            "safety_id": "SAFE2_0033",
+            "reference_text": "Keep clear!",
+            "asr_text": "Keep clear.",
+            "translation": "Mọi người, Tránh ra!",
+            "error": null,
+            "emitted_safety_ids": [
+              "SAFE2_0036"
+            ]
+          },
+          {
+            "case_id": "en2vi-safety-034",
+            "status": "pass",
+            "safety_id": "SAFE2_0034",
+            "reference_text": "Keep clear!",
+            "asr_text": "Keep clear.",
+            "translation": "Mọi người, Tránh ra!",
+            "error": null,
+            "emitted_safety_ids": [
+              "SAFE2_0036"
+            ]
+          },
+          {
+            "case_id": "en2vi-safety-035",
+            "status": "pass",
+            "safety_id": "SAFE2_0035",
+            "reference_text": "Keep clear!",
+            "asr_text": "Keep clear.",
+            "translation": "Mọi người, Tránh ra!",
+            "error": null,
+            "emitted_safety_ids": [
+              "SAFE2_0036"
+            ]
+          },
+          {
+            "case_id": "en2vi-safety-037",
+            "status": "fail",
+            "safety_id": "SAFE2_0037",
+            "reference_text": "Leave this area!",
+            "asr_text": "Lve this area.",
+            "translation": "Coi chừng khu này.",
+            "error": "RuntimeError: Safety stream must create exactly one safety commit",
+            "emitted_safety_ids": []
+          },
+          {
+            "case_id": "en2vi-safety-038",
+            "status": "fail",
+            "safety_id": "SAFE2_0038",
+            "reference_text": "Leave this area!",
+            "asr_text": "Lve this area.",
+            "translation": "Coi chừng khu này.",
+            "error": "RuntimeError: Safety stream must create exactly one safety commit",
+            "emitted_safety_ids": []
+          },
+          {
+            "case_id": "en2vi-safety-039",
+            "status": "fail",
+            "safety_id": "SAFE2_0039",
+            "reference_text": "Leave this area!",
+            "asr_text": "Lve this area.",
+            "translation": "Coi chừng khu này.",
+            "error": "RuntimeError: Safety stream must create exactly one safety commit",
+            "emitted_safety_ids": []
+          },
+          {
+            "case_id": "en2vi-safety-040",
+            "status": "fail",
+            "safety_id": "SAFE2_0040",
+            "reference_text": "Leave this area!",
+            "asr_text": "Lve this area.",
+            "translation": "Coi chừng khu này.",
+            "error": "RuntimeError: Safety stream must create exactly one safety commit",
+            "emitted_safety_ids": []
+          },
+          {
+            "case_id": "en2vi-safety-041",
+            "status": "pass",
+            "safety_id": "SAFE2_0041",
+            "reference_text": "Evacuate immediately!",
+            "asr_text": "evacuate immediately.",
+            "translation": "Mọi người, Sơ tán ngay!",
+            "error": null,
+            "emitted_safety_ids": [
+              "SAFE2_0042"
+            ]
+          },
+          {
+            "case_id": "en2vi-safety-043",
+            "status": "fail",
+            "safety_id": "SAFE2_0043",
+            "reference_text": "Fire!",
+            "asr_text": "5re.",
+            "translation": "Anh 5re.",
+            "error": "RuntimeError: Safety stream must create exactly one safety commit",
+            "emitted_safety_ids": []
+          },
+          {
+            "case_id": "en2vi-safety-044",
+            "status": "fail",
+            "safety_id": "SAFE2_0044",
+            "reference_text": "Fire!",
+            "asr_text": "5re.",
+            "translation": "Anh 5re.",
+            "error": "RuntimeError: Safety stream must create exactly one safety commit",
+            "emitted_safety_ids": []
+          },
+          {
+            "case_id": "en2vi-safety-045",
+            "status": "fail",
+            "safety_id": "SAFE2_0045",
+            "reference_text": "Smoke!",
+            "asr_text": "S.",
+            "translation": "Hàn.",
+            "error": "RuntimeError: Safety stream must create exactly one safety commit",
+            "emitted_safety_ids": []
+          },
+          {
+            "case_id": "en2vi-safety-046",
+            "status": "fail",
+            "safety_id": "SAFE2_0046",
+            "reference_text": "Smoke!",
+            "asr_text": "S.",
+            "translation": "Hàn.",
+            "error": "RuntimeError: Safety stream must create exactly one safety commit",
+            "emitted_safety_ids": []
+          },
+          {
+            "case_id": "en2vi-safety-047",
+            "status": "fail",
+            "safety_id": "SAFE2_0047",
+            "reference_text": "Smoke!",
+            "asr_text": "S.",
+            "translation": "Hàn.",
+            "error": "RuntimeError: Safety stream must create exactly one safety commit",
+            "emitted_safety_ids": []
+          },
+          {
+            "case_id": "en2vi-safety-048",
+            "status": "fail",
+            "safety_id": "SAFE2_0048",
+            "reference_text": "Smoke!",
+            "asr_text": "S.",
+            "translation": "Hàn.",
+            "error": "RuntimeError: Safety stream must create exactly one safety commit",
+            "emitted_safety_ids": []
+          },
+          {
+            "case_id": "en2vi-safety-049",
+            "status": "fail",
+            "safety_id": "SAFE2_0049",
+            "reference_text": "Electric shock hazard!",
+            "asr_text": "Eric sha hazard.",
+            "translation": "Anh sha hazard.",
+            "error": "RuntimeError: Safety stream must create exactly one safety commit",
+            "emitted_safety_ids": []
+          },
+          {
+            "case_id": "en2vi-safety-050",
+            "status": "fail",
+            "safety_id": "SAFE2_0050",
+            "reference_text": "Electric shock hazard!",
+            "asr_text": "Eric sha hazard.",
+            "translation": "Anh sha hazard.",
+            "error": "RuntimeError: Safety stream must create exactly one safety commit",
+            "emitted_safety_ids": []
+          },
+          {
+            "case_id": "en2vi-safety-051",
+            "status": "pass",
+            "safety_id": "SAFE2_0051",
+            "reference_text": "Do not touch the electrical cable!",
+            "asr_text": "Do not touch the electrical cable.",
+            "translation": "Mọi người, Không chạm vào dây điện!",
+            "error": null,
+            "emitted_safety_ids": [
+              "SAFE2_0054"
+            ]
+          },
+          {
+            "case_id": "en2vi-safety-052",
+            "status": "pass",
+            "safety_id": "SAFE2_0052",
+            "reference_text": "Do not touch the electrical cable!",
+            "asr_text": "Do not touch the electrical cable.",
+            "translation": "Mọi người, Không chạm vào dây điện!",
+            "error": null,
+            "emitted_safety_ids": [
+              "SAFE2_0054"
+            ]
+          },
+          {
+            "case_id": "en2vi-safety-053",
+            "status": "pass",
+            "safety_id": "SAFE2_0053",
+            "reference_text": "Do not touch the electrical cable!",
+            "asr_text": "Do not touch the electrical cable.",
+            "translation": "Mọi người, Không chạm vào dây điện!",
+            "error": null,
+            "emitted_safety_ids": [
+              "SAFE2_0054"
+            ]
+          },
+          {
+            "case_id": "en2vi-safety-055",
+            "status": "fail",
+            "safety_id": "SAFE2_0055",
+            "reference_text": "Do not stand under a suspended load!",
+            "asr_text": "Do not stand under amperes suspended load.",
+            "translation": "Không đứng phía dưới tải treo ampe.",
+            "error": "RuntimeError: Safety stream must create exactly one safety commit",
+            "emitted_safety_ids": []
+          },
+          {
+            "case_id": "en2vi-safety-056",
+            "status": "fail",
+            "safety_id": "SAFE2_0056",
+            "reference_text": "Do not stand under a suspended load!",
+            "asr_text": "Do not stand under amperes suspended load.",
+            "translation": "Không đứng phía dưới tải treo ampe.",
+            "error": "RuntimeError: Safety stream must create exactly one safety commit",
+            "emitted_safety_ids": []
+          },
+          {
+            "case_id": "en2vi-safety-057",
+            "status": "fail",
+            "safety_id": "SAFE2_0057",
+            "reference_text": "Do not stand under a suspended load!",
+            "asr_text": "Do not stand under amperes suspended load.",
+            "translation": "Không đứng phía dưới tải treo ampe.",
+            "error": "RuntimeError: Safety stream must create exactly one safety commit",
+            "emitted_safety_ids": []
+          },
+          {
+            "case_id": "en2vi-safety-058",
+            "status": "fail",
+            "safety_id": "SAFE2_0058",
+            "reference_text": "Do not stand under a suspended load!",
+            "asr_text": "Do not stand under amperes suspended load.",
+            "translation": "Không đứng phía dưới tải treo ampe.",
+            "error": "RuntimeError: Safety stream must create exactly one safety commit",
+            "emitted_safety_ids": []
+          },
+          {
+            "case_id": "en2vi-safety-059",
+            "status": "pass",
+            "safety_id": "SAFE2_0059",
+            "reference_text": "Stop the crane!",
+            "asr_text": "Stop the crane.",
+            "translation": "Mọi người, Dừng cẩu!",
+            "error": null,
+            "emitted_safety_ids": [
+              "SAFE2_0062"
+            ]
+          },
+          {
+            "case_id": "en2vi-safety-060",
+            "status": "pass",
+            "safety_id": "SAFE2_0060",
+            "reference_text": "Stop the crane!",
+            "asr_text": "Stop the crane.",
+            "translation": "Mọi người, Dừng cẩu!",
+            "error": null,
+            "emitted_safety_ids": [
+              "SAFE2_0062"
+            ]
+          },
+          {
+            "case_id": "en2vi-safety-061",
+            "status": "pass",
+            "safety_id": "SAFE2_0061",
+            "reference_text": "Stop the crane!",
+            "asr_text": "Stop the crane.",
+            "translation": "Mọi người, Dừng cẩu!",
+            "error": null,
+            "emitted_safety_ids": [
+              "SAFE2_0062"
+            ]
+          },
+          {
+            "case_id": "en2vi-safety-063",
+            "status": "pass",
+            "safety_id": "SAFE2_0063",
+            "reference_text": "Stop the forklift!",
+            "asr_text": "Stop the forklift.",
+            "translation": "Mọi người, Dừng xe nâng!",
+            "error": null,
+            "emitted_safety_ids": [
+              "SAFE2_0066"
+            ]
+          },
+          {
+            "case_id": "en2vi-safety-064",
+            "status": "pass",
+            "safety_id": "SAFE2_0064",
+            "reference_text": "Stop the forklift!",
+            "asr_text": "Stop the forklift.",
+            "translation": "Mọi người, Dừng xe nâng!",
+            "error": null,
+            "emitted_safety_ids": [
+              "SAFE2_0066"
+            ]
+          },
+          {
+            "case_id": "en2vi-safety-065",
+            "status": "pass",
+            "safety_id": "SAFE2_0065",
+            "reference_text": "Stop the forklift!",
+            "asr_text": "Stop the forklift.",
+            "translation": "Mọi người, Dừng xe nâng!",
+            "error": null,
+            "emitted_safety_ids": [
+              "SAFE2_0066"
+            ]
+          },
+          {
+            "case_id": "en2vi-safety-067",
+            "status": "pass",
+            "safety_id": "SAFE2_0067",
+            "reference_text": "The excavator is reversing!",
+            "asr_text": "The excavator is reversing.",
+            "translation": "Mọi người, Máy xúc đang lùi!",
+            "error": null,
+            "emitted_safety_ids": [
+              "SAFE2_0070"
+            ]
+          },
+          {
+            "case_id": "en2vi-safety-068",
+            "status": "pass",
+            "safety_id": "SAFE2_0068",
+            "reference_text": "The excavator is reversing!",
+            "asr_text": "The excavator is reversing.",
+            "translation": "Mọi người, Máy xúc đang lùi!",
+            "error": null,
+            "emitted_safety_ids": [
+              "SAFE2_0070"
+            ]
+          },
+          {
+            "case_id": "en2vi-safety-069",
+            "status": "pass",
+            "safety_id": "SAFE2_0069",
+            "reference_text": "The excavator is reversing!",
+            "asr_text": "The excavator is reversing.",
+            "translation": "Mọi người, Máy xúc đang lùi!",
+            "error": null,
+            "emitted_safety_ids": [
+              "SAFE2_0070"
+            ]
+          },
+          {
+            "case_id": "en2vi-safety-071",
+            "status": "fail",
+            "safety_id": "SAFE2_0071",
+            "reference_text": "Stay away from the excavation edge!",
+            "asr_text": "St away from the excavation edge.",
+            "translation": "Tránh xa mép hố đào.",
+            "error": "RuntimeError: Safety stream must create exactly one safety commit",
+            "emitted_safety_ids": []
+          },
+          {
+            "case_id": "en2vi-safety-072",
+            "status": "fail",
+            "safety_id": "SAFE2_0072",
+            "reference_text": "Stay away from the excavation edge!",
+            "asr_text": "St away from the excavation edge.",
+            "translation": "Tránh xa mép hố đào.",
+            "error": "RuntimeError: Safety stream must create exactly one safety commit",
+            "emitted_safety_ids": []
+          },
+          {
+            "case_id": "en2vi-safety-073",
+            "status": "fail",
+            "safety_id": "SAFE2_0073",
+            "reference_text": "Stay away from the excavation edge!",
+            "asr_text": "St away from the excavation edge.",
+            "translation": "Tránh xa mép hố đào.",
+            "error": "RuntimeError: Safety stream must create exactly one safety commit",
+            "emitted_safety_ids": []
+          },
+          {
+            "case_id": "en2vi-safety-074",
+            "status": "fail",
+            "safety_id": "SAFE2_0074",
+            "reference_text": "Stay away from the excavation edge!",
+            "asr_text": "St away from the excavation edge.",
+            "translation": "Tránh xa mép hố đào.",
+            "error": "RuntimeError: Safety stream must create exactly one safety commit",
+            "emitted_safety_ids": []
+          },
+          {
+            "case_id": "en2vi-safety-075",
+            "status": "pass",
+            "safety_id": "SAFE2_0075",
+            "reference_text": "Do not enter the excavation!",
+            "asr_text": "Do not enter the excavation.",
+            "translation": "Mọi người, Không xuống hố!",
+            "error": null,
+            "emitted_safety_ids": [
+              "SAFE2_0078"
+            ]
+          },
+          {
+            "case_id": "en2vi-safety-076",
+            "status": "pass",
+            "safety_id": "SAFE2_0076",
+            "reference_text": "Do not enter the excavation!",
+            "asr_text": "Do not enter the excavation.",
+            "translation": "Mọi người, Không xuống hố!",
+            "error": null,
+            "emitted_safety_ids": [
+              "SAFE2_0078"
+            ]
+          },
+          {
+            "case_id": "en2vi-safety-077",
+            "status": "pass",
+            "safety_id": "SAFE2_0077",
+            "reference_text": "Do not enter the excavation!",
+            "asr_text": "Do not enter the excavation.",
+            "translation": "Mọi người, Không xuống hố!",
+            "error": null,
+            "emitted_safety_ids": [
+              "SAFE2_0078"
+            ]
+          },
+          {
+            "case_id": "en2vi-safety-079",
+            "status": "pass",
+            "safety_id": "SAFE2_0079",
+            "reference_text": "The excavation wall is caving in!",
+            "asr_text": "The excavation walk is caving in.",
+            "translation": "Mọi người, Thành hố đang sạt!",
+            "error": null,
+            "emitted_safety_ids": [
+              "SAFE2_0082"
+            ]
+          },
+          {
+            "case_id": "en2vi-safety-080",
+            "status": "pass",
+            "safety_id": "SAFE2_0080",
+            "reference_text": "The excavation wall is caving in!",
+            "asr_text": "The excavation walk is caving in.",
+            "translation": "Mọi người, Thành hố đang sạt!",
+            "error": null,
+            "emitted_safety_ids": [
+              "SAFE2_0082"
+            ]
+          },
+          {
+            "case_id": "en2vi-safety-081",
+            "status": "pass",
+            "safety_id": "SAFE2_0081",
+            "reference_text": "The excavation wall is caving in!",
+            "asr_text": "The excavation walk is caving in.",
+            "translation": "Mọi người, Thành hố đang sạt!",
+            "error": null,
+            "emitted_safety_ids": [
+              "SAFE2_0082"
+            ]
+          },
+          {
+            "case_id": "en2vi-safety-083",
+            "status": "pass",
+            "safety_id": "SAFE2_0083",
+            "reference_text": "The scaffold is unsafe!",
+            "asr_text": "The scaffold is unsafe.",
+            "translation": "Mọi người, Giàn giáo không an toàn!",
+            "error": null,
+            "emitted_safety_ids": [
+              "SAFE2_0086"
+            ]
+          },
+          {
+            "case_id": "en2vi-safety-084",
+            "status": "pass",
+            "safety_id": "SAFE2_0084",
+            "reference_text": "The scaffold is unsafe!",
+            "asr_text": "The scaffold is unsafe.",
+            "translation": "Mọi người, Giàn giáo không an toàn!",
+            "error": null,
+            "emitted_safety_ids": [
+              "SAFE2_0086"
+            ]
+          },
+          {
+            "case_id": "en2vi-safety-085",
+            "status": "pass",
+            "safety_id": "SAFE2_0085",
+            "reference_text": "The scaffold is unsafe!",
+            "asr_text": "The scaffold is unsafe.",
+            "translation": "Mọi người, Giàn giáo không an toàn!",
+            "error": null,
+            "emitted_safety_ids": [
+              "SAFE2_0086"
+            ]
+          },
+          {
+            "case_id": "en2vi-safety-087",
+            "status": "fail",
+            "safety_id": "SAFE2_0087",
+            "reference_text": "Do not climb onto the scaffold!",
+            "asr_text": "Do not climb on the scaffold.",
+            "translation": "Không leo trên giàn giáo.",
+            "error": "RuntimeError: Safety stream must create exactly one safety commit",
+            "emitted_safety_ids": []
+          },
+          {
+            "case_id": "en2vi-safety-088",
+            "status": "fail",
+            "safety_id": "SAFE2_0088",
+            "reference_text": "Do not climb onto the scaffold!",
+            "asr_text": "Do not climb on the scaffold.",
+            "translation": "Không leo trên giàn giáo.",
+            "error": "RuntimeError: Safety stream must create exactly one safety commit",
+            "emitted_safety_ids": []
+          },
+          {
+            "case_id": "en2vi-safety-089",
+            "status": "fail",
+            "safety_id": "SAFE2_0089",
+            "reference_text": "Do not climb onto the scaffold!",
+            "asr_text": "Do not climb on the scaffold.",
+            "translation": "Không leo trên giàn giáo.",
+            "error": "RuntimeError: Safety stream must create exactly one safety commit",
+            "emitted_safety_ids": []
+          },
+          {
+            "case_id": "en2vi-safety-090",
+            "status": "fail",
+            "safety_id": "SAFE2_0090",
+            "reference_text": "Do not climb onto the scaffold!",
+            "asr_text": "Do not c on the scaffold.",
+            "translation": "Không c trên giàn giáo.",
+            "error": "RuntimeError: Safety stream must create exactly one safety commit",
+            "emitted_safety_ids": []
+          },
+          {
+            "case_id": "en2vi-safety-091",
+            "status": "fail",
+            "safety_id": "SAFE2_0091",
+            "reference_text": "Wear your full-body harness!",
+            "asr_text": "Wear the full-body harness.",
+            "translation": "Đeo dây đai toàn thân.",
+            "error": "RuntimeError: Safety stream must create exactly one safety commit",
+            "emitted_safety_ids": []
+          },
+          {
+            "case_id": "en2vi-safety-092",
+            "status": "fail",
+            "safety_id": "SAFE2_0092",
+            "reference_text": "Wear your full-body harness!",
+            "asr_text": "Wear the full-body harness.",
+            "translation": "Đeo dây đai toàn thân.",
+            "error": "RuntimeError: Safety stream must create exactly one safety commit",
+            "emitted_safety_ids": []
+          },
+          {
+            "case_id": "en2vi-safety-093",
+            "status": "fail",
+            "safety_id": "SAFE2_0093",
+            "reference_text": "Wear your full-body harness!",
+            "asr_text": "Wear the full-body harness.",
+            "translation": "Đeo dây đai toàn thân.",
+            "error": "RuntimeError: Safety stream must create exactly one safety commit",
+            "emitted_safety_ids": []
+          },
+          {
+            "case_id": "en2vi-safety-094",
+            "status": "fail",
+            "safety_id": "SAFE2_0094",
+            "reference_text": "Wear your full-body harness!",
+            "asr_text": "Wear the full-body harness.",
+            "translation": "Đeo dây đai toàn thân.",
+            "error": "RuntimeError: Safety stream must create exactly one safety commit",
+            "emitted_safety_ids": []
+          },
+          {
+            "case_id": "en2vi-safety-095",
+            "status": "fail",
+            "safety_id": "SAFE2_0095",
+            "reference_text": "Wear your safety helmet!",
+            "asr_text": "Wear the safety helmet.",
+            "translation": "Đeo mũ bảo hộ.",
+            "error": "RuntimeError: Safety stream must create exactly one safety commit",
+            "emitted_safety_ids": []
+          },
+          {
+            "case_id": "en2vi-safety-096",
+            "status": "fail",
+            "safety_id": "SAFE2_0096",
+            "reference_text": "Wear your safety helmet!",
+            "asr_text": "Wear the safety helmet.",
+            "translation": "Đeo mũ bảo hộ.",
+            "error": "RuntimeError: Safety stream must create exactly one safety commit",
+            "emitted_safety_ids": []
+          },
+          {
+            "case_id": "en2vi-safety-097",
+            "status": "fail",
+            "safety_id": "SAFE2_0097",
+            "reference_text": "Wear your safety helmet!",
+            "asr_text": "Wear the safety helmet.",
+            "translation": "Đeo mũ bảo hộ.",
+            "error": "RuntimeError: Safety stream must create exactly one safety commit",
+            "emitted_safety_ids": []
+          },
+          {
+            "case_id": "en2vi-safety-098",
+            "status": "fail",
+            "safety_id": "SAFE2_0098",
+            "reference_text": "Wear your safety helmet!",
+            "asr_text": "Wear the safety helmet.",
+            "translation": "Đeo mũ bảo hộ.",
+            "error": "RuntimeError: Safety stream must create exactly one safety commit",
+            "emitted_safety_ids": []
+          },
+          {
+            "case_id": "en2vi-safety-099",
+            "status": "fail",
+            "safety_id": "SAFE2_0099",
+            "reference_text": "Wear your welding helmet!",
+            "asr_text": "Wear the welding helmet.",
+            "translation": "Đeo mặt nạ hàn.",
+            "error": "RuntimeError: Safety stream must create exactly one safety commit",
+            "emitted_safety_ids": []
+          },
+          {
+            "case_id": "en2vi-safety-100",
+            "status": "fail",
+            "safety_id": "SAFE2_0100",
+            "reference_text": "Wear your welding helmet!",
+            "asr_text": "Wear the welding helmet.",
+            "translation": "Đeo mặt nạ hàn.",
+            "error": "RuntimeError: Safety stream must create exactly one safety commit",
+            "emitted_safety_ids": []
+          },
+          {
+            "case_id": "en2vi-safety-101",
+            "status": "fail",
+            "safety_id": "SAFE2_0101",
+            "reference_text": "Wear your welding helmet!",
+            "asr_text": "Wear the welding helmet.",
+            "translation": "Đeo mặt nạ hàn.",
+            "error": "RuntimeError: Safety stream must create exactly one safety commit",
+            "emitted_safety_ids": []
+          },
+          {
+            "case_id": "en2vi-safety-102",
+            "status": "fail",
+            "safety_id": "SAFE2_0102",
+            "reference_text": "Wear your welding helmet!",
+            "asr_text": "Wear the welding helmet.",
+            "translation": "Đeo mặt nạ hàn.",
+            "error": "RuntimeError: Safety stream must create exactly one safety commit",
+            "emitted_safety_ids": []
+          },
+          {
+            "case_id": "en2vi-safety-103",
+            "status": "fail",
+            "safety_id": "SAFE2_0103",
+            "reference_text": "Lock out the energy source before maintenance!",
+            "asr_text": "Lock out the engine source before maintenance.",
+            "translation": "Khóa nguồn động cơ trước khi bảo trì.",
+            "error": "RuntimeError: Safety stream must create exactly one safety commit",
+            "emitted_safety_ids": []
+          },
+          {
+            "case_id": "en2vi-safety-104",
+            "status": "fail",
+            "safety_id": "SAFE2_0104",
+            "reference_text": "Lock out the energy source before maintenance!",
+            "asr_text": "Lock out the engine source before maintenance.",
+            "translation": "Khóa nguồn động cơ trước khi bảo trì.",
+            "error": "RuntimeError: Safety stream must create exactly one safety commit",
+            "emitted_safety_ids": []
+          },
+          {
+            "case_id": "en2vi-safety-105",
+            "status": "fail",
+            "safety_id": "SAFE2_0105",
+            "reference_text": "Lock out the energy source before maintenance!",
+            "asr_text": "Lock out the engine source before maintenance.",
+            "translation": "Khóa nguồn động cơ trước khi bảo trì.",
+            "error": "RuntimeError: Safety stream must create exactly one safety commit",
+            "emitted_safety_ids": []
+          },
+          {
+            "case_id": "en2vi-safety-106",
+            "status": "fail",
+            "safety_id": "SAFE2_0106",
+            "reference_text": "Lock out the energy source before maintenance!",
+            "asr_text": "Lock out the engine source before maintenance.",
+            "translation": "Khóa nguồn động cơ trước khi bảo trì.",
+            "error": "RuntimeError: Safety stream must create exactly one safety commit",
+            "emitted_safety_ids": []
+          },
+          {
+            "case_id": "en2vi-safety-107",
+            "status": "fail",
+            "safety_id": "SAFE2_0107",
+            "reference_text": "There is a gas leak!",
+            "asr_text": "There is amperes gas leak.",
+            "translation": "Có rò khí ampe.",
+            "error": "RuntimeError: Safety stream must create exactly one safety commit",
+            "emitted_safety_ids": []
+          },
+          {
+            "case_id": "en2vi-safety-108",
+            "status": "fail",
+            "safety_id": "SAFE2_0108",
+            "reference_text": "There is a gas leak!",
+            "asr_text": "There is amperes gas leak.",
+            "translation": "Có rò khí ampe.",
+            "error": "RuntimeError: Safety stream must create exactly one safety commit",
+            "emitted_safety_ids": []
+          },
+          {
+            "case_id": "en2vi-safety-109",
+            "status": "fail",
+            "safety_id": "SAFE2_0109",
+            "reference_text": "There is a gas leak!",
+            "asr_text": "There is amperes gas leak.",
+            "translation": "Có rò khí ampe.",
+            "error": "RuntimeError: Safety stream must create exactly one safety commit",
+            "emitted_safety_ids": []
+          },
+          {
+            "case_id": "en2vi-safety-110",
+            "status": "fail",
+            "safety_id": "SAFE2_0110",
+            "reference_text": "There is a gas leak!",
+            "asr_text": "There is amperes gas leak.",
+            "translation": "Có rò khí ampe.",
+            "error": "RuntimeError: Safety stream must create exactly one safety commit",
+            "emitted_safety_ids": []
+          },
+          {
+            "case_id": "en2vi-safety-111",
+            "status": "pass",
+            "safety_id": "SAFE2_0111",
+            "reference_text": "Close the valve immediately!",
+            "asr_text": "Close the valve immediately.",
+            "translation": "Mọi người, Đóng van ngay!",
+            "error": null,
+            "emitted_safety_ids": [
+              "SAFE2_0114"
+            ]
+          },
+          {
+            "case_id": "en2vi-safety-112",
+            "status": "pass",
+            "safety_id": "SAFE2_0112",
+            "reference_text": "Close the valve immediately!",
+            "asr_text": "Close the valve immediately.",
+            "translation": "Mọi người, Đóng van ngay!",
+            "error": null,
+            "emitted_safety_ids": [
+              "SAFE2_0114"
+            ]
+          },
+          {
+            "case_id": "en2vi-safety-113",
+            "status": "pass",
+            "safety_id": "SAFE2_0113",
+            "reference_text": "Close the valve immediately!",
+            "asr_text": "Close the valve immediately.",
+            "translation": "Mọi người, Đóng van ngay!",
+            "error": null,
+            "emitted_safety_ids": [
+              "SAFE2_0114"
+            ]
+          },
+          {
+            "case_id": "en2vi-safety-115",
+            "status": "pass",
+            "safety_id": "SAFE2_0115",
+            "reference_text": "Stop welding!",
+            "asr_text": "Stop welding.",
+            "translation": "Mọi người, Dừng hàn!",
+            "error": null,
+            "emitted_safety_ids": [
+              "SAFE2_0118"
+            ]
+          },
+          {
+            "case_id": "en2vi-safety-116",
+            "status": "pass",
+            "safety_id": "SAFE2_0116",
+            "reference_text": "Stop welding!",
+            "asr_text": "Stop welding.",
+            "translation": "Mọi người, Dừng hàn!",
+            "error": null,
+            "emitted_safety_ids": [
+              "SAFE2_0118"
+            ]
+          },
+          {
+            "case_id": "en2vi-safety-117",
+            "status": "pass",
+            "safety_id": "SAFE2_0117",
+            "reference_text": "Stop welding!",
+            "asr_text": "Stop welding.",
+            "translation": "Mọi người, Dừng hàn!",
+            "error": null,
+            "emitted_safety_ids": [
+              "SAFE2_0118"
+            ]
+          },
+          {
+            "case_id": "en2vi-safety-119",
+            "status": "fail",
+            "safety_id": "SAFE2_0119",
+            "reference_text": "Watch overhead!",
+            "asr_text": "Watch over.",
+            "translation": "Coi chừng.",
+            "error": "RuntimeError: Safety stream must create exactly one safety commit",
+            "emitted_safety_ids": []
+          },
+          {
+            "case_id": "en2vi-safety-120",
+            "status": "fail",
+            "safety_id": "SAFE2_0120",
+            "reference_text": "Watch overhead!",
+            "asr_text": "Watch over.",
+            "translation": "Coi chừng.",
+            "error": "RuntimeError: Safety stream must create exactly one safety commit",
+            "emitted_safety_ids": []
+          },
+          {
+            "case_id": "en2vi-safety-121",
+            "status": "fail",
+            "safety_id": "SAFE2_0121",
+            "reference_text": "Watch overhead!",
+            "asr_text": "Watch over.",
+            "translation": "Coi chừng.",
+            "error": "RuntimeError: Safety stream must create exactly one safety commit",
+            "emitted_safety_ids": []
+          },
+          {
+            "case_id": "en2vi-safety-122",
+            "status": "fail",
+            "safety_id": "SAFE2_0122",
+            "reference_text": "Watch overhead!",
+            "asr_text": "Watch over.",
+            "translation": "Coi chừng.",
+            "error": "RuntimeError: Safety stream must create exactly one safety commit",
+            "emitted_safety_ids": []
+          },
+          {
+            "case_id": "en2vi-safety-123",
+            "status": "pass",
+            "safety_id": "SAFE2_0123",
+            "reference_text": "Watch out for the reversing vehicle!",
+            "asr_text": "Watch out for the reversing vehicle.",
+            "translation": "Mọi người, Coi chừng xe đang lùi!",
+            "error": null,
+            "emitted_safety_ids": [
+              "SAFE2_0126"
+            ]
+          },
+          {
+            "case_id": "en2vi-safety-124",
+            "status": "pass",
+            "safety_id": "SAFE2_0124",
+            "reference_text": "Watch out for the reversing vehicle!",
+            "asr_text": "Watch out for the reversing vehicle.",
+            "translation": "Mọi người, Coi chừng xe đang lùi!",
+            "error": null,
+            "emitted_safety_ids": [
+              "SAFE2_0126"
+            ]
+          },
+          {
+            "case_id": "en2vi-safety-125",
+            "status": "pass",
+            "safety_id": "SAFE2_0125",
+            "reference_text": "Watch out for the reversing vehicle!",
+            "asr_text": "Watch out for the reversing vehicle.",
+            "translation": "Mọi người, Coi chừng xe đang lùi!",
+            "error": null,
+            "emitted_safety_ids": [
+              "SAFE2_0126"
+            ]
+          }
+        ],
+        "examples": [
+          {
+            "case_id": "en2vi-safety-021",
+            "status": "fail",
+            "reference_text": "Do not start the machine!",
+            "asr_text": "Do nott the machine.",
+            "translation": "Không bơm máy.",
+            "error": "RuntimeError: Safety stream must create exactly one safety commit",
+            "reference_validation_errors": []
+          },
+          {
+            "case_id": "en2vi-safety-022",
+            "status": "fail",
+            "reference_text": "Do not start the machine!",
+            "asr_text": "Do nott the machine.",
+            "translation": "Không bơm máy.",
+            "error": "RuntimeError: Safety stream must create exactly one safety commit",
+            "reference_validation_errors": []
+          },
+          {
+            "case_id": "en2vi-safety-023",
+            "status": "fail",
+            "reference_text": "Do not start the machine!",
+            "asr_text": "Do nott the machine.",
+            "translation": "Không bơm máy.",
+            "error": "RuntimeError: Safety stream must create exactly one safety commit",
+            "reference_validation_errors": []
+          },
+          {
+            "case_id": "en2vi-safety-024",
+            "status": "fail",
+            "reference_text": "Do not start the machine!",
+            "asr_text": "Do nott the machine.",
+            "translation": "Không bơm máy.",
+            "error": "RuntimeError: Safety stream must create exactly one safety commit",
+            "reference_validation_errors": []
+          },
+          {
+            "case_id": "en2vi-safety-025",
+            "status": "fail",
+            "reference_text": "There is someone below!",
+            "asr_text": "There is amperes below.",
+            "translation": "Có ampe ở bên dưới.",
+            "error": "RuntimeError: Safety stream must create exactly one safety commit",
+            "reference_validation_errors": []
+          },
+          {
+            "case_id": "en2vi-safety-026",
+            "status": "fail",
+            "reference_text": "There is someone below!",
+            "asr_text": "There is amperes below.",
+            "translation": "Có ampe ở bên dưới.",
+            "error": "RuntimeError: Safety stream must create exactly one safety commit",
+            "reference_validation_errors": []
+          },
+          {
+            "case_id": "en2vi-safety-027",
+            "status": "fail",
+            "reference_text": "There is someone below!",
+            "asr_text": "There is amperes below.",
+            "translation": "Có ampe ở bên dưới.",
+            "error": "RuntimeError: Safety stream must create exactly one safety commit",
+            "reference_validation_errors": []
+          },
+          {
+            "case_id": "en2vi-safety-028",
+            "status": "fail",
+            "reference_text": "There is someone below!",
+            "asr_text": "There is amperes below.",
+            "translation": "Có ampe ở bên dưới.",
+            "error": "RuntimeError: Safety stream must create exactly one safety commit",
+            "reference_validation_errors": []
+          },
+          {
+            "case_id": "en2vi-safety-029",
+            "status": "fail",
+            "reference_text": "Falling object!",
+            "asr_text": "pling object.",
+            "translation": "Mặt bằng pling.",
+            "error": "RuntimeError: Safety stream must create exactly one safety commit",
+            "reference_validation_errors": []
+          },
+          {
+            "case_id": "en2vi-safety-030",
+            "status": "fail",
+            "reference_text": "Falling object!",
+            "asr_text": "pling object.",
+            "translation": "Mặt bằng pling.",
+            "error": "RuntimeError: Safety stream must create exactly one safety commit",
+            "reference_validation_errors": []
+          },
+          {
+            "case_id": "en2vi-safety-031",
+            "status": "fail",
+            "reference_text": "Falling object!",
+            "asr_text": "pling object.",
+            "translation": "Mặt bằng pling.",
+            "error": "RuntimeError: Safety stream must create exactly one safety commit",
+            "reference_validation_errors": []
+          },
+          {
+            "case_id": "en2vi-safety-032",
+            "status": "fail",
+            "reference_text": "Falling object!",
+            "asr_text": "pling object.",
+            "translation": "Mặt bằng pling.",
+            "error": "RuntimeError: Safety stream must create exactly one safety commit",
+            "reference_validation_errors": []
+          }
+        ],
+        "notes": "Reference errors are rule-based findings, not human semantic labels. Exact safety-ID agreement is stricter than route checks; equivalent approved phrases may have different IDs and require manual review."
+      },
+      "corpus": {
+        "test_noisy": {
+          "entries": 2546,
+          "unique_audio_sha256": 2546,
+          "unique_source_texts": 1135,
+          "unique_source_ids": 1273
+        },
+        "approved_safety": {
+          "entries": 126,
+          "unique_audio_sha256": 78,
+          "unique_source_texts": 33,
+          "unique_source_ids": 126
+        }
+      },
+      "provenance": {
+        "pipeline_contract_sha256": "c353e393ea1dc36a5c8c33c846bc5a2bf1f1acfdbf6e054ea5b7e8ff2db53f53",
+        "runtime_code_sha256": "b66b3bee9452e708ab9cb862d241a30ab8ecb63011006e0c40b93daffdbad80b",
+        "config_sha256": "5a11ef22917fbb11d1ae0b61eceebaf69dc760dcaf6f3bac9c6232ddd6ad673e",
+        "manifest_sha256": "cf0f8e7c0637e65afd79787d80e0d86450f0d31c7339e81e5e2af6f7c1e6a7c0",
+        "artifact_manifest_sha256": "8051195e2aea7d6957457a42eb3d0cde78945baddcf5ed6b47e953daed62a093",
+        "context_data_sha256": {
+          "safety_fast_path_review.csv": "8eff526ae21d61046b2876eaeb508100a0e2b43515f047186499fec59670c3b3",
+          "term_aliases.csv": "a600caf83df49e110be3fa068a65f72cab1a479791de4adb5633b487a565f92f",
+          "terminology_master.csv": "66aa87c2fa5668da5a95d869cb6a69983abeb9f68deb11920421ce9fa62541a3"
+        },
+        "safety_manifest_sha256": "facb1a2558fbfe59682a0dbfd2b7f3942c399e61b06b5c4b5cf7784678551717",
+        "platform": "Windows-10-10.0.26200-SP0",
+        "python": "3.11.8 | packaged by Anaconda, Inc. | (main, Feb 26 2024, 21:34:05) [MSC v.1916 64 bit (AMD64)]",
+        "dependencies": {
+          "numpy": "1.26.4",
+          "onnxruntime": "1.26.0",
+          "optimum-onnx": "0.1.0",
+          "transformers": "4.57.1",
+          "sherpa-onnx": "1.13.2",
+          "funasr-onnx": "0.4.1",
+          "pyttsx3": "2.99"
+        },
+        "tts_contract_sha256": "51261e0c64bd3d0814e6ab88d648d81affac8f0fd5a41bf30c33ede8c00b1ca8"
+      }
+    }
+  },
+  "scope": "PC Windows offline, replay tăng tốc WAV tổng hợp và TTS hệ thống cục bộ. Thời gian tạo buffer audio không gồm driver hoặc truyền Bluetooth. Trường trọng yếu được đối chiếu với văn bản gốc bằng rule; chưa phải đánh giá ngữ nghĩa của người nghe."
+}

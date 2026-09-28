@@ -337,7 +337,9 @@ Output mặc định: `reports/pc_pipeline_afterfix_v2`. Có thể chạy lại 
 các case đã lưu cùng code, backend và dữ liệu. Khi thay đổi chúng, dùng
 `-OutputRoot` mới; không ghép các latency của hai runtime vào cùng báo cáo.
 Case lỗi vẫn nằm trong mẫu số chất lượng; p50/p95 audio chỉ tính các lượt
-có đầu ra. Reference critical-field validator so với văn bản gốc phát hiện
+qua invariant chức năng. Ca đã tạo audio nhưng bị rule/route đánh FAIL cũng
+không góp latency vào các percentile này. Reference critical-field validator
+so với văn bản gốc phát hiện
 cả mất thuật ngữ/phủ định do ASR, thay vì chỉ đối chiếu với bản nhận dạng.
 
 Bộ full dùng replay tăng tốc (`realtime=false`) để kiểm tra toàn bộ corpus.
@@ -346,6 +348,23 @@ driver/tai nghe và chưa kiểm tra mic thực. Các WAV clean đầy đủ ch�
 local, nên không ghi nhận full clean test từ bộ chạy này. Có thể kiểm tra
 kế hoạch mà chưa nạp model với `-PrepareOnly`; `-SmokeTestCases 3` chỉ là
 smoke và được ghi `full_selected_corpus=false`.
+
+Khi cả hai chiều đã hoàn tất streaming, TTS và P5, tạo báo cáo GitHub từ
+chính các số liệu vừa đo:
+
+```powershell
+$Repo = "D:\code\.vscode\OneVoice\onevoice-edge"
+$OneVoicePython = "D:\MINICONDA\envs\onevoice\python.exe"
+Set-Location $Repo
+& $OneVoicePython scripts/build_desktop_benchmark_report.py `
+  --input-root reports/pc_pipeline_afterfix_v2 `
+  --output-dir docs/desktop_runtime_rebenchmark
+```
+
+Lệnh tạo `summary.json`, `report.md`, `report.html` và `overview.svg`, từ chối
+ghép báo cáo chưa chạy đủ hoặc TTS sai ngôn ngữ. Các ca FAIL vẫn được công bố;
+hoàn tất phép đo không có nghĩa mọi ca đều PASS. Không sửa runtime giữa lượt
+đo để làm các ca lỗi biến mất khỏi mẫu số.
 
 ### P5 với input cố định
 

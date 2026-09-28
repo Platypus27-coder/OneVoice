@@ -13,12 +13,12 @@ V2 nâng cấp runtime từ mốc rollback `v1-working-baseline`. Bảng dưới
 
 | Hạng mục | Trạng thái | Bằng chứng / giới hạn |
 |---|---|---|
-| Context Engine, thuật ngữ và Safety Matching | `ĐÃ KIỂM TRA` | Logic định tuyến xác định; safety WAV được duyệt nội bộ chỉ cho demo |
+| Context Engine, thuật ngữ và Safety Matching | `CÒN LỖI FULL SUITE` | PC safety gate: VI→EN 108/126, EN→VI 66/126; lỗi chuẩn hóa/matching và nhận dạng cần sửa |
 | Streaming 32 ms và semantic commit | `ĐÃ KIỂM TRA` | Fixed suite 4/4 và soak offline 30 phút, 325/325 lượt trên Colab; PC có P5 riêng |
 | Denoising | `PASSTHROUGH ĐƯỢC CHỌN` | DeepFilterNet không cải thiện noisy dev và làm chậm pipeline; chưa promote |
 | EN → VI ASR | `ĐẠT TRÊN TEST TỔNG HỢP` | SenseVoice FP32 ONNX; critical-term recall 99,17% trên PC noisy test |
 | VI → EN ASR | `CÒN HẠN CHẾ` | GIPFormer ONNX baseline; critical-term recall 75,82% trên PC noisy test, dưới mục tiêu 95% |
-| MT và TTS | `DÙNG ĐƯỢC CHO DEMO` | EnViT5 fine-tuned và TTS offline cục bộ; chưa khẳng định chất lượng giọng sản phẩm |
+| MT và TTS | `DEMO, CÒN HẠN CHẾ` | EnViT5 có lỗi thuật ngữ; TTS EN 979/979, VI 976/979 WAV qua gate kỹ thuật, 3 cảnh báo clipping |
 | Windows PC offline | `ĐÃ KIỂM TRA` | Hai bundle qua smoke không mạng; P5 qua budget desktop khai báo trên ASUS TUF F15 |
 | Dữ liệu công trường thật | `CHƯA CÓ` | Chưa thu/đánh giá holdout WAV tại công trường; safety audio hiện có là dữ liệu tổng hợp cho demo |
 | Android / Snapdragon / Bluetooth | `ROADMAP` | Chưa triển khai trên điện thoại |
@@ -357,6 +357,38 @@ P5 phát lại audio qua ASR → MT/context/safety → TTS, mỗi loại route l
 | EN → VI | 1.124 ms | 2.876 ms | 2,2 ms | 829 ms | 3,54 GB | Đạt budget PC |
 
 Hai bundle cục bộ cũng đã qua smoke no-network ở cả hai chiều. Đây là xác nhận trên đúng laptop nêu trên, không phải trên điện thoại hoặc phần cứng khác. Hướng dẫn đóng gói, chạy lại và câu mô tả CV thận trọng nằm trong [tài liệu Windows desktop](docs/PC_DESKTOP_RELEASE.md). Android/Snapdragon/tai nghe Bluetooth vẫn là [roadmap riêng](docs/ANDROID_SNAPDRAGON_EXECUTION.md).
+
+### Đo lại pipeline PC sau sửa desktop · 28/09/2026
+
+Runtime `a34118a`: normal commit chờ endpoint, VI→EN dùng Windows SAPI
+(Microsoft David), EN→VI dùng eSpeak NG offline. Đã đo **4.756 lượt streaming**:
+full noisy test local và 126 entry safety canonical mỗi chiều, không giới hạn
+vài mẫu và không loại ca FAIL khỏi mẫu số.
+
+<img src="docs/desktop_runtime_rebenchmark/overview.svg" alt="Benchmark pipeline PC: gate noisy, gate safety, rule trường trọng yếu và commit tới buffer audio p95" width="100%" />
+
+- VI→EN: noisy 1.879/1.958, safety 108/126 qua gate; tổng 97 FAIL.
+- EN→VI: noisy 2.520/2.546, safety 66/126 qua gate; tổng 86 FAIL.
+- Normal commit→buffer audio p95 trên ca qua gate: 1.390,6 ms / 803,9 ms
+  (VI→EN / EN→VI). Đây chưa phải latency tới tai người nghe.
+- TTS độc lập đúng ngôn ngữ đầu ra: EN 979/979, VI 976/979 câu qua gate WAV;
+  3 câu VI có nguy cơ clipping. Không phải nghiệm thu độ rõ của giọng.
+- P5 lặp 5 lần/route qua budget desktop ở hai chiều; peak Python RSS của full
+  replay là 2,78 / 3,50 GiB, không gồm các process TTS con.
+
+**Chưa đạt nghiệm thu chất lượng toàn pipeline.** Qua gate chức năng không
+đồng nghĩa đúng nghĩa so với lời gốc. Full suite phát hiện lỗi normalize
+(“a” → “amperes”, “giàn giáo” bị mở rộng trước safety matching), commit safety
+lặp và lỗi ASR/thuật ngữ MT. Rule reference còn có false positive; metric
+100% của rule trên EN safety **không phải** độ chính xác safety. EN safety
+có 126 entry nhưng chỉ 33 văn bản nguồn riêng; không coi các entry là 126
+câu/người nói độc lập. Số liệu raw ASR/model Colab và P5 lịch sử phía trên
+được giữ nguyên để truy vết, không gán cho bản runtime mới.
+
+[Báo cáo chi tiết](docs/desktop_runtime_rebenchmark/report.md) ·
+[HTML](docs/desktop_runtime_rebenchmark/report.html) ·
+[JSON và provenance](docs/desktop_runtime_rebenchmark/summary.json) ·
+[Lỗi còn lại và hướng xử lý](docs/desktop_runtime_rebenchmark/review_findings.md)
 
 Fixed streaming suite 4/4 và soak offline 30 phút 325/325 lượt đã chạy trên Colab, không được tính là soak trên laptop Windows. Safety WAV là âm thanh tổng hợp demo từ 126 câu duyệt nội bộ; nhóm dự án chưa có WAV công trường thực tế.
 

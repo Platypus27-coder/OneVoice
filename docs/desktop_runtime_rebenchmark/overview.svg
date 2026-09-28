@@ -1,0 +1,63 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1120" height="810" viewBox="0 0 1120 810">
+<style>text{font-family:Segoe UI,Arial,sans-serif;fill:#e5e7eb}.title{font-size:23px;font-weight:650}.label{font-size:14px}.value{font-size:14px;font-weight:600}.note{font-size:12px;fill:#aeb7c6}.axis{stroke:#9aa4b2;stroke-width:1}</style>
+<rect width="1120" height="810" rx="14" fill="#0d1117"/>
+<text x="32" y="40" class="title">OneVoice · Benchmark pipeline PC sau sửa lỗi</text>
+<text x="32" y="65" class="note">Full noisy test + 126 mục safety canonical mỗi chiều · Offline · Replay tăng tốc</text>
+<text x="32" y="115" class="label">Noisy test: qua gate streaming (audio, route, rule, commit/frame)</text>
+<text x="32" y="150" class="label">VI → EN · n=1958</text>
+<rect x="225" y="135" width="767.72" height="22" rx="3" fill="#7dd3c2"/>
+<text x="1002.72" y="151" class="value">96.0 %</text>
+<text x="32" y="184" class="label">EN → VI · n=2546</text>
+<rect x="225" y="169" width="791.83" height="22" rx="3" fill="#f19aaa"/>
+<text x="1026.83" y="185" class="value">99.0 %</text>
+<path d="M225 209H1025" class="axis"/>
+<text x="225" y="227" text-anchor="middle" class="note">0</text>
+<text x="425.0" y="227" text-anchor="middle" class="note">25</text>
+<text x="625.0" y="227" text-anchor="middle" class="note">50</text>
+<text x="825.0" y="227" text-anchor="middle" class="note">75</text>
+<text x="1025" y="227" text-anchor="middle" class="note">100</text>
+<text x="625.0" y="245" text-anchor="middle" class="note">Tỷ lệ lượt (%)</text>
+<text x="32" y="285" class="label">Safety canonical: qua gate streaming (đúng safety route, không phát lặp)</text>
+<text x="32" y="320" class="label">VI → EN · n=126</text>
+<rect x="225" y="305" width="685.71" height="22" rx="3" fill="#7dd3c2"/>
+<text x="920.71" y="321" class="value">85.7 %</text>
+<text x="32" y="354" class="label">EN → VI · n=126</text>
+<rect x="225" y="339" width="419.05" height="22" rx="3" fill="#f19aaa"/>
+<text x="654.05" y="355" class="value">52.4 %</text>
+<path d="M225 379H1025" class="axis"/>
+<text x="225" y="397" text-anchor="middle" class="note">0</text>
+<text x="425.0" y="397" text-anchor="middle" class="note">25</text>
+<text x="625.0" y="397" text-anchor="middle" class="note">50</text>
+<text x="825.0" y="397" text-anchor="middle" class="note">75</text>
+<text x="1025" y="397" text-anchor="middle" class="note">100</text>
+<text x="625.0" y="415" text-anchor="middle" class="note">Tỷ lệ entry (%)</text>
+<text x="32" y="455" class="label">Noisy test: bảo toàn trường trọng yếu so với lời gốc</text>
+<text x="32" y="490" class="label">VI → EN · n=1958</text>
+<rect x="225" y="475" width="538.92" height="22" rx="3" fill="#7dd3c2"/>
+<text x="773.92" y="491" class="value">67.4 %</text>
+<text x="32" y="524" class="label">EN → VI · n=2546</text>
+<rect x="225" y="509" width="786.80" height="22" rx="3" fill="#f19aaa"/>
+<text x="1021.80" y="525" class="value">98.4 %</text>
+<path d="M225 549H1025" class="axis"/>
+<text x="225" y="567" text-anchor="middle" class="note">0</text>
+<text x="425.0" y="567" text-anchor="middle" class="note">25</text>
+<text x="625.0" y="567" text-anchor="middle" class="note">50</text>
+<text x="825.0" y="567" text-anchor="middle" class="note">75</text>
+<text x="1025" y="567" text-anchor="middle" class="note">100</text>
+<text x="625.0" y="585" text-anchor="middle" class="note">Tỷ lệ câu (%)</text>
+<text x="32" y="625" class="label">Noisy normal: commit → buffer audio p95</text>
+<text x="32" y="660" class="label">VI → EN · n=1879</text>
+<rect x="225" y="645" width="666.67" height="22" rx="3" fill="#7dd3c2"/>
+<text x="901.67" y="661" class="value">1390.6 ms</text>
+<text x="32" y="694" class="label">EN → VI · n=2520</text>
+<rect x="225" y="679" width="385.40" height="22" rx="3" fill="#f19aaa"/>
+<text x="620.40" y="695" class="value">803.9 ms</text>
+<path d="M225 719H1025" class="axis"/>
+<text x="225" y="737" text-anchor="middle" class="note">0</text>
+<text x="425.0" y="737" text-anchor="middle" class="note">417</text>
+<text x="625.0" y="737" text-anchor="middle" class="note">834</text>
+<text x="825.0" y="737" text-anchor="middle" class="note">1252</text>
+<text x="1025" y="737" text-anchor="middle" class="note">1669</text>
+<text x="625.0" y="755" text-anchor="middle" class="note">Độ trễ p95 (ms)</text>
+<text x="32" y="794" class="note">Nguồn: summary.json · p95 chỉ tính ca qua invariant · Trường trọng yếu kiểm bằng rule · Tổng hợp 2026-09-28</text>
+</svg>
