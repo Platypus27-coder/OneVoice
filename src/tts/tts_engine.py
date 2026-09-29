@@ -73,15 +73,17 @@ class TTSEngine:
         self._vi_tts_engine = None
         self._vi_tts_engine_name = None
         self._sapi_voice_name = None
+        self._sapi_vi_voice_name = None
         self._gtts_class = None
         self._audio_segment_class = None
         self.output_device = config["audio"].get("output_device")
         self.synthesis_timeout_s = float(self.cfg.get("synthesis_timeout_s", 15.0))
         if not 0 < self.synthesis_timeout_s < float("inf"):
             raise ValueError("tts.synthesis_timeout_s must be positive and finite")
-        windows_rate = int(self.cfg.get("windows_en_rate", -1))
-        if not -10 <= windows_rate <= 10:
-            raise ValueError("tts.windows_en_rate must be between -10 and 10")
+        for language in ("en", "vi"):
+            windows_rate = int(self.cfg.get(f"windows_{language}_rate", -1))
+            if not -10 <= windows_rate <= 10:
+                raise ValueError(f"tts.windows_{language}_rate must be between -10 and 10")
 
     @staticmethod
     def _find_espeak_executable() -> str | None:
@@ -99,7 +101,7 @@ class TTSEngine:
     def _require_windows_espeak(self, executable: str | None) -> None:
         if sys.platform == "win32" and not executable:
             raise RuntimeError(
-                "Windows offline TTS has no usable SAPI English voice and no local eSpeak fallback. "
+                "Windows offline TTS has no usable SAPI voice for the target language and no local eSpeak fallback. "
                 "Activate the onevoice environment with its eSpeak NG hook, "
                 "or install the local runtime under the environment's "
                 "espeak-ng-runtime/eSpeak NG directory."
@@ -130,6 +132,10 @@ class TTSEngine:
 
     def _run_windows_sapi(self, request: dict) -> dict:
         """Use an isolated PowerShell/.NET process for Windows offline speech."""
+        language = request.get("language", "en")
+        if language not in {"en", "vi"}:
+            raise ValueError("Windows SAPI language must be en or vi")
+        request = {**request, "language": language}
         if sys.platform != "win32":
             raise RuntimeError("Windows SAPI is available only on Windows")
         executable = self._powershell_executable()
@@ -138,28 +144,65 @@ class TTSEngine:
 
         script = r"""
 $ErrorActionPreference = 'Stop'
+$ProgressPreference = 'SilentlyContinue'
 [Console]::InputEncoding = [System.Text.UTF8Encoding]::new($false)
 $synth = $null
+$fileStream = $null
 try {
     $request = [Console]::In.ReadToEnd() | ConvertFrom-Json
     Add-Type -AssemblyName System.Speech
     $synth = New-Object System.Speech.Synthesis.SpeechSynthesizer
+    $language = [string]$request.language
     $voices = @($synth.GetInstalledVoices() | Where-Object {
-        $_.Enabled -and ($_.VoiceInfo.Culture.Name -eq 'en' -or $_.VoiceInfo.Culture.Name -like 'en-*')
+        $_.Enabled -and ($_.VoiceInfo.Culture.Name -eq $language -or $_.VoiceInfo.Culture.Name -like "$language-*")
     })
-    if ($voices.Count -eq 0) { throw 'No enabled English Windows speech voice is installed.' }
+    # .NET Framework System.Speech can omit installed OneCore voices.
+    # Read their SAPI token category directly; do NOT copy/edit registry keys.
+    $useOneCore = $false
+    if ($voices.Count -eq 0 -and $language -eq 'vi') {
+        $category = New-Object -ComObject SAPI.SpObjectTokenCategory
+        $category.SetId('HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Speech_OneCore\Voices', $false)
+        $voices = @($category.EnumerateTokens() | ForEach-Object {
+            $token = $_
+            $culture = [System.Globalization.CultureInfo]::GetCultureInfo(
+                [Convert]::ToInt32(($token.GetAttribute('Language') -split ';')[0], 16))
+            if ($culture.Name -eq $language -or $culture.Name -like "$language-*") {
+                [pscustomobject]@{ Token = $token; VoiceInfo = [pscustomobject]@{
+                    Name = $token.GetDescription(); Culture = $culture
+                } }
+            }
+        })
+        $useOneCore = $true
+    }
+    if ($voices.Count -eq 0) { throw "No enabled '$language' Windows speech voice is installed." }
     $voice = $null
     if (-not [string]::IsNullOrWhiteSpace([string]$request.voice)) {
         $voice = $voices | Where-Object { $_.VoiceInfo.Name -eq [string]$request.voice } | Select-Object -First 1
-        if (-not $voice) { throw "Requested English voice '$($request.voice)' is not installed or enabled." }
+        if (-not $voice) { throw "Requested '$language' voice '$($request.voice)' is not installed or enabled for this language." }
     } else {
-        $voice = $voices | Where-Object { $_.VoiceInfo.Name -match 'David|Zira' } | Select-Object -First 1
-        if (-not $voice) { $voice = $voices | Where-Object { $_.VoiceInfo.Culture.Name -eq 'en-US' } | Select-Object -First 1 }
+        if ($language -eq 'en') {
+            $voice = $voices | Where-Object { $_.VoiceInfo.Name -match 'David|Zira' } | Select-Object -First 1
+            if (-not $voice) { $voice = $voices | Where-Object { $_.VoiceInfo.Culture.Name -eq 'en-US' } | Select-Object -First 1 }
+        } else {
+            $voice = $voices | Where-Object { $_.VoiceInfo.Culture.Name -eq 'vi-VN' } | Select-Object -First 1
+        }
         if (-not $voice) { $voice = $voices | Select-Object -First 1 }
     }
-    $synth.SelectVoice($voice.VoiceInfo.Name)
+    if (-not $useOneCore) { $synth.SelectVoice($voice.VoiceInfo.Name) }
     if ($request.probe) {
         $result = @{ voice = $voice.VoiceInfo.Name; culture = $voice.VoiceInfo.Culture.Name }
+    } elseif ($useOneCore) {
+        $oneCore = New-Object -ComObject SAPI.SpVoice
+        $oneCore.Voice = $voice.Token
+        $oneCore.Rate = [int]$request.rate
+        $fileStream = New-Object -ComObject SAPI.SpFileStream
+        $fileStream.Format.Type = 22 # SAFT22kHz16BitMono (PCM)
+        $fileStream.Open([string]$request.path, 3, $false) # SSFMCreateForWrite
+        $oneCore.AudioOutputStream = $fileStream
+        [void]$oneCore.Speak([string]$request.text, 16) # SVSFIsNotXML: literal text only
+        $fileStream.Close()
+        $fileStream = $null
+        $result = @{ voice = $voice.VoiceInfo.Name; culture = $voice.VoiceInfo.Culture.Name; written = $true }
     } else {
         $synth.Rate = [int]$request.rate
         $synth.SetOutputToWaveFile([string]$request.path)
@@ -172,6 +215,7 @@ try {
     [Console]::Error.WriteLine($_.Exception.Message)
     exit 1
 } finally {
+    if ($fileStream) { $fileStream.Close() }
     if ($synth) { $synth.Dispose() }
 }
 """
@@ -222,6 +266,9 @@ try {
         )
 
     def _synthesize_sapi_en(self, text: str) -> tuple[np.ndarray, int]:
+        return self._synthesize_windows_sapi(text, "en")
+
+    def _synthesize_windows_sapi(self, text: str, language: str) -> tuple[np.ndarray, int]:
         import tempfile
 
         tmp_path = None
@@ -230,8 +277,9 @@ try {
                 tmp_path = handle.name
             self._run_windows_sapi({
                 "probe": False,
-                "voice": self._sapi_voice_name or "",
-                "rate": int(self.cfg.get("windows_en_rate", -1)),
+                "language": language,
+                "voice": (self._sapi_voice_name if language == "en" else self._sapi_vi_voice_name) or "",
+                "rate": int(self.cfg.get(f"windows_{language}_rate", -1)),
                 "text": text,
                 "path": tmp_path,
             })
@@ -279,7 +327,7 @@ try {
         if direction in (None, "en2vi"):
             # Explicit offline/demo mode uses a real local system voice and
             # avoids OmniVoice's large optional dependency stack.
-            if self.backend == "gtts":
+            if self.backend in {"gtts", "sapi", "espeak"}:
                 self._load_edge_vi_tts()
             elif self.offline and self.cfg.get("offline_engine") == "pyttsx3":
                 self._load_edge_vi_tts()
@@ -575,8 +623,8 @@ try {
             self._load_online_gtts()
             self._vi_tts_engine_name = "gtts-online"
             return
-        if self.backend == "sapi":
-            raise RuntimeError("Windows SAPI selection is for English output; use auto/espeak/gtts for Vietnamese")
+        if self.backend == "sapi" and sys.platform != "win32":
+            raise RuntimeError("Windows SAPI backend is available only on Windows")
         # Linux Colab's pyttsx3/espeak driver can acknowledge save_to_file()
         # while leaving a non-RIFF placeholder behind.  Keep pyttsx3 as the
         # configured backend, but remember the native executable as a reliable
@@ -588,6 +636,21 @@ try {
             self._vi_tts_engine_name = "espeak-ng-offline-demo"
             return
         if sys.platform == "win32":
+            try:
+                voice = self._run_windows_sapi({
+                    "probe": True,
+                    "language": "vi",
+                    "voice": str(self.cfg.get("windows_vi_voice", "")),
+                })
+            except Exception as exc:
+                if self.backend == "sapi":
+                    raise
+                print(f"[TTS] ⚠ Vietnamese Windows SAPI unavailable ({exc}); trying local eSpeak demo voice.")
+            else:
+                self._sapi_vi_voice_name = voice["voice"]
+                self._vi_tts_engine_name = "windows-sapi-offline"
+                print(f"[TTS] ✅ Windows offline Vietnamese voice loaded: {self._sapi_vi_voice_name}")
+                return
             self._require_windows_espeak(self._vi_tts_executable)
             self._vi_tts_engine_name = "espeak-ng-offline-demo"
             print("[TTS] ✅ Native local Vietnamese TTS loaded (voice=vi).")
@@ -697,6 +760,12 @@ try {
             started = time.perf_counter()
             audio, sample_rate = self._synthesize_gtts(text, "vi")
             print(f"[TTS VI] {(time.perf_counter() - started) * 1000:.0f}ms | gTTS online")
+            return audio, sample_rate
+
+        if self._vi_tts_engine_name == "windows-sapi-offline":
+            started = time.perf_counter()
+            audio, sample_rate = self._synthesize_windows_sapi(text, "vi")
+            print(f"[TTS VI] Windows SAPI voice={self._sapi_vi_voice_name} | {(time.perf_counter() - started) * 1000:.0f}ms")
             return audio, sample_rate
 
         if self._vi_tts_engine_name == "espeak-ng-offline-demo":

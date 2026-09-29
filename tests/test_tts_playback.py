@@ -27,6 +27,67 @@ def config() -> dict:
 
 
 class SystemTTSTests(unittest.TestCase):
+    def test_windows_auto_prefers_a_vietnamese_sapi_voice_without_espeak(self):
+        with mock.patch("sys.platform", "win32"), \
+             mock.patch.object(TTSEngine, "_find_espeak_executable", return_value=None), \
+             mock.patch.object(TTSEngine, "_run_windows_sapi", return_value={"voice": "Microsoft An", "culture": "vi-VN"}) as probe, \
+             contextlib.redirect_stdout(io.StringIO()):
+            engine = TTSEngine(config(), profile="edge", offline=True)
+            engine.load("en2vi")
+        self.assertEqual(probe.call_args.args[0]["language"], "vi")
+        self.assertEqual(engine._sapi_vi_voice_name, "Microsoft An")
+        self.assertIsNone(engine._sapi_voice_name)
+        self.assertEqual(engine.engine_name("en2vi"), "windows-sapi-offline")
+
+    def test_explicit_vietnamese_sapi_does_not_silently_fall_back(self):
+        with mock.patch("sys.platform", "win32"), \
+             mock.patch.object(TTSEngine, "_find_espeak_executable", return_value="espeak-ng"), \
+             mock.patch.object(TTSEngine, "_run_windows_sapi", side_effect=RuntimeError("No vi voice")):
+            engine = TTSEngine(config(), profile="edge", offline=True, backend="sapi")
+            with self.assertRaisesRegex(RuntimeError, "No vi voice"):
+                engine.load("en2vi")
+
+    def test_auto_falls_back_to_espeak_when_vietnamese_sapi_is_absent(self):
+        with mock.patch("sys.platform", "win32"), \
+             mock.patch.object(TTSEngine, "_find_espeak_executable", return_value="espeak-ng"), \
+             mock.patch.object(TTSEngine, "_run_windows_sapi", side_effect=RuntimeError("No vi voice")), \
+             contextlib.redirect_stdout(io.StringIO()):
+            engine = TTSEngine(config(), profile="edge", offline=True)
+            engine.load("en2vi")
+        self.assertEqual(engine.engine_name("en2vi"), "espeak-ng-offline-demo")
+
+    def test_sapi_language_request_keeps_diacritics_and_separate_voice_names(self):
+        engine = TTSEngine(config(), profile="edge", offline=True)
+        engine._sapi_voice_name = "David"
+        engine._sapi_vi_voice_name = "An"
+        engine._vi_tts_engine_name = "windows-sapi-offline"
+        calls = []
+
+        def synthesize(request):
+            calls.append(request)
+            with wave.open(request["path"], "wb") as handle:
+                handle.setnchannels(1)
+                handle.setsampwidth(2)
+                handle.setframerate(22050)
+                handle.writeframes(np.asarray([2000, -2000], dtype="<i2").tobytes())
+
+        with mock.patch.object(engine, "_run_windows_sapi", side_effect=synthesize), \
+             contextlib.redirect_stdout(io.StringIO()):
+            audio, sample_rate = engine.synthesize("Kiểm tra mũ bảo hộ.", "en2vi")
+            engine._synthesize_sapi_en("Check the helmet.")
+        self.assertEqual(sample_rate, 22050)
+        self.assertFalse(engine.is_silence(audio))
+        self.assertEqual([(c["language"], c["voice"]) for c in calls], [("vi", "An"), ("en", "David")])
+        self.assertEqual(calls[0]["text"], "Kiểm tra mũ bảo hộ.")
+        self.assertTrue(all(not Path(c["path"]).exists() for c in calls))
+
+    def test_windows_rates_are_validated_for_both_languages(self):
+        for language in ("en", "vi"):
+            cfg = config()
+            cfg["tts"][f"windows_{language}_rate"] = 11
+            with self.assertRaisesRegex(ValueError, f"windows_{language}_rate"):
+                TTSEngine(cfg, profile="edge", offline=True)
+
     def test_windows_loads_native_backend_for_both_languages_without_pyttsx3(self):
         broken_pyttsx3 = SimpleNamespace(init=mock.Mock(side_effect=AssertionError("must not enter SAPI loop")))
         with mock.patch("sys.platform", "win32"), mock.patch.object(TTSEngine, "_find_espeak_executable", return_value="espeak-ng.exe"), \

@@ -59,10 +59,20 @@ class OneVoicePipeline:
         input_device: int | str | None = None,
         tts_backend: str | None = None,
         allow_online_tts: bool = False,
+        windows_en_voice: str | None = None,
+        windows_en_rate: int | None = None,
     ):
         if direction not in {"vi2en", "en2vi"}:
             raise ValueError("direction must be 'vi2en' or 'en2vi'")
         self.cfg = load_config(config_path)
+        if windows_en_voice is not None:
+            if not windows_en_voice.strip():
+                raise ValueError("windows_en_voice cannot be empty")
+            self.cfg["tts"]["windows_en_voice"] = windows_en_voice.strip()
+        if windows_en_rate is not None:
+            if not -10 <= windows_en_rate <= 10:
+                raise ValueError("windows_en_rate must be between -10 and 10")
+            self.cfg["tts"]["windows_en_rate"] = windows_en_rate
         if vad_energy_threshold is not None:
             if not 0 < vad_energy_threshold <= 1:
                 raise ValueError("vad_energy_threshold must be greater than 0 and at most 1")
@@ -1021,8 +1031,10 @@ def main() -> None:
                         help="Microphone index or name/host API, e.g. 'Microphone Array Realtek MME'")
     parser.add_argument(
         "--tts-backend", choices=["auto", "sapi", "espeak", "gtts"],
-        help="TTS voice backend; Windows auto prefers its installed offline English voice",
+        help="TTS voice backend; Windows auto prefers an installed offline voice in the output language",
     )
+    parser.add_argument("--windows-en-voice", help="Installed Windows English voice name for this run, e.g. 'Microsoft Zira Desktop'")
+    parser.add_argument("--windows-en-rate", type=int, help="Windows English speech rate from -10 to 10; overrides config for this run")
     parser.add_argument(
         "--allow-online-tts", action="store_true",
         help="Allow gTTS network requests for translated text (requires --tts-backend gtts)",
@@ -1042,6 +1054,10 @@ def main() -> None:
         parser.error("--tts-backend gtts sends translated text online; also pass --allow-online-tts")
     if args.allow_online_tts and args.tts_backend != "gtts":
         parser.error("--allow-online-tts requires --tts-backend gtts")
+    if args.windows_en_voice is not None and not args.windows_en_voice.strip():
+        parser.error("--windows-en-voice cannot be empty")
+    if args.windows_en_rate is not None and not -10 <= args.windows_en_rate <= 10:
+        parser.error("--windows-en-rate must be between -10 and 10")
 
     pipeline = OneVoicePipeline(
         config_path=args.config,
@@ -1055,6 +1071,8 @@ def main() -> None:
         input_device=args.input_device,
         tts_backend=args.tts_backend,
         allow_online_tts=args.allow_online_tts,
+        windows_en_voice=args.windows_en_voice,
+        windows_en_rate=args.windows_en_rate,
     )
     if args.stream_file:
         result = pipeline.stream_file(args.stream_file, realtime=args.realtime)

@@ -286,7 +286,8 @@ def main() -> None:
                "elapsed_seconds": time.perf_counter() - started,
                "realtime": args.realtime, "normal_commit_policy": pipeline.committer.normal_commit_policy,
                "tts_backend_requested": args.tts_backend, "tts_engine": pipeline.tts.engine_name(args.direction),
-               "sapi_voice": pipeline.tts._sapi_voice_name,
+               "sapi_voice": (pipeline.tts._sapi_voice_name if args.direction == "vi2en"
+                              else pipeline.tts._sapi_vi_voice_name),
                "suites": {suite: summarize_results([r for r in rows if r["suite"] == suite]) for suite in available},
                "routes": {route: summarize_results(group) for route in ("normal", "safety")
                           if (group := [r for r in rows if r["expected_route"] == route])},

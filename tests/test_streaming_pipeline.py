@@ -37,6 +37,21 @@ class _SoundFileStub:
 
 
 class StreamingPipelineTests(unittest.TestCase):
+    def test_cli_forwards_windows_voice_without_changing_config_on_disk(self):
+        with mock.patch.object(sys, "argv", ["pipeline.py", "--direction", "vi2en",
+                              "--windows-en-voice", "Microsoft Zira Desktop", "--windows-en-rate", "-2"]), \
+             mock.patch("pipeline.OneVoicePipeline") as factory:
+            pipeline_main()
+        self.assertEqual(factory.call_args.kwargs["windows_en_voice"], "Microsoft Zira Desktop")
+        self.assertEqual(factory.call_args.kwargs["windows_en_rate"], -2)
+
+    def test_cli_rejects_invalid_windows_rate_before_loading_models(self):
+        with mock.patch.object(sys, "argv", ["pipeline.py", "--windows-en-rate", "11"]), \
+             mock.patch("pipeline.OneVoicePipeline") as factory, \
+             contextlib.redirect_stderr(io.StringIO()), self.assertRaises(SystemExit):
+            pipeline_main()
+        factory.assert_not_called()
+
     def test_suppressed_translation_keeps_the_reason_without_emitting_audio(self):
         pipeline = OneVoicePipeline.__new__(OneVoicePipeline)
         pipeline.stop_event = threading.Event()

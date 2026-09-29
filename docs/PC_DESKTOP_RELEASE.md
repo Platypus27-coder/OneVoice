@@ -150,9 +150,29 @@ nghe đầu ra và so sánh câu nhận dạng với lời nói; chỉ có log n
 Windows English TTS ở chế độ `auto` ưu tiên giọng Microsoft SAPI đã cài sẵn,
 chạy trong tiến trình PowerShell riêng để tránh vòng lặp COM `pyttsx3` bị kẹt.
 Nếu Windows không có giọng tiếng Anh dùng được, OneVoice mới chuyển sang
-eSpeak NG cục bộ. Tiếng Việt tiếp tục dùng giọng cục bộ hiện có. Không tải
+eSpeak NG cục bộ. Tiếng Việt ở `auto` cũng ưu tiên giọng Windows đúng ngôn ngữ
+(ví dụ Microsoft An) nếu có; nếu thiếu mới dùng eSpeak demo. Adapter đọc token
+OneCore trực tiếp bằng SAPI khi .NET Framework không liệt kê giọng đó, không
+sao chép hoặc sửa registry. `--tts-backend sapi` yêu cầu giọng đúng ngôn ngữ
+và báo lỗi nếu không có, không âm thầm chuyển sang giọng khác. Không tải
 model TTS trong edge profile. Mỗi lần tổng hợp có timeout mặc định 15 giây
 (có thể đặt `tts.synthesis_timeout_s` trong config).
+
+Có thể đặt `tts.windows_en_voice`, `tts.windows_en_rate`,
+`tts.windows_vi_voice`, `tts.windows_vi_rate` trong config. Rate Windows nằm
+trong khoảng -10 đến 10, mặc định -1. Hai tùy chọn CLI `--windows-en-voice`
+và `--windows-en-rate` thay giọng/tốc độ tiếng Anh cho riêng lượt chạy, không
+sửa bundle hoặc trọng số. `check_desktop_audio.py --save-audio` lưu WAV để
+nghe đối chiếu và ghi tên giọng thực tế; WAV hợp lệ không có nghĩa giọng dễ hiểu.
+
+Đối chiếu nghe ngày 29/09/2026: người dùng nghe rõ WAV tiếng Anh có sẵn qua
+Realtek MME và WASAPI. Cùng WAV Zira hơi rè qua tai nghe nhưng được xác nhận
+rõ qua loa laptop. Đây là bằng chứng giới hạn ở các đoạn vừa nghe, chưa chẩn
+đoán hỏng tai nghe, chưa nghiệm thu Bluetooth hoặc microphone. Dùng tên thiết
+bị kèm host API để tránh index đổi khi cắm/rút, ví dụ `Speakers Realtek WASAPI`;
+chỉ dùng selector khi thiết bị thật sự xuất hiện trong `python -m sounddevice`.
+Khi thử mic và loa cùng laptop, thu trước rồi phát sau để tránh tiếng TTS lọt
+lại vào mic; bài nghe TTS riêng không chứng minh ASR/MT live đã đúng.
 
 Với runtime eSpeak portable trên Windows, tiến trình con nhận
 `ESPEAK_DATA_PATH` trỏ vào `espeak-ng-data` đi cùng executable; không sửa biến
@@ -313,8 +333,12 @@ mic có thể thu lại giọng máy, vì chưa có nghiệm thu chống vọng 
 
 Sau khi đổi normal commit policy sang endpoint hoặc đổi tiếng Anh từ eSpeak
 sang SAPI, số liệu P5 cũ chỉ mô tả phiên bản trước đó. Chạy lại bản đang dùng
-bằng bộ benchmark đầy đủ dưới đây. Script gọi giọng Windows SAPI cho VI→EN
-ở backend `auto`, eSpeak tiếng Việt cho EN→VI và WAV duyệt sẵn cho safety.
+bằng bộ benchmark đầy đủ dưới đây khi cần nghiệm thu runtime mới. Backend
+`auto` chọn giọng Windows đúng ngôn ngữ nếu có; các báo cáo cũ ngày 28–29/09
+đã đo David cho VI→EN, eSpeak cho EN→VI và WAV duyệt sẵn cho safety. Không
+gán các latency cũ cho Microsoft An/Zira hoặc đường phát loa/tai nghe mới.
+Không cần chạy lại full ASR/MT chỉ để kiểm tra tiếng rè; đối chiếu WAV, giọng
+và thiết bị riêng trước. Báo cáo benchmark lưu backend và tên giọng thực tế.
 
 ```powershell
 $Repo = "D:\code\.vscode\OneVoice\onevoice-edge"
