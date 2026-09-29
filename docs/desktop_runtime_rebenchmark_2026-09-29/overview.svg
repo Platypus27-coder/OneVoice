@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1120" height="730" viewBox="0 0 1120 730" role="img" aria-labelledby="title desc">
+<title id="title">OneVoice PC full benchmark comparison, September 28 to 29, 2026</title>
+<desc id="desc">Matched offline Windows PC replay of 4,756 cases. Functional gate pass rate improved from 96.15 percent to 98.28 percent. Safety gate pass rate improved from 69.05 percent to 82.54 percent. EN to VI noisy latency increased.</desc>
+<style>
+text{font-family:Segoe UI,Arial,sans-serif;fill:#e5e7eb}.title{font-size:25px;font-weight:650}.subtitle{font-size:14px;fill:#aeb7c6}.section{font-size:16px;font-weight:650}.label{font-size:14px}.small{font-size:12px;fill:#aeb7c6}.value{font-size:16px;font-weight:650}.cardlabel{font-size:12px;fill:#aeb7c6;letter-spacing:.4px}.axis{stroke:#667080;stroke-width:1}.grid{stroke:#26303b;stroke-width:1}.old{fill:#8492a6}.current{fill:#65c6b4}.accent{fill:#f2b66d}
+</style>
+<rect width="1120" height="730" rx="14" fill="#0d1117"/>
+<text x="34" y="42" class="title">OneVoice · full benchmark PC</text>
+<text x="34" y="67" class="subtitle">Matched offline replay · baseline a34118a (28 Sep) → current da7f34e (29 Sep) · 4,756 cases</text>
+
+<rect x="34" y="91" width="330" height="89" rx="9" fill="#161d26" stroke="#303a47"/>
+<text x="54" y="116" class="cardlabel">FUNCTIONAL GATE · ALL CASES</text>
+<text x="54" y="148" class="value">96.15% → 98.28%</text>
+<text x="54" y="168" class="small">4,573 → 4,674 PASS / 4,756</text>
+<rect x="395" y="91" width="330" height="89" rx="9" fill="#161d26" stroke="#303a47"/>
+<text x="415" y="116" class="cardlabel">FAILS · MATCHED CASES</text>
+<text x="415" y="148" class="value">183 → 82</text>
+<text x="415" y="168" class="small">101 fewer · 0 PASS→FAIL regressions</text>
+<rect x="756" y="91" width="330" height="89" rx="9" fill="#161d26" stroke="#303a47"/>
+<text x="776" y="116" class="cardlabel">SAFETY GATE · 252 ENTRIES</text>
+<text x="776" y="148" class="value">69.05% → 82.54%</text>
+<text x="776" y="168" class="small">174 → 208 PASS · 44 still fail</text>
+
+<text x="34" y="219" class="section">Gate PASS rate by cohort</text>
+<rect x="34" y="236" width="1052" height="222" rx="9" fill="#111820" stroke="#303a47"/>
+<rect x="760" y="252" width="12" height="12" rx="2" class="old"/><text x="779" y="263" class="small">Baseline a34118a</text>
+<rect x="910" y="252" width="12" height="12" rx="2" class="current"/><text x="929" y="263" class="small">Current da7f34e</text>
+<text x="54" y="302" class="label">Noisy · n=4,504</text>
+<rect x="230" y="282" width="683.7" height="20" rx="3" class="old"/>
+<rect x="230" y="306" width="694.1" height="20" rx="3" class="current"/>
+<text x="935" y="298" class="small">97.67%</text><text x="945" y="322" class="small">99.16%</text>
+<text x="54" y="371" class="label">Approved safety · n=252</text>
+<rect x="230" y="351" width="483.4" height="20" rx="3" class="old"/>
+<rect x="230" y="375" width="577.8" height="20" rx="3" class="current"/>
+<text x="722" y="367" class="small">69.05%</text><text x="816" y="391" class="small">82.54%</text>
+<path d="M230 418H930" class="axis"/>
+<path d="M370 414V422M510 414V422M650 414V422M790 414V422M930 414V422" class="axis"/>
+<text x="230" y="441" text-anchor="middle" class="small">0%</text><text x="370" y="441" text-anchor="middle" class="small">20%</text><text x="510" y="441" text-anchor="middle" class="small">40%</text><text x="650" y="441" text-anchor="middle" class="small">60%</text><text x="790" y="441" text-anchor="middle" class="small">80%</text><text x="930" y="441" text-anchor="middle" class="small">100%</text>
+
+<text x="34" y="498" class="section">Noisy-set quality and first-audio latency</text>
+<rect x="34" y="515" width="1052" height="150" rx="9" fill="#111820" stroke="#303a47"/>
+<text x="54" y="544" class="cardlabel">DIRECTION</text><text x="265" y="544" class="cardlabel">ASR WER · LOWER IS BETTER</text><text x="526" y="544" class="cardlabel">TRANSLATION WER · LOWER IS BETTER</text><text x="826" y="544" class="cardlabel">COMMIT→AUDIO P95</text>
+<path d="M54 557H1062M54 605H1062" class="grid"/>
+<text x="54" y="583" class="label">VI → EN</text><text x="265" y="583" class="label">11.81% → 11.32%</text><text x="526" y="583" class="label">16.33% → 13.79%</text><text x="826" y="583" class="label">1,391 → 1,211 ms</text>
+<text x="54" y="632" class="label">EN → VI</text><text x="265" y="632" class="label">1.21% → 0.55%</text><text x="526" y="632" class="label">4.90% → 4.17%</text><text x="826" y="632" class="label">804 → 1,018 ms</text>
+<text x="34" y="691" class="small">Functional PASS ≠ semantic/safety correctness. Accelerated WAV replay to buffer; no microphone, physical playback or Bluetooth latency measured.</text>
+</svg>

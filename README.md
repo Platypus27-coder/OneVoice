@@ -358,7 +358,33 @@ P5 phát lại audio qua ASR → MT/context/safety → TTS, mỗi loại route l
 
 Hai bundle cục bộ cũng đã qua smoke no-network ở cả hai chiều. Đây là xác nhận trên đúng laptop nêu trên, không phải trên điện thoại hoặc phần cứng khác. Hướng dẫn đóng gói, chạy lại và câu mô tả CV thận trọng nằm trong [tài liệu Windows desktop](docs/PC_DESKTOP_RELEASE.md). Android/Snapdragon/tai nghe Bluetooth vẫn là [roadmap riêng](docs/ANDROID_SNAPDRAGON_EXECUTION.md).
 
-### Đo lại pipeline PC sau sửa desktop · 28/09/2026
+### Full benchmark pipeline PC mới nhất · 29/09/2026
+
+Runtime `da7f34e` được đối chiếu trực tiếp với full baseline `a34118a` trên
+cùng **4.756 lượt** (4.504 noisy + 252 safety), cùng corpus và môi trường PC
+Windows offline. Replay chạy tăng tốc, không phát qua mic/tai nghe thật.
+
+<img src="docs/desktop_runtime_rebenchmark_2026-09-29/overview.svg" alt="So sánh benchmark pipeline PC full giữa baseline ngày 28/9 và runtime ngày 29/9" width="100%" />
+
+- Gate chức năng toàn bộ: **4.573/4.756 (96,15%) → 4.674/4.756 (98,28%)**;
+  giảm 101 ca FAIL, không có ca PASS cũ chuyển thành FAIL trong phép so sánh
+  từng case.
+- VI→EN: 1.987/2.084 → 2.049/2.084 qua gate; noisy ASR WER 11,81% → 11,32%,
+  translation WER 16,33% → 13,79%; commit→audio p95 1.391 → 1.211 ms.
+- EN→VI: 2.586/2.672 → 2.625/2.672 qua gate; noisy ASR WER 1,21% → 0,55%,
+  translation WER 4,90% → 4,17%; commit→audio p95 804 → 1.018 ms (chậm hơn).
+- Safety qua gate: **174/252 → 208/252**; vẫn còn **44/252** safety case
+  không qua gate. Ngoài ra, 582 output qua gate chức năng vẫn bị rule so với
+  reference gắn cờ cần review. Gate PASS không đồng nghĩa bản dịch đúng nghĩa.
+
+Đây là corpus synthetic/được duyệt nội bộ; các lần sửa đã dùng corpus này,
+nên kết quả chưa chứng minh tổng quát hóa trên holdout độc lập hay nghiệm thu
+an toàn production. WER là sai khác văn bản so với reference, không phải phần
+trăm câu dịch đúng. Chi tiết phương pháp, số liệu và giới hạn: [báo cáo
+full](docs/desktop_runtime_rebenchmark_2026-09-29/report.md) ·
+[JSON tổng hợp](docs/desktop_runtime_rebenchmark_2026-09-29/summary.json).
+
+### Full benchmark trước đó — mốc so sánh lịch sử · 28/09/2026
 
 Runtime `a34118a`: normal commit chờ endpoint, VI→EN dùng Windows SAPI
 (Microsoft David), EN→VI dùng eSpeak NG offline. Đã đo **4.756 lượt streaming**:
@@ -393,17 +419,18 @@ câu/người nói độc lập. Số liệu raw ASR/model Colab và P5 lịch s
 Đã sửa mất thông tin khi normalize ASR, commit safety lặp, một số false
 positive của validator và clipping TTS VI. Kiểm tra hồi quy 557 lượt khôi
 phục 51 ca FAIL sang PASS gate chức năng, chưa có regression trên các ca
-từng đạt được replay; TTS VI đạt 979/979 gate WAV. Đây chưa phải full
-benchmark mới hoặc xác nhận mọi câu đúng nghĩa. Xem
+đã replay; TTS VI đạt 979/979 gate WAV. Đây là kiểm tra hồi quy chọn lọc,
+không phải full benchmark. Full benchmark sau sửa được trình bày ở mục mới
+nhất phía trên. Xem
 [bản sửa, bằng chứng và bước tiếp theo](docs/PIPELINE_INPUT_INTEGRITY.md).
-Số liệu full benchmark và biểu đồ phía trên được giữ nguyên để đối chiếu.
+Số liệu và biểu đồ ngày 28/09 được giữ ở mục lịch sử để đối chiếu.
 
-Bản sửa tiếp theo giữ nguyên các model và bổ sung chọn beam MT có validation,
+Đợt sửa validated decoding tiếp theo giữ nguyên các model và bổ sung chọn beam MT có validation,
 retry SenseVoice có guard tại endpoint, cùng kiểm tra phủ định/số chính xác
 hơn. Trên cùng bộ hồi quy 557 WAV, khôi phục thêm 50 ca; còn 82 ca FAIL
-chức năng cần xử lý, chưa thấy regression ở các ca đã đạt được replay.
-178 unit test đạt. Đây **không phải tỷ lệ chính xác full test mới** và
-không phải nghiệm thu production. Xem
+chức năng trong lần đo full cần xử lý, chưa thấy regression ở các ca đã đạt
+được replay. 178 unit test đạt. Kết quả full của runtime này ở mục mới nhất;
+đây **không phải tỷ lệ chính xác dịch** và không phải nghiệm thu production. Xem
 [bằng chứng và giới hạn của validated decoding](docs/VALIDATED_DECODING.md).
 
 Fixed streaming suite 4/4 và soak offline 30 phút 325/325 lượt đã chạy trên Colab, không được tính là soak trên laptop Windows. Safety WAV là âm thanh tổng hợp demo từ 126 câu duyệt nội bộ; nhóm dự án chưa có WAV công trường thực tế.

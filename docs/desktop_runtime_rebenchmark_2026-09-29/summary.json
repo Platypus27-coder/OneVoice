@@ -1,0 +1,86 @@
+{
+  "schema_version": 1,
+  "generated_at_utc": "2026-09-29T03:13:42.196335+00:00",
+  "benchmark": "OneVoice PC offline full-pipeline replay",
+  "current_revision": "da7f34eb8d1c741b7d05a059db74ae83c57fab56",
+  "baseline_revision": "a34118afeaad4124f59c5f95ca567f7040dd905f",
+  "scope": {
+    "platform": "Windows PC",
+    "profile": "edge",
+    "offline": true,
+    "python_network_blocked": true,
+    "realtime_audio_replay": false,
+    "tts": {
+      "vi2en": "Windows SAPI offline — Microsoft David Desktop",
+      "en2vi": "eSpeak NG offline demo voice"
+    },
+    "corpus": "Full local noisy test corpus plus 126 approved synthetic safety WAV entries per direction",
+    "total_cases": 4756,
+    "directions": {
+      "vi2en": {"noisy": 1958, "approved_safety": 126, "total": 2084},
+      "en2vi": {"noisy": 2546, "approved_safety": 126, "total": 2672}
+    }
+  },
+  "functional_gate": {
+    "baseline": {"passed": 4573, "failed": 183, "total": 4756, "pass_rate_percent": 96.15},
+    "current": {"passed": 4674, "failed": 82, "total": 4756, "pass_rate_percent": 98.28},
+    "additional_cases_passing": 101,
+    "case_level_pass_to_fail_regressions": 0
+  },
+  "cohort_gate": {
+    "noisy": {
+      "baseline": {"passed": 4399, "failed": 105, "total": 4504, "pass_rate_percent": 97.67},
+      "current": {"passed": 4466, "failed": 38, "total": 4504, "pass_rate_percent": 99.16}
+    },
+    "approved_safety": {
+      "baseline": {"passed": 174, "failed": 78, "total": 252, "pass_rate_percent": 69.05},
+      "current": {"passed": 208, "failed": 44, "total": 252, "pass_rate_percent": 82.54}
+    }
+  },
+  "directions": {
+    "vi2en": {
+      "functional_gate": {"baseline": {"passed": 1987, "failed": 97, "total": 2084}, "current": {"passed": 2049, "failed": 35, "total": 2084}},
+      "noisy": {
+        "samples": 1958,
+        "gate_passed": {"baseline": 1879, "current": 1935},
+        "asr_wer_percent": {"baseline": 11.8055, "current": 11.3226},
+        "asr_cer_percent": {"baseline": 8.2730, "current": 7.8011},
+        "translation_reference_wer_percent": {"baseline": 16.3328, "current": 13.7859},
+        "translation_exact_match_percent": {"baseline": 56.2308, "current": 57.8652},
+        "commit_to_first_audio_p95_ms": {"baseline": 1390.61, "current": 1211.17}
+      },
+      "approved_safety": {"samples": 126, "gate_passed": {"baseline": 108, "current": 114}, "current_failed": 12},
+      "current_reference_rule_flags_among_functional_passes": 564
+    },
+    "en2vi": {
+      "functional_gate": {"baseline": {"passed": 2586, "failed": 86, "total": 2672}, "current": {"passed": 2625, "failed": 47, "total": 2672}},
+      "noisy": {
+        "samples": 2546,
+        "gate_passed": {"baseline": 2520, "current": 2531},
+        "asr_wer_percent": {"baseline": 1.2082, "current": 0.5502},
+        "asr_cer_percent": {"baseline": 1.1044, "current": 0.2550},
+        "translation_reference_wer_percent": {"baseline": 4.9030, "current": 4.1689},
+        "translation_exact_match_percent": {"baseline": 76.6300, "current": 80.5577},
+        "commit_to_first_audio_p95_ms": {"baseline": 803.92, "current": 1018.41}
+      },
+      "approved_safety": {"samples": 126, "gate_passed": {"baseline": 66, "current": 94}, "current_failed": 32},
+      "current_reference_rule_flags_among_functional_passes": 18
+    }
+  },
+  "comparability": {
+    "same_case_ids_and_audio_hashes": true,
+    "same_reference_and_suite": true,
+    "same_model_artifacts_and_configuration": true,
+    "same_platform_python_and_dependencies": true,
+    "same_replay_mode": true,
+    "same_tts_engines_per_direction": true
+  },
+  "limitations": [
+    "Functional-gate PASS does not prove translation semantics or safety correctness.",
+    "44 of 252 approved safety entries still fail the runtime gate; 582 functional passes are flagged by the separate strict reference-rule review.",
+    "The benchmark corpus was used during iterative fixes; this is not an untouched independent holdout.",
+    "Audio is synthetic/curated internal data, not real-site recordings or evidence.",
+    "Latency is accelerated WAV replay to the audio buffer, not microphone-to-ear or Bluetooth latency.",
+    "WER and CER measure text difference from references; they are not percentages of correctly translated sentences."
+  ]
+}
