@@ -118,6 +118,41 @@ Expected result: two `bundle_verify_*.json` reports with `passed: true` and
 
 ## Thử trực tiếp bằng mic laptop
 
+### Cửa sổ live VI → EN có text ASR và bản dịch
+
+Chạy bằng Python trong môi trường `onevoice`; không cần chỉnh config trong
+bundle. Cửa sổ chưa bật micro khi vừa mở, chỉ bắt đầu sau khi nhấn **Bắt đầu**:
+
+```powershell
+$Repo = "D:\code\.vscode\OneVoice\onevoice-edge"
+& "D:\MINICONDA\envs\onevoice\python.exe" -u "$Repo\scripts\run_desktop_live.py" --bundle-dir "D:\OneVoiceDesktop\onevoice-v2-rc1\vi2en"
+```
+
+Mặc định chọn `Microphone Array MME` và `Speakers Realtek WASAPI` theo tên,
+không theo index dễ đổi khi cắm/rút tai nghe. Có thể thay bằng `--input-device`
+và `--output-device` nếu các tên này không có trong `python -m sounddevice`.
+Giọng EN là Windows Zira offline, rate -2; không dùng gTTS hay tải model.
+
+Cửa sổ hiện ASR gốc tạm thời, ASR cuối cụm và cặp nguồn VI/bản dịch EN thật.
+Text tạm dùng rolling window ngắn nên có thể thay đổi hoặc chỉ chứa cuối câu;
+ASR cuối cụm được chạy lại trên cả đoạn thu. Hệ thống dịch normal theo endpoint
+(ngắt nói khoảng 0,5 giây), không dịch độc lập từng từ chưa ổn định. Runtime vẫn
+có giới hạn an toàn `max_utterance_ms` trong config (mặc định 15 giây/cụm), không
+phải khung thu thử 8 giây. Safety audio đã duyệt vẫn đi qua route riêng.
+
+Với loa và micro cùng laptop, GUI bật **half-duplex**: vẫn mở luồng audio nhưng
+không gửi frame micro vào ASR khi loa đang phát, thêm 200 ms chờ tiếng vang rồi
+nhận tiếp. Hãy chờ trạng thái “Đang nghe” trước khi nói tiếp hoặc phát tiếp clip.
+Đây không phải acoustic echo cancellation và không hỗ trợ hai người nói chồng
+lên tiếng TTS. CLI gốc có tùy chọn `--pause-mic-during-playback` tương đương;
+mặc định CLI không thay đổi chế độ thu để giữ tương thích các bài đo cũ.
+
+Nhấn **Dừng** để ngừng thu và lưu `asr_events.json`, `translation_events.json`,
+`playback_events.json`, latency và runtime summary trong `reports/desktop_live_vi2en/`.
+ASR/MT sai vẫn được hiện đúng như model trả về; validator chặn phát được báo rõ.
+GUI không chấm độ chính xác, không sửa text bằng câu mẫu và không thay benchmark
+cũ. Đây là công cụ kiểm thử trực tiếp, không phải bằng chứng live ASR đã đạt.
+
 Chọn **Microphone Array (Realtek)** làm input mặc định trong Windows và tai
 nghe làm output. Chạy từ thư mục bundle sau khi kích hoạt Conda `onevoice`.
 Runtime dùng bản sao riêng của từng frame mic để buffer của driver không ghi

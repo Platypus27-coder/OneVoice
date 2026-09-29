@@ -61,6 +61,8 @@ class OneVoicePipeline:
         allow_online_tts: bool = False,
         windows_en_voice: str | None = None,
         windows_en_rate: int | None = None,
+        event_callback=None,
+        pause_mic_during_playback: bool = False,
     ):
         if direction not in {"vi2en", "en2vi"}:
             raise ValueError("direction must be 'vi2en' or 'en2vi'")
@@ -96,6 +98,8 @@ class OneVoicePipeline:
         self.report_dir = Path(report_dir) if report_dir else None
         self.stop_event = threading.Event()
         self._fatal_error: BaseException | None = None
+        self.event_callback = event_callback
+        self.pause_mic_during_playback = bool(pause_mic_during_playback)
 
         # GIPFormer loads sherpa-onnx before the edge translator is initialized.
         # On some Windows Conda installations, importing ONNX Runtime afterwards
@@ -196,6 +200,16 @@ class OneVoicePipeline:
         self._stream_chunks: list[SynthesizedChunk] = []
         self._stream_trace: list[dict] = []
 
+    def _emit_event(self, kind: str, **data) -> None:
+        """Optional UI observer; never decides or changes model output."""
+        callback = getattr(self, "event_callback", None)
+        if callback is not None:
+            try:
+                callback({"kind": kind, "direction": self.direction,
+                          "timestamp": time.time(), **data})
+            except Exception as exc:
+                print(f"[Live observer] Event delivery failed: {exc}")
+
     def _put(self, target: queue.Queue, item: object) -> bool:
         while not self.stop_event.is_set():
             try:
@@ -212,6 +226,7 @@ class OneVoicePipeline:
             self._fatal_error = exc
             self.stop_event.set()
             print(f"[{name}] ❌ Fatal worker error: {exc}")
+            self._emit_event("error", worker=name, message=str(exc))
 
     def _denoise_worker(self) -> None:
         print("[Denoise Worker] ✅ Started")
@@ -253,6 +268,7 @@ class OneVoicePipeline:
                     result = self._refine_safety_asr(event.audio, result)
                 asr_ms = (time.perf_counter() - started) * 1000
                 if not result.get("text"):
+                    self._emit_event("asr", text="", hypothesis="", endpoint=event.endpoint)
                     if event.endpoint:
                         self.aligner.reset()
                         self.hypothesis_assembler.reset()
@@ -279,6 +295,14 @@ class OneVoicePipeline:
                 )
                 context = self.context.analyze(text, self.direction)
                 decision = self.committer.decide(hypothesis, context)
+                self._emit_event(
+                    "asr", text=result.get("primary_text", result["text"]),
+                    hypothesis=hypothesis.text, endpoint=event.endpoint,
+                    stable_prefix=stable, unstable_tail=unstable,
+                    decision=decision.kind.value, reason=decision.reason,
+                )
+                if event.endpoint:
+                    print(f"[ASR {result['lang'].upper()} FINAL] {text}")
                 self._stream_trace.append(
                     {
                         "event_started_at": event.started_at,
@@ -402,6 +426,12 @@ class OneVoicePipeline:
                     mt_ms=(time.perf_counter() - started) * 1000,
                 )
                 unsafe_validation = errors and context.risk_level in {"high", "critical"}
+                self._emit_event(
+                    "translation", source=item["text"], text=translated,
+                    route=route, suppressed=bool(unsafe_validation),
+                    validation_errors=list(errors),
+                )
+                print(f"[Translation {item['direction']}] {item['text']!r} -> {translated!r}")
                 self._translation_log.append({
                     "source": item["text"], "translation": translated,
                     "route": route, "validation_errors": errors,
@@ -448,6 +478,10 @@ class OneVoicePipeline:
                         direction=item["direction"],
                         emotion=item.get("emotion", "neutral"),
                     )
+                if self.stop_event.is_set():
+                    # A native synthesis call may finish after Stop was clicked.
+                    # Do not start new speaker output after cancellation.
+                    continue
                 first_audio_at = time.perf_counter()
                 tts_ms = (first_audio_at - started) * 1000
                 total_ms = sum(
@@ -478,8 +512,18 @@ class OneVoicePipeline:
                 if self.tts.is_silence(audio):
                     raise RuntimeError("TTS returned silence; commit was not played")
                 if self._stream_playback_enabled:
-                    playback = self.tts.play(audio, sample_rate=sample_rate)
-                    self._playback_log.append({"commit_id": commit_id, **playback})
+                    pause_mic = bool(getattr(self, "pause_mic_during_playback", False))
+                    if pause_mic:
+                        self.capture.pause()
+                    self._emit_event("playback", state="started", mic_paused=pause_mic)
+                    try:
+                        playback = self.tts.play(audio, sample_rate=sample_rate)
+                        self._playback_log.append({"commit_id": commit_id, **playback})
+                    finally:
+                        if pause_mic:
+                            self.stop_event.wait(0.2)  # Let room echo decay.
+                            self.capture.resume()
+                        self._emit_event("playback", state="finished", mic_paused=False)
                 self.srt.add_entry(
                     item["text"], item["translated"], len(audio) / sample_rate
                 )
@@ -528,6 +572,7 @@ class OneVoicePipeline:
         for the microphone runtime.
         """
         if self.offline and not self._preflight_complete:
+            self._emit_event("status", state="loading", message="Kiểm tra model local...")
             manifest = self.cfg["pipeline"].get("artifact_manifest", "artifacts/manifest.json")
             result = verify_artifacts(
                 manifest,
@@ -554,18 +599,24 @@ class OneVoicePipeline:
             self.asr.load(direction=self.direction)
             self._asr_loaded = True
         if load_translation and not self._translation_loaded:
+            self._emit_event("status", state="loading", message="Nạp model dịch local...")
             self.translator.load()
             self._translation_loaded = True
         if load_tts and not self._tts_loaded:
+            self._emit_event("status", state="loading", message="Nạp giọng đọc offline...")
             self.tts.load(direction=self.direction)
             self._tts_loaded = True
         print(f"\n✅ Models loaded in {time.perf_counter() - started:.1f}s\n")
 
     def start(self) -> None:
         self.load_models()
+        if self.stop_event.is_set():
+            self._save_reports()
+            return
         self.capture.start()
         threads = self._start_workers()
         print(f"🎙️ OneVoice V2 LIVE — {self.direction} ({self.profile})")
+        self._emit_event("status", state="listening", message="Đang nghe — bạn có thể nói.")
         try:
             while not self.stop_event.wait(0.2):
                 if self.capture.error is not None:
@@ -581,6 +632,7 @@ class OneVoicePipeline:
         finally:
             self._stop_workers(threads)
             self._save_reports()
+            self._emit_event("status", state="stopped", message="Đã dừng thu micro.")
         if self._fatal_error:
             raise RuntimeError("OneVoice worker failed") from self._fatal_error
 
@@ -970,6 +1022,14 @@ class OneVoicePipeline:
             (self.report_dir / "playback_events.json").write_text(
                 json.dumps(self._playback_log, ensure_ascii=False, indent=2), encoding="utf-8"
             )
+            (self.report_dir / "asr_events.json").write_text(
+                json.dumps(getattr(self, "_stream_trace", []), ensure_ascii=False, indent=2),
+                encoding="utf-8",
+            )
+            (self.report_dir / "translation_events.json").write_text(
+                json.dumps(getattr(self, "_translation_log", []), ensure_ascii=False, indent=2),
+                encoding="utf-8",
+            )
             (self.report_dir / "runtime_summary.json").write_text(
                 json.dumps(
                     {
@@ -987,6 +1047,8 @@ class OneVoicePipeline:
                             "vad_energy_threshold", 0.015
                         ),
                         "dropped_audio_frames": self.capture.dropped_frames,
+                        "pause_mic_during_playback": getattr(self, "pause_mic_during_playback", False),
+                        "paused_audio_frames": getattr(self.capture, "paused_frames", 0),
                         "fatal_error": repr(self._fatal_error) if self._fatal_error else None,
                     },
                     indent=2,
@@ -1035,6 +1097,8 @@ def main() -> None:
     )
     parser.add_argument("--windows-en-voice", help="Installed Windows English voice name for this run, e.g. 'Microsoft Zira Desktop'")
     parser.add_argument("--windows-en-rate", type=int, help="Windows English speech rate from -10 to 10; overrides config for this run")
+    parser.add_argument("--pause-mic-during-playback", action="store_true",
+                        help="Half-duplex laptop demo: discard mic frames during speaker output to avoid self-translation (not AEC)")
     parser.add_argument(
         "--allow-online-tts", action="store_true",
         help="Allow gTTS network requests for translated text (requires --tts-backend gtts)",
@@ -1073,6 +1137,7 @@ def main() -> None:
         allow_online_tts=args.allow_online_tts,
         windows_en_voice=args.windows_en_voice,
         windows_en_rate=args.windows_en_rate,
+        pause_mic_during_playback=args.pause_mic_during_playback,
     )
     if args.stream_file:
         result = pipeline.stream_file(args.stream_file, realtime=args.realtime)

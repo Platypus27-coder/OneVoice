@@ -190,6 +190,33 @@ class SystemTTSTests(unittest.TestCase):
 
 
 class PlaybackTests(unittest.TestCase):
+    def test_optional_desktop_playback_repeats_mono_with_gain_and_high_buffer(self):
+        device = mock.Mock()
+        device.query_devices.return_value = {"name": "Speakers", "index": 8,
+                                             "default_samplerate": 22050.0}
+        device.wait.return_value = None
+        engine = TTSEngine(config(), profile="edge", offline=True)
+        engine.playback_options.update(gain=0.7, stereo=True, latency="high")
+        audio = np.asarray([0.1, -0.1], np.float32)
+        with mock.patch("tts.tts_engine.sd", device), contextlib.redirect_stdout(io.StringIO()):
+            result = engine.play(audio, 22050)
+        np.testing.assert_allclose(device.play.call_args.args[0],
+                                   np.column_stack((audio, audio)) * 0.7)
+        self.assertEqual(device.play.call_args.kwargs["latency"], "high")
+        self.assertEqual(result["channels"], 2)
+        self.assertEqual(result["gain"], 0.7)
+        self.assertEqual(result["source_duration_seconds"], result["playback_duration_seconds"])
+
+    def test_invalid_playback_gain_never_reaches_device(self):
+        device = mock.Mock()
+        device.query_devices.return_value = {"name": "Speakers", "index": 8}
+        engine = TTSEngine(config(), profile="edge", offline=True)
+        for gain in (0, 2, float("nan")):
+            engine.playback_options["gain"] = gain
+            with mock.patch("tts.tts_engine.sd", device), self.assertRaisesRegex(RuntimeError, "gain"):
+                engine.play(np.asarray([0.1, -0.1], np.float32), 22050)
+        device.play.assert_not_called()
+
     def test_playback_resamples_to_native_device_rate_without_speedup(self):
         device = mock.Mock()
         device.query_devices.return_value = {"name": "Headphones", "index": 13,

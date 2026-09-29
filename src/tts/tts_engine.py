@@ -77,6 +77,7 @@ class TTSEngine:
         self._gtts_class = None
         self._audio_segment_class = None
         self.output_device = config["audio"].get("output_device")
+        self.playback_options = dict(config["audio"].get("playback", {}))
         self.synthesis_timeout_s = float(self.cfg.get("synthesis_timeout_s", 15.0))
         if not 0 < self.synthesis_timeout_s < float("inf"):
             raise ValueError("tts.synthesis_timeout_s must be positive and finite")
@@ -1023,6 +1024,16 @@ try {
             info = sd.query_devices(self.output_device, kind="output")
             output_rate = float(info.get("default_samplerate", sr))
             played_audio = prepare_playback_audio(audio, sr, output_rate)
+            gain = float(self.playback_options.get("gain", 1.0))
+            if not 0 < gain <= 1:
+                raise ValueError("Playback gain must be greater than 0 and at most 1")
+            if gain != 1:
+                played_audio = played_audio * gain
+            if self.playback_options.get("stereo", False) and played_audio.ndim == 1:
+                played_audio = np.column_stack((played_audio, played_audio))
+            latency = self.playback_options.get("latency")
+            if latency is not None and latency not in {"low", "high"}:
+                raise ValueError("Playback latency must be 'low' or 'high'")
             output_rate = int(output_rate)
             host_api = (sd.query_hostapis(info["hostapi"])["name"]
                         if "hostapi" in info else None)
@@ -1033,7 +1044,8 @@ try {
                   f"source_rate={sr} | playback_rate={output_rate}")
             # Resolve a name in this process and keep that exact device for
             # playback; never fall back to speakers if the headset is missing.
-            sd.play(played_audio, samplerate=output_rate, device=info["index"])
+            options = {"latency": latency} if latency is not None else {}
+            sd.play(played_audio, samplerate=output_rate, device=info["index"], **options)
             status = sd.wait(ignore_errors=False)
             if status:
                 raise RuntimeError(f"Audio device reported an underrun/overflow: {status}")
@@ -1042,6 +1054,7 @@ try {
                     "output_host_api": host_api, "source_sample_rate": int(sr),
                     "source_samples": len(audio), "sample_rate": output_rate,
                     "samples": len(played_audio), "resampled": int(sr) != output_rate,
+                    "gain": gain, "channels": channels, "latency": latency,
                     "source_duration_seconds": len(audio) / sr,
                     "playback_duration_seconds": len(played_audio) / output_rate,
                     "device_playback_completed": True}

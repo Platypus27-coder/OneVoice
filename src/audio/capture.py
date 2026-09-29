@@ -26,6 +26,8 @@ class AudioCapture:
         self._thread: threading.Thread | None = None
         self._sequence = 0
         self.dropped_frames = 0
+        self.paused_frames = 0
+        self._paused = threading.Event()
         self.error: BaseException | None = None
 
     def _callback(self, indata: np.ndarray, frames: int, time_info, status) -> None:
@@ -33,6 +35,10 @@ class AudioCapture:
         if status:
             print(f"[AudioCapture] Warning: {status}")
         self._sequence += 1
+        if self._paused.is_set():
+            # Deliberately discard speaker echo, not a queue overflow.
+            self.paused_frames += 1
+            return
         frame = AudioFrame(
             # PortAudio owns indata and may reuse it after this callback.
             # ascontiguousarray() can return a view for mono float32 input;
@@ -82,6 +88,12 @@ class AudioCapture:
 
     def is_alive(self) -> bool:
         return bool(self._thread and self._thread.is_alive())
+
+    def pause(self) -> None:
+        self._paused.set()
+
+    def resume(self) -> None:
+        self._paused.clear()
 
     def stop(self) -> None:
         if not self._running:

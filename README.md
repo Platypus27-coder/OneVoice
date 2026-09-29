@@ -136,6 +136,19 @@ Hệ thống là một đường ống hai chiều, cho phép chuyển đổi li
 
 ### Replay streaming (P2)
 
+Muốn thử **micro laptop → nhận diện VI → dịch EN → loa laptop**, có cửa sổ
+live hiển thị ASR tạm, ASR cuối cụm và nguồn/bản dịch thực tế:
+
+```powershell
+& "D:\MINICONDA\envs\onevoice\python.exe" -u "D:\code\.vscode\OneVoice\onevoice-edge\scripts\run_desktop_live.py" --bundle-dir "D:\OneVoiceDesktop\onevoice-v2-rc1\vi2en"
+```
+
+Nhấn **Bắt đầu**, nói tiếng Việt và ngắt khoảng 0,5 giây để dịch theo cụm.
+Với loa cùng laptop, micro tạm ngưng nhận lúc phát EN để tránh tự dịch tiếng loa
+(half-duplex, không phải AEC). Nhấn **Dừng** để lưu báo cáo local. Cửa sổ này
+không sửa model hay chứng minh ASR live đã đạt; chi tiết ở
+[hướng dẫn desktop](docs/PC_DESKTOP_RELEASE.md#cửa-sổ-live-vi--en-có-text-asr-và-bản-dịch).
+
 Để kiểm tra pipeline streaming với model thật mà không cần microphone, dùng `--stream-file`. WAV được chia thành frame 32 ms, tự thêm đuôi im lặng để xác nhận endpoint, tắt playback và ghi trace/latency vào `--report-dir`:
 
 ```bash

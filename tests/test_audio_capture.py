@@ -14,6 +14,19 @@ from streaming.session import RollingUtteranceSession
 
 
 class AudioCaptureTests(unittest.TestCase):
+    def test_half_duplex_pause_drops_echo_without_counting_queue_overflow(self):
+        frames = queue.Queue()
+        capture = AudioCapture(frames, {"audio": {"sample_rate": 16000, "chunk_size": 512}})
+        samples = np.ones((512, 1), np.float32) * 0.1
+        capture.pause()
+        capture._callback(samples, 512, None, None)
+        self.assertTrue(frames.empty())
+        self.assertEqual(capture.paused_frames, 1)
+        self.assertEqual(capture.dropped_frames, 0)
+        capture.resume()
+        capture._callback(samples, 512, None, None)
+        self.assertEqual(frames.get_nowait().sequence, 2)
+
     def test_queued_mono_frame_survives_driver_buffer_reuse(self):
         frames = queue.Queue()
         capture = AudioCapture(frames, {"audio": {"sample_rate": 16000, "chunk_size": 512}})
