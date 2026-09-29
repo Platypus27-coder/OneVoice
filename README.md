@@ -1,456 +1,162 @@
-# OneVoice Edge V2 — Hệ Thống Phiên Dịch Giọng Nói Thời Gian Thực (Edge AI)
+# OneVoice Edge V2
 
-<img width="2352" height="1792" alt="OneVoice Edge Banner" src="https://github.com/user-attachments/assets/f4747894-01d8-4889-bbf5-a0d2a5c01de7" />
+**Dịch giọng nói Việt ↔ Anh trên Windows PC, chạy offline.**
 
-OneVoice là hệ thống dịch thuật Speech-to-Speech Việt ↔ Anh dành cho môi trường công nghiệp (nhà máy, công trường). Mục tiêu release hiện tại là **Windows PC offline desktop demo** để tái lập, demo và đưa vào hồ sơ dự án. Android/Snapdragon và tai nghe Bluetooth được giữ là roadmap tiếp theo. `edge_200mb` vẫn là mục tiêu portable/RAM thấp; desktop phải khai báo budget phần cứng riêng trong report P5. Dự án chưa tuyên bố production-ready khi chưa vượt dữ liệu thực địa.
+<img width="900" alt="OneVoice Edge V2" src="https://github.com/user-attachments/assets/f4747894-01d8-4889-bbf5-a0d2a5c01de7" />
 
----
+OneVoice là prototype dịch lời nói hai chiều cho hội thoại công nghiệp. Bản hiện tại dành cho demo có giám sát trên laptop Windows. Model, nhận diện, dịch và giọng đọc chạy từ môi trường và bundle đã chuẩn bị trên máy.
 
+| | Tình trạng hiện tại |
+|---|---|
+| Runtime | Windows PC, profile edge, chạy offline sau khi chuẩn bị môi trường và hai bundle |
+| VI → EN | GIPFormer ONNX baseline; ASR noisy chưa đạt mục tiêu recall thuật ngữ 95% |
+| EN → VI | SenseVoice fine-tuned ONNX FP32 |
+| Dịch | EnViT5 fine-tuned, kiểm tra nội dung và thuật ngữ |
+| Đọc | Giọng hệ thống Windows offline; câu safety dùng WAV tổng hợp đã duyệt nội bộ |
+| Giới hạn | Chưa nghiệm thu tại công trường; chưa triển khai Android, Snapdragon hoặc Bluetooth hai chiều |
 
-## Trạng Thái OneVoice V2
+## Pipeline
 
-V2 nâng cấp runtime từ mốc rollback `v1-working-baseline`. Bảng dưới đây phản ánh bằng chứng đã có, không đồng nghĩa với chứng nhận an toàn hay triển khai thực địa:
+~~~mermaid
+flowchart LR
+    A[Microphone] --> B[Audio frames 32 ms và VAD]
+    B --> C{Hướng dịch}
+    C -->|VI → EN| D[GIPFormer ONNX]
+    C -->|EN → VI| E[SenseVoice ONNX]
+    D --> F[EnViT5 và Context/Safety]
+    E --> F
+    F --> G[Windows TTS hoặc safety WAV]
+    G --> H[Loa / tai nghe]
+~~~
 
-| Hạng mục | Trạng thái | Bằng chứng / giới hạn |
-|---|---|---|
-| Context Engine, thuật ngữ và Safety Matching | `CÒN LỖI FULL SUITE` | PC safety gate: VI→EN 108/126, EN→VI 66/126; lỗi chuẩn hóa/matching và nhận dạng cần sửa |
-| Streaming 32 ms và semantic commit | `ĐÃ KIỂM TRA` | Fixed suite 4/4 và soak offline 30 phút, 325/325 lượt trên Colab; PC có P5 riêng |
-| Denoising | `PASSTHROUGH ĐƯỢC CHỌN` | DeepFilterNet không cải thiện noisy dev và làm chậm pipeline; chưa promote |
-| EN → VI ASR | `ĐẠT TRÊN TEST TỔNG HỢP` | SenseVoice FP32 ONNX; critical-term recall 99,17% trên PC noisy test |
-| VI → EN ASR | `CÒN HẠN CHẾ` | GIPFormer ONNX baseline; critical-term recall 75,82% trên PC noisy test, dưới mục tiêu 95% |
-| MT và TTS | `DEMO, CÒN HẠN CHẾ` | EnViT5 có lỗi thuật ngữ; TTS EN 979/979, VI 976/979 WAV qua gate kỹ thuật, 3 cảnh báo clipping |
-| Windows PC offline | `ĐÃ KIỂM TRA` | Hai bundle qua smoke không mạng; P5 qua budget desktop khai báo trên ASUS TUF F15 |
-| Dữ liệu công trường thật | `CHƯA CÓ` | Chưa thu/đánh giá holdout WAV tại công trường; safety audio hiện có là dữ liệu tổng hợp cho demo |
-| Android / Snapdragon / Bluetooth | `ROADMAP` | Chưa triển khai trên điện thoại |
+Runtime có thể hiện bản ASR đang nhận và bản cuối câu trong terminal; việc dịch thông thường bắt đầu khi người nói ngừng khoảng 0,5 giây. Khi loa cùng laptop đang phát, tùy chọn half-duplex tạm ngưng gửi âm thanh micro vào ASR để hạn chế máy thu lại giọng đọc.
 
-Chi tiết bằng chứng: [V1 baseline](docs/V1_BASELINE_STATUS.md), [kế hoạch V1 → V2](ONEVOICE_V1_TO_V2_PLAN.md) và [hướng dẫn notebook V2](notebooks/README_V2.md).
+## Chạy live trên Windows
 
----
+### Cần chuẩn bị một lần
 
-## Bài Toán
+- Windows với môi trường Conda onevoice và thư viện runtime đã cài.
+- Hai bundle đã giải nén: vi2en và en2vi. Mỗi bundle gồm model cùng runtime_config.yaml.
+- Repository này trên máy và microphone/loa đã được Windows nhận diện.
 
-OneVoice thử nghiệm dịch giọng nói Việt ↔ Anh cho hội thoại chuyên ngành công nghiệp. Bản desktop hiện hướng tới hoạt động offline sau khi cài đủ runtime và chép bundle mô hình/dữ liệu về máy. Đây là prototype nghiên cứu; chưa có dữ liệu hiện trường để kết luận độ bền vững trong tiếng ồn công trường và không thay thế quy trình an toàn lao động.
+Nếu thiết lập trên máy mới, tạo môi trường và cài các gói dành cho edge một lần:
 
----
-
-## Runtime Hiện Tại: Windows PC Offline Demo
-
-### Luồng 1: VI → EN (Tiếng Việt → Tiếng Anh)
-
-```text
-Microphone
-    │
-    ▼
-┌─────────────────────────────────┐
-│  Trạm 0: Audio / streaming      │  Frame 32 ms + VAD
-│  Passthrough denoiser           │  Không lọc nhiễu ở release hiện tại
-└─────────────────────────────────┘
-    │
-    ▼
-┌─────────────────────────────────┐
-│  Trạm 1: Nhận diện tiếng Việt   │  GIPFormer ONNX baseline
-│  Giọng nói → văn bản            │  Chưa đạt mục tiêu noisy critical-term
-└─────────────────────────────────┘
-    │
-    ▼
-┌─────────────────────────────────┐
-│  Trạm 2: Dịch VI → EN           │  EnViT5 fine-tuned + context/validator
-│  Kiểm tra thuật ngữ / nội dung  │  Có safety route riêng
-└─────────────────────────────────┘
-    │
-    ▼
-┌─────────────────────────────────┐
-│  Trạm 3: Phát âm thanh          │  TTS hệ thống offline cho demo
-│  Hoặc safety audio              │  WAV tổng hợp đã duyệt nội bộ
-└─────────────────────────────────┘
-    │
-    ▼
-Speaker / Earphone
-```
-
-### Luồng 2: EN → VI (Tiếng Anh → Tiếng Việt)
-
-```text
-Microphone
-    │
-    ▼
-┌─────────────────────────────────┐
-│  Trạm 0: Audio / streaming      │  Frame 32 ms + VAD
-│  Passthrough denoiser           │  Không lọc nhiễu ở release hiện tại
-└─────────────────────────────────┘
-    │
-    ▼
-┌─────────────────────────────────┐
-│  Trạm 1: Nhận diện tiếng Anh    │  SenseVoice FP32 ONNX
-│  Giọng nói → văn bản            │  Không dùng Whisper trong release này
-└─────────────────────────────────┘
-    │ văn bản nhận dạng
-    ▼
-┌─────────────────────────────────┐
-│  Trạm 2: Dịch EN → VI           │  EnViT5 fine-tuned + context/validator
-│  Kiểm tra thuật ngữ / nội dung  │  Có safety route riêng
-└─────────────────────────────────┘
-    │ văn bản đã kiểm tra
-    ▼
-┌─────────────────────────────────┐
-│  Trạm 3: Phát âm thanh          │  TTS hệ thống offline cho demo
-│  Hoặc safety audio              │  WAV tổng hợp đã duyệt nội bộ
-└─────────────────────────────────┘
-    │
-    ▼
-Speaker / Earphone
-```
-
-**Mốc đo trên PC demo hiện tại:** ASUS TUF Gaming F15 (i5-11400H, RAM 24 GB, RTX 2050 4 GB VRAM), profile `desktop_tuf_f15_rtx2050`, budget 8 GB RSS và 3 giây commit→first-audio cho lượt thường. Đây là budget của laptop này, không phải kết quả cho mọi PC hay điện thoại. Profile portable `edge_200mb` là mục tiêu riêng và chưa đạt. Bản demo chưa được xác nhận cho vận hành công trường.
-
----
-
-
-### Các lớp V2 bổ sung quanh hai luồng trên
-
-```text
-AudioFrame 32 ms
-    → Denoiser
-    → Stateful VAD + rolling utterance
-    → Rolling ASR + stable prefix
-    → Construction Context Engine
-    → Semantic Commit (WAIT / NORMAL / SAFETY)
-    → Safety Audio hoặc MT
-    → Critical-field Validator
-    → Ordered TTS
-    → Audio đầu tiên + báo cáo latency
-```
-
-Hai sơ đồ VI→EN và EN→VI ở trên mô tả hướng model; chuỗi V2 này mô tả cơ chế streaming, an toàn và đo lường dùng chung cho cả hai hướng.
-
----
-
-## Các Chế Độ Hoạt Động (Translation Directions)
-
-Hệ thống là một đường ống hai chiều, cho phép chuyển đổi linh hoạt qua cờ lệnh runtime:
-
-| Hướng (Direction) | Đầu vào (Người nói) | Đầu ra (Loa phát) | Lệnh chạy (Flag) |
-|---|---|---|---|
-| **VI → EN** (Mặc định) | Người Việt | Người Anh | `python src/pipeline.py --direction vi2en` |
-| **EN → VI** | Người Anh | Người Việt | `python src/pipeline.py --direction en2vi` |
-
-### Replay streaming (P2)
-
-Muốn thử **micro laptop → nhận diện VI → dịch EN → loa laptop**, có cửa sổ
-live hiển thị ASR tạm, ASR cuối cụm và nguồn/bản dịch thực tế:
-
-```powershell
-& "D:\MINICONDA\envs\onevoice\python.exe" -u "D:\code\.vscode\OneVoice\onevoice-edge\scripts\run_desktop_live.py" --bundle-dir "D:\OneVoiceDesktop\onevoice-v2-rc1\vi2en"
-```
-
-Nhấn **Bắt đầu**, nói tiếng Việt và ngắt khoảng 0,5 giây để dịch theo cụm.
-Với loa cùng laptop, micro tạm ngưng nhận lúc phát EN để tránh tự dịch tiếng loa
-(half-duplex, không phải AEC). Nhấn **Dừng** để lưu báo cáo local. Cửa sổ này
-không sửa model hay chứng minh ASR live đã đạt; chi tiết ở
-[hướng dẫn desktop](docs/PC_DESKTOP_RELEASE.md#cửa-sổ-live-vi--en-có-text-asr-và-bản-dịch).
-
-Để kiểm tra pipeline streaming với model thật mà không cần microphone, dùng `--stream-file`. WAV được chia thành frame 32 ms, tự thêm đuôi im lặng để xác nhận endpoint, tắt playback và ghi trace/latency vào `--report-dir`:
-
-```bash
-python src/pipeline.py --config config/config.yaml --direction vi2en --profile development --offline \
-  --stream-file path/to/input.wav --report-dir reports/streaming_v2_smoke
-```
-
-Colab dùng `notebooks/colab_streaming_v2.ipynb`; notebook chỉ mount Drive và clone/pull GitHub, còn logic streaming nằm trong runtime Python. Kết quả `stream_result.json` ghi frame count, stable/unstable hypotheses, commit IDs, chunk timestamps, dropped frames và worker error (nếu có). Đây là integration smoke/soak gate, chưa phải tuyên bố production latency.
-
-Cell cuối của notebook chạy `scripts/run_streaming_e2e.py`: fixed suite gồm normal + safety ở cả hai chiều, ghi `case_manifest.json`, report từng turn và `summary.json` có resume. Smoke mặc định dùng 1 case/route; chỉ tăng số case hoặc chạy soak sau khi smoke pass.
-
-Sau fixed suite pass, dùng `scripts/run_streaming_soak.py --duration-minutes 30 --realtime --resume` để lặp fixed cases trong thời gian thực. `soak_state.json` tích luỹ thời lượng đã chạy, còn `events.jsonl` ghi từng turn nên có thể chuyển Colab account rồi chạy lại cùng output directory.
-
----
-
-## Demo Kết Quả Dịch Thuật & Voice Cloning
-
-Dưới đây là 7 kịch bản demo đã có từ baseline V1, gồm thuật ngữ chuyên ngành, từ lóng thi công và tình huống công trường. Đây là bằng chứng demo lịch sử, không thay thế benchmark V2 trên fixed test set. Các bản MP4 vẫn được lưu trong `demo_outputs/`:
-
-1. **Test 1 (VI→EN)**
-   - **Đầu vào**: Cậu đã làm gì với nó vậy thêm năng lượng hả nó hoạt động như thế nào vậy cho mình mượn chút đừng có keo kiệt vậy chứ hôm nay lớp mình có bài kiểm tra môn thể dục nên mình rất là cần nó luôn xài xong mình trả lại liền
-   - **Bản dịch**: *What did you do with it? More power, huh? How it works. Well, let me borrow some. don't be mean, because we have a gym test today, so... I really need it. I'll give it back when I'm done.*
-<details>
-  <summary><h5>🔗 Nghe Audio</h5></summary>
-
-[test_1_output_vi2en.webm](https://github.com/user-attachments/assets/274cef99-a640-4cc5-8ed6-2c7836ec417b)
-
-[▶ Xem/nghe file MP4 trong repository](demo_outputs/test_1_output_vi2en.mp4)
-
-</details>
-
-2. **Test 2 (VI→EN)**
-   - **Đầu vào**: Ê bạn ơi cái máy xúc số ba nó bị xì nhớt thủy lực rồi bơm bê tông cũng kẹt luôn qua kiểm tra lẹ giùm mình đi chứ để vậy là cháy van an toàn nha
-   - **Bản dịch**: *Hey, buddy, that excavator number three, it's leaking hydraulic fluid. The pump's jammed, too. please check it immediately. the safety valve will blow out.*
-<details>
-  <summary><h5>🔗 Nghe Audio</h5></summary>
-
-[test_2_output_vi2en.webm](https://github.com/user-attachments/assets/9bad0263-e075-4f59-a08b-67be54f38863)
-
-[▶ Xem/nghe file MP4 trong repository](demo_outputs/test_2_output_vi2en.mp4)
-
-</details>
-
-3. **Test 3 (EN→VI)**
-   - **Đầu vào**: the gantry crane at berth seven is malfunctioning we cannot unload the containers the draft survey shows the vessel is listing to port side
-   - **Bản dịch**: *Cần cẩu ở cầu cảng số 7 bị trục trặc. Chúng ta không thể dỡ các container. Cuộc giám định mớn nước cho thấy con tàu đang nghiêng sang mạn trái.*
-<details>
-  <summary><h5>🔗 Nghe Audio</h5></summary>
-
-[test_3_output_en2vi.webm](https://github.com/user-attachments/assets/abb1cbe9-16e4-49b8-abe6-37017fae85c3)
-
-[▶ Xem/nghe file MP4 trong repository](demo_outputs/test_3_output_en2vi.mp4)
-
-</details>
-
-4. **Test 4 (EN→VI)**
-   - **Đầu vào**: the solar inverter tripped again check the photovoltaic panels on the rooftop and make sure the string combiner box is not overheating
-   - **Bản dịch**: *Bộ đảo lưu năng lượng mặt trời lại bị hỏng. Kiểm tra các tấm pin quang điện trên mái nhà và đảm bảo bộ tổng hợp dây không bị quá nóng.*
-<details>
-  <summary><h5>🔗 Nghe Audio</h5></summary>
-
-[test_4_output_en2vi.webm](https://github.com/user-attachments/assets/0111b682-b7c0-4d84-83cf-17091a52361a)
-
-[▶ Xem/nghe file MP4 trong repository](demo_outputs/test_4_output_en2vi.mp4)
-
-</details>
-
-5. **Test 5 (VI→EN)**
-   - **Đầu vào**: anh ơi cái xe tải nó bị hộp số trục trặc rồi mà két nước cũng rỉ nước ra nữa bạc biên kêu to lắm chắc phải thay rồi mà ống bô cũng bị thủng luôn
-   - **Bản dịch**: *Hey, man, the truck's got a malfunctioning gearbox, and the cooling system's leaking water. Connecting rod ball bearings knocked. It's gotta be replaced, and the exhaust pipe's leaking too.*
-<details>
-  <summary><h5>🔗 Nghe Audio</h5></summary>
-
-[test_5_output_vi2en.webm](https://github.com/user-attachments/assets/0ac1d9d2-23a3-4715-b085-d7b28689a677)
-
-[▶ Xem/nghe file MP4 trong repository](demo_outputs/test_5_output_vi2en.mp4)
-
-</details>
-
-6. **Test 6 (EN→VI)**
-   - **Đầu vào**: one worker collapsed from heatstroke bring the first aid kit and check if we have tourniquets and a portable defibrillator in the emergency cabinet
-   - **Bản dịch**: *Một công nhân bị ngã do say nắng. Mang theo bộ sơ cứu và kiểm tra xem có ga-rô và máy khử rung cầm tay không trong tủ cấp cứu.*
-<details>
-  <summary><h5>🔗 Nghe Audio</h5></summary>
-
-[test_6_output_en2vi.webm](https://github.com/user-attachments/assets/b8d8ee00-a9bc-4739-8419-e1bb333d9cad)
-
-[▶ Xem/nghe file MP4 trong repository](demo_outputs/test_6_output_en2vi.mp4)
-
-</details>
-
-7. **Test 7 (EN→VI)**
-   - **Đầu vào**: the project manager said that if the geotechnical report confirms the soil bearing capacity is sufficient we can proceed with the shallow foundation design instead of using deep piles which would save us approximately thirty percent of the budget
-   - **Bản dịch**: *Giám đốc dự án nói rằng nếu báo cáo địa kỹ thuật xác nhận sức chịu tải của đất là đủ, chúng tôi có thể tiến hành thiết kế móng nông thay vì sử dụng cọc sâu, mà sẽ tiết kiệm cho chúng ta khoảng 30% ngân sách.*
-<details>
-  <summary><h5>🔗 Nghe Audio</h5></summary>
-
-[test_7_output_en2vi.webm](https://github.com/user-attachments/assets/f24d1c5d-ec8b-4aab-bc2f-8668b2f1eb46)
-
-[▶ Xem/nghe file MP4 trong repository](demo_outputs/test_7_output_en2vi.mp4)
-
-</details>
-
----
-
-
-## ☁️ Chạy Trực Tiếp Trên Google Colab
-
-Source code được clone từ GitHub vào `/content/OneVoice`; dataset giữ nguyên trên Google Drive và report được lưu tại `MyDrive/OneVoice/reports`.
-Hướng dẫn Colab, Drive persistence và resume sau khi mất GPU: [COLAB_RUNBOOK.md](docs/COLAB_RUNBOOK.md).
-
-Cấu trúc Drive hiện dùng:
-
-```text
-MyDrive/
-├── onevoice_audio_v1/
-│   ├── clean/
-│   ├── noisy/
-│   ├── noise_bank/
-│   └── manifest.jsonl              # notebook audit tự phục hồi nếu thiếu
-└── OneVoice/
-    ├── model_cache/
-    └── reports/
-```
-
-Chạy theo thứ tự:
-
-1. [Data Audit V2](https://colab.research.google.com/github/Platypus27-coder/OneVoice/blob/main/notebooks/colab_data_audit_v2.ipynb)
-2. [Vietnamese ASR V2](https://colab.research.google.com/github/Platypus27-coder/OneVoice/blob/main/notebooks/colab_vi_asr_v2.ipynb)
-3. [Denoiser V2](https://colab.research.google.com/github/Platypus27-coder/OneVoice/blob/main/notebooks/colab_denoiser_v2.ipynb)
-4. [Machine Translation V2](https://colab.research.google.com/github/Platypus27-coder/OneVoice/blob/main/notebooks/colab_mt_v2.ipynb)
-5. [English ASR V2](https://colab.research.google.com/github/Platypus27-coder/OneVoice/blob/main/notebooks/colab_en_asr_v2.ipynb) — chỉ chạy khi đã có audio English V2.1
-6. [Qualcomm Edge Profile V2](https://colab.research.google.com/github/Platypus27-coder/OneVoice/blob/main/notebooks/colab_edge_profile_v2.ipynb) — cần frozen ONNX và `QAI_HUB_API_TOKEN`
-
-Mỗi benchmark đo thật phải xuất `run_manifest.json`, `predictions.csv` và `aggregate.json`. Không dùng predictions sao chép hoặc hệ số WER giả lập.
-
----
-
-## 🛠️ Chạy Local (Tùy Chọn)
-
-```bash
-# 1. Tạo môi trường Conda
+~~~powershell
+$Repo = "D:\code\.vscode\OneVoice\onevoice-edge"
 conda create -n onevoice python=3.11.8 -y
 conda activate onevoice
+python -m pip install -r "$Repo\requirements-edge.txt"
+~~~
 
-# 2. Cài đặt các thư viện phụ thuộc
-pip install -r requirements.txt
+Nếu đã có môi trường Conda onevoice dùng được, kích hoạt môi trường đó và bỏ qua bước tạo/cài lại. Các lệnh chạy live bên dưới dùng đường dẫn Python của môi trường này.
 
-# 3. Tải voice presets (Voice Reference Files)
-python scripts/download_voice_preset.py
+Làm theo [hướng dẫn đóng gói và thiết lập Windows](docs/PC_DESKTOP_RELEASE.md) nếu cần tải, xác minh hoặc dựng lại bundle. Khi chạy offline, pipeline không tải model từ Hugging Face; các model phải có trong bundle trên máy.
 
-# 4. Chạy hệ thống dịch thời gian thực (VI → EN)
-python src/pipeline.py --direction vi2en
+### Mở PowerShell
 
-# 5. Chạy hệ thống dịch thời gian thực (EN → VI)
-python src/pipeline.py --direction en2vi
-```
+Điền đúng đường dẫn repo và nơi đã giải nén bundle. Kích hoạt môi trường rồi thiết lập module nguồn:
 
----
+~~~powershell
+conda activate onevoice
+$Repo = "D:\code\.vscode\OneVoice\onevoice-edge"
+$OneVoicePython = "D:\MINICONDA\envs\onevoice\python.exe"
+$env:PYTHONPATH = "$Repo\src"
+$env:PYTHONIOENCODING = "utf-8"
+~~~
 
-## Giấy Phép & Tri Ân Tác Giả
+### VI → EN: nói tiếng Việt, nghe tiếng Anh
 
-Dự án tuân thủ Giấy phép **CC BY-NC 4.0**.
-Chúng tôi trân trọng tri ân các công trình mã nguồn mở được tích hợp:
-- **BetterBox-TTS & OmniVoice**: Dolly VN / ContextBoxAI (CC BY-NC 4.0)
-- **GIPFormer**: G-Group AI Lab (MIT)
-- **SenseVoice**: FunAudioLLM / Alibaba (MIT)
-- **VietAI/envit5**: VietAI (MIT)
+~~~powershell
+$Bundle = "D:\OneVoiceDesktop\onevoice-v2-rc1\vi2en"
+$RunId = Get-Date -Format "yyyyMMdd-HHmmss"
+$ReportDir = Join-Path "$Repo\reports\terminal-live" "vi2en-$RunId"
+$LiveArgs = @(
+    "-u", "$Repo\src\pipeline.py",
+    "--config", ".\runtime_config.yaml",
+    "--direction", "vi2en",
+    "--profile", "edge", "--offline",
+    "--input-device", "Microphone Array MME",
+    "--output-device", "Speakers Realtek WASAPI",
+    "--tts-backend", "sapi",
+    "--windows-en-voice", "Microsoft Zira Desktop",
+    "--windows-en-rate", "-2",
+    "--pause-mic-during-playback",
+    "--report-dir", $ReportDir
+)
+Set-Location $Bundle
+& $OneVoicePython @LiveArgs
+~~~
 
----
+### EN → VI: nói tiếng Anh, nghe tiếng Việt
 
-## Benchmark Thành Phần (Colab)
+~~~powershell
+$Bundle = "D:\OneVoiceDesktop\onevoice-v2-rc1\en2vi"
+$RunId = Get-Date -Format "yyyyMMdd-HHmmss"
+$ReportDir = Join-Path "$Repo\reports\terminal-live" "en2vi-$RunId"
+$LiveArgs = @(
+    "-u", "$Repo\src\pipeline.py",
+    "--config", ".\runtime_config.yaml",
+    "--direction", "en2vi",
+    "--profile", "edge", "--offline",
+    "--input-device", "Microphone Array MME",
+    "--output-device", "Speakers Realtek WASAPI",
+    "--tts-backend", "sapi",
+    "--pause-mic-during-playback",
+    "--report-dir", $ReportDir
+)
+Set-Location $Bundle
+& $OneVoicePython @LiveArgs
+~~~
 
-Các biểu đồ bên dưới và báo cáo đi kèm là benchmark thành phần ASR/MT đã chốt ngày 2026-08-29; đây không phải benchmark toàn pipeline trên laptop. Dữ liệu là synthetic/hosted, không phải WAV thu tại công trường.
+Thay đường dẫn D: và tên microphone/loa nếu máy bạn dùng vị trí hoặc thiết bị khác. Xem thiết bị đang có bằng lệnh:
 
-[Báo cáo Markdown](report.md) · [Báo cáo HTML](report.html) · [Dữ liệu JSON](summary.json)
+~~~powershell
+& $OneVoicePython -m sounddevice
+~~~
 
-### Bảo toàn thuật ngữ trọng yếu (%)
+Đợi terminal báo pipeline đang nghe, nói một câu rồi ngắt nhẹ để dịch. Các dòng ASR cho biết model nhận dạng thế nào; bản cuối câu và dòng Translation cho biết nội dung được đem đi dịch và bản dịch thực tế. Đây là kết quả model trả về, không được soạn sẵn. Chờ phát xong rồi nói tiếp. Nhấn Ctrl+C để dừng; báo cáo của lượt chạy được ghi vào thư mục riêng dưới reports/terminal-live.
 
-<img src="docs/benchmark_release_critical.svg" alt="Biểu đồ tỷ lệ bảo toàn thuật ngữ trọng yếu của các benchmark thành phần" width="100%" />
+Tên giọng Windows phải có trên máy. EN → VI dùng giọng đọc tiếng Việt cài sẵn và cấu hình trong bundle. Cấu hình chọn ngưỡng microphone, giọng đọc và chế độ phát được giải thích thêm trong [hướng dẫn Windows](docs/PC_DESKTOP_RELEASE.md). Để xem ASR trong cửa sổ riêng, có script tùy chọn [run_desktop_live.py](scripts/run_desktop_live.py).
 
-### Tổng quan chất lượng và latency của từng model
+## Benchmark pipeline PC
 
-<img src="docs/benchmark_release_overview.svg" alt="Biểu đồ benchmark các model và bộ dữ liệu" width="100%" />
+Bản full benchmark gần nhất trong repository được ghi ngày 29/09/2026. Nó phát lại corpus WAV trên ASUS TUF Gaming F15 (i5-11400H, RAM 24 GB, RTX 2050 4 GB), Windows offline; đây không phải phép đo qua micro hoặc loa vật lý. Benchmark dùng runtime da7f34e; các thay đổi cửa sổ live và quan sát terminal được thêm sau mốc đó.
 
-### Kiểm tra noisy audio trên PC
+| Chỉ số | Baseline 28/09 | Bản đo 29/09 |
+|---|---:|---:|
+| Lượt qua gate chức năng | 4.573/4.756 (96,15%) | 4.674/4.756 (98,28%) |
+| WER ASR VI → EN trên noisy | 11,81% | 11,32% |
+| WER ASR EN → VI trên noisy | 1,21% | 0,55% |
+| WER bản dịch VI → EN trên noisy | 16,33% | 13,79% |
+| WER bản dịch EN → VI trên noisy | 4,90% | 4,17% |
+| Safety qua gate | 174/252 | 208/252 |
+| Commit → audio đầu tiên, p95 VI → EN | 1.391 ms | 1.211 ms |
+| Commit → audio đầu tiên, p95 EN → VI | 804 ms | 1.018 ms |
 
-ASR được đo trên toàn bộ noisy test split tổng hợp ở PC, không phải chỉ vài mẫu. WER/CER thấp hơn là tốt hơn; độ phủ thuật ngữ cao hơn là tốt hơn. Latency ở bảng này là thời gian benchmark ASR theo mẫu, không phải latency đầu-cuối của hội thoại.
+Các lượt thử gồm 4.504 WAV noisy và 252 WAV safety tổng hợp. Gate kiểm tra điều kiện thực thi của pipeline; PASS không đồng nghĩa bản dịch chính xác về nghĩa. Có 44 lượt safety không qua gate và 582 lượt qua gate bị rule đối chiếu reference gắn cờ cần review. WER so sánh văn bản với reference, không phải phần trăm câu đúng. Latency đo lúc audio được tạo trong buffer, không đo thời điểm người nghe nhận được tiếng.
 
-| Hướng / mô hình đang dùng | Số mẫu | WER | CER | Recall thuật ngữ trọng yếu | p95 ASR / mẫu |
-|---|---:|---:|---:|---:|---:|
-| VI → EN · GIPFormer ONNX baseline | 1.958 | 11,39% | 7,78% | 75,82% | 96,8 ms |
-| EN → VI · SenseVoice FP32 ONNX fine-tuned | 2.546 | 0,54% | 0,25% | 99,17% | 224,3 ms |
+**Đánh giá:** bản đo mới cải thiện tổng số qua gate, WER và latency VI → EN; latency EN → VI tăng. Kết quả đủ mô tả một prototype PC offline có giám sát, chưa đủ để tuyên bố vận hành an toàn hoặc đã được xác nhận ở công trường.
 
-Đây là kết quả trên bộ noisy test đã chuẩn bị bằng nhiễu tổng hợp. VI → EN ASR là hạn chế chất lượng lớn nhất hiện tại: model vẫn hoạt động nhưng chưa đạt mục tiêu 95% recall thuật ngữ trọng yếu. Không dùng kết quả này để khẳng định độ chính xác ngoài công trường.
+### Báo cáo và biểu đồ
 
-### Thử nghiệm denoiser trên dev
+- [So sánh full benchmark 29/09](docs/desktop_runtime_rebenchmark_2026-09-29/report.md) · [JSON](docs/desktop_runtime_rebenchmark_2026-09-29/summary.json) · [Biểu đồ](docs/desktop_runtime_rebenchmark_2026-09-29/overview.svg)
+- [Benchmark full 28/09](docs/desktop_runtime_rebenchmark/report.md) · [HTML](docs/desktop_runtime_rebenchmark/report.html) · [JSON](docs/desktop_runtime_rebenchmark/summary.json)
+- [Benchmark thành phần ASR/MT, 29/08](report.md) · [HTML](report.html) · [JSON](summary.json)
+- [Biểu đồ benchmark thành phần](docs/benchmark_release_overview.svg)
+- [Ví dụ dịch V1 và các bản thu](docs/LEGACY_DEMOS_V1.md)
 
-So sánh passthrough với DeepFilterNet trên noisy dev cho thấy lọc nhiễu làm xấu đi WER và recall thuật ngữ ở cả hai hướng, đồng thời tăng latency. Vì vậy release hiện tại giữ passthrough; đây không phải tuyên bố rằng hệ thống đã xử lý tốt mọi loại nhiễu.
+Các phiên streaming fixed suite và soak trên Colab được mô tả trong [Colab runbook](docs/COLAB_RUNBOOK.md). Các notebook V2 nằm trong thư mục [notebooks](notebooks/).
 
-| Hướng | Passthrough: WER / recall thuật ngữ | DeepFilterNet: WER / recall thuật ngữ | Quyết định |
-|---|---:|---:|---|
-| VI → EN | 9,97% / 72,59% | 11,43% / 69,77% | Giữ passthrough |
-| EN → VI | 0,55% / 98,68% | 1,14% / 97,53% | Giữ passthrough |
+## Giới hạn và bước tiếp theo
 
-### P5: đo toàn pipeline trên laptop Windows
+- Bộ test có âm thanh tổng hợp và biến thể nhiễu; số WAV không tương ứng số người nói độc lập. Chưa có đánh giá holdout tại công trường.
+- VI → EN ASR còn là hạn chế chính; các model GIPFormer fine-tune thử nghiệm trước đó không qua gate, nên bản đang dùng là baseline ONNX.
+- Safety WAV hỗ trợ demo nội bộ, chưa phải bằng chứng lựa chọn đúng cảnh báo trong vận hành thật.
+- Profile portable edge_200mb chưa đạt giới hạn bộ nhớ đó. Số đo trên laptop không áp dụng tự động cho thiết bị khác.
+- Android, tăng tốc Snapdragon và định tuyến tai nghe cho hai người là roadmap.
 
-Các số liệu P5 trong bảng dưới là **bản đo trước các thay đổi desktop ngày
-28/09/2026** (normal commit chờ endpoint, giọng EN ưu tiên Windows SAPI).
-Giữ chúng để truy vết; chưa dùng làm số đo của runtime đã sửa. Bộ đo lại
-full noisy test và toàn bộ safety canonical nằm trong
-[hướng dẫn benchmark desktop](docs/PC_DESKTOP_RELEASE.md#đo-lại-sau-các-bản-sửa-desktop).
+Xem [kế hoạch Android/Snapdragon](docs/ANDROID_SNAPDRAGON_EXECUTION.md) và [kế hoạch V1 sang V2](ONEVOICE_V1_TO_V2_PLAN.md).
 
-P5 phát lại audio qua ASR → MT/context/safety → TTS, mỗi loại route lặp 5 lần. `commit→audio p95` là thời gian từ lúc hệ thống chốt một đoạn đến audio đầu tiên; `toàn lượt p95` bao gồm cả lượt streaming. RAM là peak RSS của process. Cả hai hướng qua budget desktop đã khai báo (3.000 ms commit→audio lượt thường, 300 ms safety commit→audio, 8 GB RSS); điều này không có nghĩa là toàn bộ safety turn hoàn tất dưới 300 ms.
+## Giấy phép
 
-| Hướng | Lượt thường: commit→audio p95 | Lượt thường: toàn lượt p95 | Safety: commit→audio p95 | Safety: toàn lượt p95 | Peak RSS | Gate |
-|---|---:|---:|---:|---:|---:|---|
-| VI → EN | 1.435 ms | 2.141 ms | 2,4 ms | 414 ms | 2,80 GB | Đạt budget PC |
-| EN → VI | 1.124 ms | 2.876 ms | 2,2 ms | 829 ms | 3,54 GB | Đạt budget PC |
-
-Hai bundle cục bộ cũng đã qua smoke no-network ở cả hai chiều. Đây là xác nhận trên đúng laptop nêu trên, không phải trên điện thoại hoặc phần cứng khác. Hướng dẫn đóng gói, chạy lại và câu mô tả CV thận trọng nằm trong [tài liệu Windows desktop](docs/PC_DESKTOP_RELEASE.md). Android/Snapdragon/tai nghe Bluetooth vẫn là [roadmap riêng](docs/ANDROID_SNAPDRAGON_EXECUTION.md).
-
-### Full benchmark pipeline PC mới nhất · 29/09/2026
-
-Runtime `da7f34e` được đối chiếu trực tiếp với full baseline `a34118a` trên
-cùng **4.756 lượt** (4.504 noisy + 252 safety), cùng corpus và môi trường PC
-Windows offline. Replay chạy tăng tốc, không phát qua mic/tai nghe thật.
-
-<img src="docs/desktop_runtime_rebenchmark_2026-09-29/overview.svg" alt="So sánh benchmark pipeline PC full giữa baseline ngày 28/9 và runtime ngày 29/9" width="100%" />
-
-- Gate chức năng toàn bộ: **4.573/4.756 (96,15%) → 4.674/4.756 (98,28%)**;
-  giảm 101 ca FAIL, không có ca PASS cũ chuyển thành FAIL trong phép so sánh
-  từng case.
-- VI→EN: 1.987/2.084 → 2.049/2.084 qua gate; noisy ASR WER 11,81% → 11,32%,
-  translation WER 16,33% → 13,79%; commit→audio p95 1.391 → 1.211 ms.
-- EN→VI: 2.586/2.672 → 2.625/2.672 qua gate; noisy ASR WER 1,21% → 0,55%,
-  translation WER 4,90% → 4,17%; commit→audio p95 804 → 1.018 ms (chậm hơn).
-- Safety qua gate: **174/252 → 208/252**; vẫn còn **44/252** safety case
-  không qua gate. Ngoài ra, 582 output qua gate chức năng vẫn bị rule so với
-  reference gắn cờ cần review. Gate PASS không đồng nghĩa bản dịch đúng nghĩa.
-
-Đây là corpus synthetic/được duyệt nội bộ; các lần sửa đã dùng corpus này,
-nên kết quả chưa chứng minh tổng quát hóa trên holdout độc lập hay nghiệm thu
-an toàn production. WER là sai khác văn bản so với reference, không phải phần
-trăm câu dịch đúng. Chi tiết phương pháp, số liệu và giới hạn: [báo cáo
-full](docs/desktop_runtime_rebenchmark_2026-09-29/report.md) ·
-[JSON tổng hợp](docs/desktop_runtime_rebenchmark_2026-09-29/summary.json).
-
-### Full benchmark trước đó — mốc so sánh lịch sử · 28/09/2026
-
-Runtime `a34118a`: normal commit chờ endpoint, VI→EN dùng Windows SAPI
-(Microsoft David), EN→VI dùng eSpeak NG offline. Đã đo **4.756 lượt streaming**:
-full noisy test local và 126 entry safety canonical mỗi chiều, không giới hạn
-vài mẫu và không loại ca FAIL khỏi mẫu số.
-
-<img src="docs/desktop_runtime_rebenchmark/overview.svg" alt="Benchmark pipeline PC: gate noisy, gate safety, rule trường trọng yếu và commit tới buffer audio p95" width="100%" />
-
-- VI→EN: noisy 1.879/1.958, safety 108/126 qua gate; tổng 97 FAIL.
-- EN→VI: noisy 2.520/2.546, safety 66/126 qua gate; tổng 86 FAIL.
-- Normal commit→buffer audio p95 trên ca qua gate: 1.390,6 ms / 803,9 ms
-  (VI→EN / EN→VI). Đây chưa phải latency tới tai người nghe.
-- TTS độc lập đúng ngôn ngữ đầu ra: EN 979/979, VI 976/979 câu qua gate WAV;
-  3 câu VI có nguy cơ clipping. Không phải nghiệm thu độ rõ của giọng.
-- P5 lặp 5 lần/route qua budget desktop ở hai chiều; peak Python RSS của full
-  replay là 2,78 / 3,50 GiB, không gồm các process TTS con.
-
-**Chưa đạt nghiệm thu chất lượng toàn pipeline.** Qua gate chức năng không
-đồng nghĩa đúng nghĩa so với lời gốc. Full suite phát hiện lỗi normalize
-(“a” → “amperes”, “giàn giáo” bị mở rộng trước safety matching), commit safety
-lặp và lỗi ASR/thuật ngữ MT. Rule reference còn có false positive; metric
-100% của rule trên EN safety **không phải** độ chính xác safety. EN safety
-có 126 entry nhưng chỉ 33 văn bản nguồn riêng; không coi các entry là 126
-câu/người nói độc lập. Số liệu raw ASR/model Colab và P5 lịch sử phía trên
-được giữ nguyên để truy vết, không gán cho bản runtime mới.
-
-[Báo cáo chi tiết](docs/desktop_runtime_rebenchmark/report.md) ·
-[HTML](docs/desktop_runtime_rebenchmark/report.html) ·
-[JSON và provenance](docs/desktop_runtime_rebenchmark/summary.json) ·
-[Lỗi còn lại và hướng xử lý](docs/desktop_runtime_rebenchmark/review_findings.md)
-
-Đã sửa mất thông tin khi normalize ASR, commit safety lặp, một số false
-positive của validator và clipping TTS VI. Kiểm tra hồi quy 557 lượt khôi
-phục 51 ca FAIL sang PASS gate chức năng, chưa có regression trên các ca
-đã replay; TTS VI đạt 979/979 gate WAV. Đây là kiểm tra hồi quy chọn lọc,
-không phải full benchmark. Full benchmark sau sửa được trình bày ở mục mới
-nhất phía trên. Xem
-[bản sửa, bằng chứng và bước tiếp theo](docs/PIPELINE_INPUT_INTEGRITY.md).
-Số liệu và biểu đồ ngày 28/09 được giữ ở mục lịch sử để đối chiếu.
-
-Đợt sửa validated decoding tiếp theo giữ nguyên các model và bổ sung chọn beam MT có validation,
-retry SenseVoice có guard tại endpoint, cùng kiểm tra phủ định/số chính xác
-hơn. Trên cùng bộ hồi quy 557 WAV, khôi phục thêm 50 ca; còn 82 ca FAIL
-chức năng trong lần đo full cần xử lý, chưa thấy regression ở các ca đã đạt
-được replay. 178 unit test đạt. Kết quả full của runtime này ở mục mới nhất;
-đây **không phải tỷ lệ chính xác dịch** và không phải nghiệm thu production. Xem
-[bằng chứng và giới hạn của validated decoding](docs/VALIDATED_DECODING.md).
-
-Fixed streaming suite 4/4 và soak offline 30 phút 325/325 lượt đã chạy trên Colab, không được tính là soak trên laptop Windows. Safety WAV là âm thanh tổng hợp demo từ 126 câu duyệt nội bộ; nhóm dự án chưa có WAV công trường thực tế.
-
-Trong biểu đồ benchmark thành phần: `C` = âm thanh sạch, `N` = âm thanh có nhiễu,
-`T` = bộ test, `S` = bộ safety. Latency tại đây là p95 của từng model/stage;
-không phải latency toàn pipeline. Bộ `minimal` và chi tiết WER, thuật ngữ,
-entity, latency của 10 benchmark nằm trong [báo cáo Markdown](report.md) và
-[báo cáo HTML](report.html). Số liệu Windows PC ở các bảng phía trên là một
-đợt đo riêng, trên noisy test split đầy đủ và P5 lặp 5 lần.
+Repository khai báo CC BY-NC 4.0. Model và thành phần bên thứ ba có điều khoản riêng; xem [LICENSE](LICENSE) trước khi phân phối hoặc sử dụng.
