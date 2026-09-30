@@ -133,6 +133,8 @@ Bản full benchmark gần nhất trong repository được ghi ngày 29/09/2026
 | Commit → audio đầu tiên, p95 VI → EN | 1.391 ms | 1.211 ms |
 | Commit → audio đầu tiên, p95 EN → VI | 804 ms | 1.018 ms |
 
+![Biểu đồ so sánh benchmark full pipeline PC giữa baseline 28/09 và bản đo 29/09](docs/desktop_runtime_rebenchmark_2026-09-29/overview.svg)
+
 Các lượt thử gồm 4.504 WAV noisy và 252 WAV safety tổng hợp. Gate kiểm tra điều kiện thực thi của pipeline; PASS không đồng nghĩa bản dịch chính xác về nghĩa. Có 44 lượt safety không qua gate và 582 lượt qua gate bị rule đối chiếu reference gắn cờ cần review. WER so sánh văn bản với reference, không phải phần trăm câu đúng. Latency đo lúc audio được tạo trong buffer, không đo thời điểm người nghe nhận được tiếng.
 
 **Đánh giá:** bản đo mới cải thiện tổng số qua gate, WER và latency VI → EN; latency EN → VI tăng. Kết quả đủ mô tả một prototype PC offline có giám sát, chưa đủ để tuyên bố vận hành an toàn hoặc đã được xác nhận ở công trường.
@@ -144,6 +146,8 @@ Các lượt thử gồm 4.504 WAV noisy và 252 WAV safety tổng hợp. Gate k
 - [Benchmark thành phần ASR/MT, 29/08](report.md) · [HTML](report.html) · [JSON](summary.json)
 - [Biểu đồ benchmark thành phần](docs/benchmark_release_overview.svg)
 - [Ví dụ dịch V1 và các bản thu](docs/LEGACY_DEMOS_V1.md)
+
+![Biểu đồ benchmark thành phần ASR và MT của bản release hiện tại](docs/benchmark_release_overview.svg)
 
 Các phiên streaming fixed suite và soak trên Colab được mô tả trong [Colab runbook](docs/COLAB_RUNBOOK.md). Các notebook V2 nằm trong thư mục [notebooks](notebooks/).
 
